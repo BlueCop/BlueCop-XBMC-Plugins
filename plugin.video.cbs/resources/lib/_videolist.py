@@ -180,6 +180,7 @@ class Main:
                 # 14 = site name in xml, lowercased and trimmed to match the value passed from the left menu(mostly blank)
                 # 15 = empty or 720p pid
                 breakurl = url.split("','")
+                
                 #change single digit season numbers to 2 digits
                 if len(breakurl[4]) == 1:
                         breakurl[4] = "0" + breakurl[4]
@@ -187,14 +188,14 @@ class Main:
                 if len(breakurl[6]) == 1:
                         breakurl[6] = "0" + breakurl[6]
                 #Standard Definition pid
-                breakurl[15] = breakurl[15].replace("')","")
-                if breakurl[15] == '':
+                breakurl[16] = breakurl[16].replace("')","")
+                if breakurl[16] == '':
                         pid = breakurl[10]
                         if HD == True:
                             continue
                 #480p and 720p pids
-                elif breakurl[15] <> '':
-                        breakurl[16] = breakurl[16].replace("')","")
+                elif breakurl[16] <> '':
+                        breakurl[15] = breakurl[15].replace("')","")
                         pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
                 if (xbmcplugin.getSetting(pluginhandle,'largethumbs') == 'true'):
                     thumbnail = breakurl[12]
@@ -240,6 +241,7 @@ class Main:
                 #HD title and for everything else
                 else:
                         if len(breakurl[9]) > 4:
+                            print breakurl
                             finalname = breakurl[3] + " E" + breakurl[6] + " - " + breakurl[2] # + " (" + breakurl[9] + ")"
                         elif len(breakurl[9]) <= 4:
                             if breakurl[3] in breakurl[2]:

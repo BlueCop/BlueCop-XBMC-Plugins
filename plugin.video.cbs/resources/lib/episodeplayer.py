@@ -27,7 +27,7 @@ class Main:
                 elif (xbmcplugin.getSetting(pluginhandle,"hdquality") == '2'):
                     pid=breakpid[1]
                     name = '720p: ' + name
-		elif (xbmcplugin.getSetting(pluginhandle,"hdquality") == '3'):
+                elif (xbmcplugin.getSetting(pluginhandle,"hdquality") == '3'):
                     pid=breakpid[2]
                     name = '1080p: ' + name
                 #Ask HD Quality
@@ -81,8 +81,9 @@ class Main:
                                        }
                          )
             swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
-            item.setProperty("SWFPlayer", swfUrl)
-            item.setProperty("PlayPath", playpath)
+            finalurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            #item.setProperty("SWFPlayer", swfUrl)
+            #item.setProperty("PlayPath", playpath)
             if xbmcplugin.getSetting(pluginhandle,"dvdplayer") == "true":
                     player_type = xbmc.PLAYER_CORE_DVDPLAYER
             else:

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings> <!--  25.3.2009 Finnish   -->
+    <string id="30000">Käytä DVD Player-soitinta</string>
+    <string id="30001">Kysy</string>
+    <string id="30002">Korkea</string>
+    <string id="30003">Matala</string>
+    <string id="30004">Kuvanlaatu</string>
+    <string id="30006">Videon kuvanlaatu</string>
+    <string id="30007">Poistu</string>
+
+    <string id="30008">Videoiden määrä sivua kohti</string>
+    <string id="30009">Järjestely</string>
+    <string id="30010">Merkitys</string>
+    <string id="30011">Päiväyksen mukaan nouseva</string>
+    <string id="30012">Päiväyksen mukaan laskeva</string>
+</strings>

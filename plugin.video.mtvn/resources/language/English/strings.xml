@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+	<string id="30008">Max Results Per Page</string>
+	<string id="30009">Sort Order</string>
+	<string id="30010">Relevance</string>
+	<string id="30011">Date Ascending</string>
+	<string id="30012">Date Descending</string>
+
+	<string id="30000">Enable Quality Selection</string>
+	<string id="30001">Max Bitrate</string>
+	<string id="30002">Max Resolution</string>
+	<string id="30003">Custom</string>
+	<string id="30004">Default Resolution</string>
+	<string id="30005">Default Bitrate</string>
+	<string id="30013">Default Codec</string>
+	<string id="30014">VP6/MP3</string>
+	<string id="30015">H264/AAC</string>
+
+	<string id="30006">Select Quality Level?</string>
+	<string id="30007">Exit</string>
+</strings>

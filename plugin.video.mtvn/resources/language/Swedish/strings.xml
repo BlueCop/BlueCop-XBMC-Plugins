@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--Language file translated with Team XBMC Translator-->
+<!--Translator: blittan-->
+<!--Email: blittan@xbmc.org-->
+<!--Date of translation: 04/14/2009-->
+<!--$Revision$-->
+<strings>
+  <string id="30000">Använd DVD spelare istället för den vanliga</string>
+  <string id="30001">Fråga</string>
+  <string id="30002">Hög</string>
+  <string id="30003">Låg</string>
+  <string id="30004">Standardkvalitet</string>
+  <string id="30006">Välj kvalitetsnivå?</string>
+  <string id="30007">Avsluta</string>
+  <string id="30008">Max antal resultat per sida</string>
+  <string id="30009">Sorteringsordning</string>
+  <string id="30010">Relevans</string>
+  <string id="30011">Datum stigande</string>
+  <string id="30012">Datum fallande</string>
+</strings>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    
+	<!--general-->
+	<setting id="quality" type="enum" lvalues="30015|30016|30017|30018" label="30004" default="0"/>
+	<setting id='resolution_hack' type ="bool" label="30019" default="0"/>
+	<setting type="sep" />
+	
+	<!--tv-->
+	<setting id="flat_tv_cats" type="bool" label="30003" default="false"/>
+    <setting id="flat_channels" type="bool" label="30013" default="false"/>
+	<setting id="only_full_episodes" type="bool" label="30005" default="true"/>
+    <setting id="show_epi_labels" type="bool" label="30012" default="true"/>
+	<setting id="get_show_plot" type="bool" label="30006" default="true"/>
+	<setting id="get_episode_plot" type="bool" label="30007" default="true"/>
+	<setting id="flat_season" type="enum" lvalues="30008|30009|30010" label="30011" default="0"/>
+	<setting type="sep" />
+	
+</settings>

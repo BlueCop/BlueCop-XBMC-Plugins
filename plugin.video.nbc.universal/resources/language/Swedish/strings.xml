@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--Language file translated with Team XBMC Translator-->
+<!--Translator: blittan-->
+<!--Email: blittan@xbmc.org-->
+<!--Date of translation: 04/16/2009-->
+<!--$Revision$-->
+<strings>
+  <string id="30003">Låg</string>
+  <string id="30004">Standardkvalitet</string>
+  <string id="30005">Klipp förfallet</string>
+  <string id="30006">Välj kvalitetsnivå?</string>
+  <string id="30007">Avsluta</string>
+  <string id="30008">Katigoriserad efter kanal</string>
+  <string id="30009">Alltid</string>
+  <string id="30010">Nyare</string>
+  <string id="30011">Lägg ihop säsonger</string>
+  <string id="30012">Visa tillgänglig säsongs-/avsnitts- information</string>
+  <string id="30013">Lägg ihop kanaler</string>
+  <string id="30015">Fråga</string>
+  <string id="30016">Hög</string>
+  <string id="30017">Normal</string>
+  <string id="30018">Avsluta</string>
+  <string id="30019">Ändra inte XBMC's upplösning</string>
+  <string id="30090">Ej tillgänglig</string>
+  <string id="30091">(endast klipp)</string>
+  <string id="30092">Klipp från</string>
+  <string id="30093">Inga klipp</string>
+  <string id="30094">Inget hittades för</string>
+  <string id="30095">Klipp</string>
+  <string id="30096">Endast USA</string>
+</strings>

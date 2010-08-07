@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+	<!--settings labels-->
+	<string id="30004">Quality</string>
+	<string id="30015">Ask</string>
+	<string id="30016">High</string>
+	<string id="30017">Normal</string>
+	<string id="30018">Exit</string>
+	
+	<string id="30019">Don't Change XBMC's Resolution</string>
+	
+	<string id="30003">Flatten TV Categories</string>
+	<string id="30005">Only Shows with Full Episodes</string>
+	<string id="30006">Get Show Description</string>
+	<string id="30007">Get Episode Plot</string>
+	<string id="30008">If Only One Season</string>
+	<string id="30009">Always</string>
+	<string id="30010">Never</string>
+	<string id="30011">Flatten Seasons</string>
+    <string id="30012">Show Available Season/Episode Info</string>
+    <string id="30013">Flatten Channels</string>
+		
+	<!--General-->
+	<string id="30090">Unavaliable</string>
+	<string id="30095">Clips</string>
+	<string id="30091">(clips only)</string>
+	<string id="30092">Clips From</string>
+	<string id="30093">No Clips</string>
+	<string id="30094">Nothing was found for</string> <!--tvshowname/moviename-->
+	<string id="30096">USA Only</string>
+
+</strings>

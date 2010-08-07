@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings> <!--  16.4.2009 Finnish   -->
+    <!--settings labels-->
+    <string id="30004">Kuvanlaatu</string>
+    <string id="30015">Kysy</string>
+    <string id="30016">Korkea</string>
+    <string id="30017">Normaali</string>
+    <string id="30018">Poistu</string>
+    
+    <string id="30019">Älä vaihda XBMC:n resoluutiota</string>
+    
+    <string id="30003">Tiivistä TV-kategoriat</string>
+    <string id="30005">Vain kaikki jaksot sisältävät TV-ohjelmat</string>
+    <string id="30006">Nouda TV-ohjelman kuvaus</string>
+    <string id="30007">Nouda jakson juoni</string>
+    <string id="30008">Jos samalta tuotantokaudelta</string>
+    <string id="30009">Aina</string>
+    <string id="30010">Ei koskaan</string>
+    <string id="30011">Tiivistä tuotantokaudet</string>
+    <string id="30012">Näytä saatavilla olevat tuotantokauden/jakson tiedot</string>
+    <string id="30013">Tiivistä kanavat</string>
+
+    <!--General-->
+    <string id="30090">Ei saatavilla</string>
+    <string id="30095">Näytteet</string>
+    <string id="30091">(näytteet ainoastaan)</string>
+    <string id="30092">Näytteet alkaen</string>
+    <string id="30093">Ei näytteitä</string>
+    <string id="30094">Ei löytynyt ohjelmaa</string> <!--tvshowname/moviename-->
+    <string id="30096">USA ainoastaan</string>
+
+</strings>

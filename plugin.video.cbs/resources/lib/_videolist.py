@@ -85,7 +85,7 @@ class Main:
         #Season Filter
         seasons = self.CHECKSEASONS(showid)
         C = 0
-        for season in range(1,15):
+        for season in range(1,20):
                 url = common.SITEFEED_URL + showid + str(season) + ".js"
                 if self.TESTURL(url) == True:
                         C = C + 1
@@ -181,34 +181,38 @@ class Main:
                 # 15 = empty or 720p pid
                 breakurl = url.split("','")
                 
-                #change single digit season numbers to 2 digits
-                if len(breakurl[4]) == 1:
-                        breakurl[4] = "0" + breakurl[4]
-                #change single digit episode numbers to 2 digits
-                if len(breakurl[6]) == 1:
-                        breakurl[6] = "0" + breakurl[6]
+                #480p, 720p, 1080p pids
+                try:
+                    breakurl[16] = breakurl[16].replace("')","")
+                    pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
                 #Standard Definition pid
-                breakurl[16] = breakurl[16].replace("')","")
-                if breakurl[16] == '':
+                except:
+                    breakurl[15] = breakurl[15].replace("')","")
+                    if breakurl[15] == '':
                         pid = breakurl[10]
                         if HD == True:
                             continue
-                #480p and 720p pids
-                elif breakurl[16] <> '':
-                        breakurl[15] = breakurl[15].replace("')","")
-                        pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
                 if (xbmcplugin.getSetting(pluginhandle,'largethumbs') == 'true'):
                     thumbnail = breakurl[12]
                 elif (xbmcplugin.getSetting(pluginhandle,'largethumbs') == 'false'):
                     thumbnail = breakurl[11]
                 plot = breakurl[5].replace('\\','')
                 duration = breakurl[9]
+                #change single digit season numbers to 2 digits
+                if len(breakurl[4]) == 1:
+                        breakurl[4] = "0" + breakurl[4]
+                #change single digit episode numbers to 2 digits
+                if len(breakurl[6]) == 1:
+                        breakurl[6] = "0" + breakurl[6]
                 if breakurl[4] <> '':
-                        season = int(breakurl[4].replace('_','').replace('-','').replace('.',''))
+                        try:
+                            season = int(breakurl[4].replace('_','').replace('-','').replace('.',''))
+                        except:
+                            season = 0
                 else:
                         season = 0
                 if breakurl[6] <> '':
-                        episode = int(breakurl[6].replace('_','').replace('-','').replace('.','').replace('A','').replace('T',''))
+                        episode = int(breakurl[6].replace('_','').replace('-','').replace('.','').replace('A','').replace('T','')[-2])
                 else:
                         episode = 0
                 #seriestitle = breakurl[3]

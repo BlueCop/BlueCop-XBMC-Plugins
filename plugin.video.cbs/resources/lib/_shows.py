@@ -32,7 +32,7 @@ class Main:
         for url,name in match:
                 thumb = "http://www.cbs.com" + url + "images/common/show_logo.gif"
                 #Clean names
-                name = name.replace("<br>"," ").replace("&reg","")
+                name = name.replace("<br>"," ").replace("&reg","").replace('&trade;','')
                 #Ignore badshow links & showids
                 if "http://" in url:
                         pass

@@ -20,16 +20,28 @@ def getURL( url ):
         return False
     else:
             return link
-            
+
 def seasons():
+    xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
     addDir('Random Episode','http://www.southparkstudios.com/episodes/random.php',3,'')
-    #place marker grab highest season from site
     for sn in range(1,15):
         sn = str(sn)
-        addDir('Season '+sn,sn,1,'')
+        #addDir('Season '+sn,sn,1,'')
+        name = 'Season '+sn
+        TVShowTitle='South Park'
+        url = sn
+        mode = 1
+        iconimage = ''
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+        liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+        liz.setInfo( type="Video", infoLabels={ "Title": name,
+                                                "Season":int(sn),
+                                                "TVShowTitle":TVShowTitle
+                                                })
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
 
 def episodes(season):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     url = 'http://www.southparkstudios.com/includes/utils/proxy_feed.php?html=season_json.jhtml%3fseason=' + season
     json = getURL(url)
     episodes = demjson.decode(json)['season']['episode']
@@ -39,10 +51,24 @@ def episodes(season):
         thumbnail = episode['thumbnail'].replace('width=55','width=400')
         episodeid = episode['id']
         senumber = episode['episodenumber']
+        date = episode['airdate'].replace('.','-')
         seasonnumber = senumber[:-2]
         episodenumber = senumber[len(seasonnumber):]
         itemname = seasonnumber+'x'+episodenumber+' - '+title
-        addDir(itemname,episodeid,2,thumbnail,description)
+        TVShowTitle='South Park'
+        mode = 2
+        u=sys.argv[0]+"?url="+urllib.quote_plus(episodeid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(itemname)
+        liz=xbmcgui.ListItem(itemname, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
+        liz.setInfo( type="Video", infoLabels={ "Title": itemname,
+                                                "Season":int(seasonnumber),
+                                                "Episode":int(episodenumber),
+                                                "premiered":date,
+                                                "Plot":description,
+                                                "TVShowTitle":TVShowTitle
+                                                })
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 def randomEpisode(url):
     data = getURL(url)
@@ -121,13 +147,12 @@ def addLink(name,url):
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
     return ok
 
-def addDir(name,url,mode,iconimage,plot=''):
+def addDir(name,url,mode,iconimage=''):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
     ok=True
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    #liz.setInfo( type="Video", infoLabels={ "Title": name } )
-    liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
-    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+    liz.setInfo( type="Video", infoLabels={ "Title": name })
+    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
     return ok
 
         
@@ -158,8 +183,7 @@ if mode==None or url==None or len(url)<1:
 elif mode==1:
     print "Get Eps"
     episodes(url)
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
-    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
 elif mode==2:
     print "Get Rtmp"
     playVideo(url)

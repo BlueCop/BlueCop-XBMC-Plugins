@@ -47,6 +47,7 @@ def addDir(name,url,mode,iconimage=shownail,plot=''):
         return ok
 
 def pageFragments(url):
+        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
         pageNum = int(url[-1])
         nextPage = pageNum + 1
         nurl = url.replace('page='+str(pageNum),'page='+str(nextPage))
@@ -66,6 +67,7 @@ def ROOT():
         addDir('Guests','guests',3)
 
 def FULLEPISODES():
+        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
         for week in range(0,4):
             url = 'http://www.thedailyshow.com/feeds/full-episode/showcase/258329/'+str(week)+'/343079'
             data = getURL(url)
@@ -85,7 +87,12 @@ def FULLEPISODES():
                 marker = descriptions.index(description)
                 listings[marker].append(description)
             for name, link, thumbnail, plot in listings:
-                addDir(name,link,10,thumbnail,plot)
+                #addDir(name,link,10,thumbnail,plot)
+                mode = 10
+                u=sys.argv[0]+"?url="+urllib.quote_plus(link)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+                liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
+                liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
+                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
    
 
 def NEWS_TEAM():
@@ -168,6 +175,7 @@ def DATES(ymcode):
                         addDir((month+' '+day+', '+year),(ymcode+','+dcode),8)
                         
 def LISTVIDEODATE(ymdcode):
+        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
         url = DATELOOKUP+ymdcode
         items = demjson.decode(getURL(url))
         dataurl = items['data_url']
@@ -222,6 +230,7 @@ def GRAB_RTMP(uri):
         rtmps = re.compile('<src>rtmp(.+?)</src>').findall(data)
         mpixels = 0
         mbitrate = 0
+        lbitrate = 0
         if xbmcplugin.getSetting(pluginhandle,"bitrate") == '0':
                 lbitrate = 0
         elif xbmcplugin.getSetting(pluginhandle,"bitrate") == '1':

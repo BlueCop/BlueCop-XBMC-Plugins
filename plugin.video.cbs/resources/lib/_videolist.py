@@ -183,6 +183,7 @@ class Main:
                 
                 #480p, 720p, 1080p pids
                 try:
+                    breakurl[15] = breakurl[15].replace("')","")
                     breakurl[16] = breakurl[16].replace("')","")
                     pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
                 #Standard Definition pid

@@ -68,5 +68,6 @@ class Main:
                 common.addDirectory(SHOWNAME, 'Episodes', 'ListHD')
             elif Clips == True:
                 common.addDirectory(SHOWNAME, "Clips", "ListHD")
-                    
+                
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )

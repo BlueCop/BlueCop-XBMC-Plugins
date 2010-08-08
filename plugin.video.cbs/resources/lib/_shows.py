@@ -28,50 +28,26 @@ class Main:
     def LISTSHOWS(self,cat):
         url = common.ALL_SHOWS_URL
         link=common.getHTML(url)
-        match=re.compile('<a href="(.+?)" class="shows" target="_parent">(.+?)<').findall(link)
+        #match=re.compile('<a href="(.+?)" class="shows" target="_parent">(.+?)<').findall(link)
+        #<a href="?showname=primetime/48_hours#video">48 Hours Mystery</a>
+        match=re.compile('<a href="\?showname=(.+?)\#video">(.+?)</a>').findall(link)
         for url,name in match:
-                thumb = "http://www.cbs.com" + url + "images/common/show_logo.gif"
+                #thumb = "http://www.cbs.com" + url + "images/common/show_logo.gif"
                 #Clean names
+                url = '/'+url+'/'
                 name = name.replace("<br>"," ").replace("&reg","").replace('&trade;','')
                 #Ignore badshow links & showids
                 if "http://" in url:
                         pass
                 elif "/daytime/" == url:
-                        pass
-                elif "/primetime/survivor/fantasy/" == url:
-                        pass                       
+                        pass                 
                 else:
-                        #Fix late show showid & thumb
-                        if "/latenight/lateshow/" == url:
-                                url = "/late_show/"
-                                thumb = "http://www.cbs.com" + url + "images/common/show_logo.gif"
-                        #Fix crimetime thumb        
-                        elif "/crimetime/" == url:
-                                thumb = "http://www.cbs.com" + url + "images/common/show_logo.png"
-                        #Fix 48 Hours and Victorias Secret thumb
-                        elif "/primetime/48_hours/" == url or "/specials/victorias_secret/" == url:
-                                thumb = "http://www.cbs.com" + url + "images/common/show_logo.jpg"
-                        elif "/primetime/big_brother/housecalls/" == url:
-                                thumb = "http://www.cbs.com" + "/primetime/big_brother/" + "images/common/show_logo.gif"
-                        #Blank icons for unavailable
-                        elif "/primetime/flashpoint/" == url or "/primetime/game_show_in_my_head/" == url or "/specials/grammys/lincoln/" == url:
-                                thumb = xbmc.translatePath(os.path.join(common.imagepath,url.replace('/','') + ".png"))
-
-                        #Plot cache file
-                        plotfile = xbmc.translatePath(os.path.join(common.cachepath,url.replace('/','') + ".txt"))
-                        #Check for show info cache file
-                        if os.path.isfile(plotfile):
-                            f = open(plotfile , 'r')
-                            plot = f.read()
-                            f.close()
-                        #No Plot
-                        else:
-                            plot = 'No Plot Information Available'
                         #All Categories
                         if cat == "all":
-                            common.addDirectory(name,url,'List',thumb,thumb,plot)
+                            common.addDirectory(name,url,'List')
                         #Selected Categories
                         elif cat in url:
-                            common.addDirectory(name,url,'List',thumb,thumb,plot)
+                            common.addDirectory(name,url,'List')
 
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ))

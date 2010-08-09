@@ -50,19 +50,25 @@ class Main:
                     else:
                             return
             #url containing video link
-            url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&pid=" + pid
+            url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
             link=common.getHTML(url)
             #Get ad links
             #if (xbmcplugin.getSetting(pluginhandle,"ads") == 'true'):
             #        ads = self.getAds(link)                  
             if "rtmp://" in link:
-                    stripurl = re.compile('<ref src="rtmp://(.+?)" ').findall(link)
-                    cleanurl = stripurl[0].replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').split('<break>')
-                    finalurl = "rtmp://" + cleanurl[0]
-                    if ".mp4" in cleanurl[1]:
-                            playpath = 'mp4:' + cleanurl[1]
-                    else:
-                            playpath = cleanurl[1].replace('.flv','')
+                    stripurls = re.compile('<video src="rtmp://(.+?)" system-bitrate=".+?" width="(.+?)" height="(.+?)" profile="(.+?)"').findall(link)
+                    hpixels = 0
+                    for stripurl, w, h ,profile in stripurls:
+                        pixels = int(w) * int(h)
+                        if pixels > hpixels:
+                            hpixels = pixels
+                            print stripurl
+                            cleanurl = stripurl.replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').split('<break>')
+                            finalurl = "rtmp://" + cleanurl[0]
+                            if ".mp4" in cleanurl[1]:
+                                    playpath = 'mp4:' + cleanurl[1]
+                            else:
+                                    playpath = cleanurl[1].replace('.flv','')
             elif "http://" in link:
                     stripurl = re.compile('<ref src="http://(.+?)" ').findall(link)
                     finalurl = "http://" + stripurl[0]

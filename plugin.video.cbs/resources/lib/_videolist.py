@@ -148,19 +148,15 @@ class Main:
             showfilter = ''
             HD = False
 
-        hdcachefile = xbmc.translatePath(os.path.join(common.cachepath,"hd.js"))
-        if url == common.HDVIDEOS_URL and os.path.isfile(hdcachefile):
-            f = open(hdcachefile , 'r')
-            link = f.read()
-            f.close()
-        else:
-            link=common.getHTML(url)
+        link=common.getHTML(url)
         match=re.compile('videoProperties(.+?);\r').findall(link)
         #set List Counter to 1 for popular and recent shows
         if "popular" in url or "recent" in url or "editorial" in url :
                 C = 1
+                #xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
         else:
                 C = 0
+                xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
         for url in match:
                 # breakurl item list
                 #  0 = empty
@@ -179,43 +175,60 @@ class Main:
                 # 13 = the current category value for the existing show pages(mostly blank)
                 # 14 = site name in xml, lowercased and trimmed to match the value passed from the left menu(mostly blank)
                 # 15 = empty or 720p pid
+
                 breakurl = url.split("','")
                 
-                #480p, 720p, 1080p pids
-                try:
-                    breakurl[15] = breakurl[15].replace("')","")
-                    breakurl[16] = breakurl[16].replace("')","")
-                    pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
-                #Standard Definition pid
-                except:
-                    breakurl[15] = breakurl[15].replace("')","")
-                    if breakurl[15] == '':
-                        pid = breakurl[10]
-                        if HD == True:
-                            continue
+                title1 = breakurl[1]
+                episodetitle = breakurl[2]
+                series_title = breakurl[3]
+
+                #Assign thumbnail
                 if (xbmcplugin.getSetting(pluginhandle,'largethumbs') == 'true'):
                     thumbnail = breakurl[12]
                 elif (xbmcplugin.getSetting(pluginhandle,'largethumbs') == 'false'):
                     thumbnail = breakurl[11]
+                
+                #Meta Data
                 plot = breakurl[5].replace('\\','')
                 duration = breakurl[9]
-                #change single digit season numbers to 2 digits
-                if len(breakurl[4]) == 1:
-                        breakurl[4] = "0" + breakurl[4]
-                #change single digit episode numbers to 2 digits
-                if len(breakurl[6]) == 1:
-                        breakurl[6] = "0" + breakurl[6]
-                if breakurl[4] <> '':
-                        try:
-                            season = int(breakurl[4].replace('_','').replace('-','').replace('.',''))
-                        except:
-                            season = 0
+
+                #Season Number
+                try:
+                    season = int(breakurl[4])#.replace('_','').replace('-','').replace('.',''))
+                except:
+                    season = 0
+                #Episode Number
+                try:
+                    episode = int(breakurl[6])
+                except:
+                    episode = 0
+
+                #PIDS
+                pid1 = breakurl[10]
+                try:
+                    pid2 = breakurl[15]
+                    pid3 = breakurl[16].replace("')","")
+                except:
+                    pid2 = breakurl[15].replace("')","")
+
+                if HD == True:
+                    pid = pid1 + "<break>" + pid2 + "<break>" + pid3
                 else:
-                        season = 0
-                if breakurl[6] <> '':
-                        episode = int(breakurl[6].replace('_','').replace('-','').replace('.','').replace('A','').replace('T','')[-2])
-                else:
-                        episode = 0
+                    pid = pid1
+                
+                #480p, 720p, 1080p pids
+                #try:
+                #    breakurl[16] = breakurl[16].replace("')","")
+                #    pid = breakurl[10] + "<break>" + breakurl[15] + "<break>" + breakurl[16]
+                #Standard Definition pid
+                #except:
+                #    breakurl[15] = breakurl[15].replace("')","")
+                #    if breakurl[15] == '':
+                #        pid = breakurl[10]
+                #        if HD == True:
+                #            continue
+
+
                 #seriestitle = breakurl[3]
                 #episodetitle = breakurl[2]
                 #List Order Counter for popular and recent lists
@@ -230,33 +243,30 @@ class Main:
                         ordernumber = ''
                 #Generate filename for Full Episode - series title + "S" + season number+ "E" + episode number + " - " + episode title
                 if breakurl[8] == "Full Episode":
-                         if "late" in breakurl[1] or "daytime" in breakurl[1]:
-                                finalname = ordernumber + breakurl[2]
-                         else:
-                                finalname = ordernumber + "S" + breakurl[4] + "E" + breakurl[6] + " - " + breakurl[2]
+                                finalname = ordernumber + episodetitle
                 #Generate filename for Clip - series title + " - " + episode title + " (Clip)"
                 elif breakurl[8] == "Clip": 
-                        #finalname = ordernumber + breakurl[3] + " - " + breakurl[2] + " (Clip) " + breakurl[9]
-                        if breakurl[2] == '':
-                                finalname = ordernumber + breakurl[3] + " (Clip)"
-                        if breakurl[3] in breakurl[2]:
-                                finalname = ordernumber + breakurl[2] + " (Clip)"
+                        #finalname = ordernumber + series_title + " - " + episodetitle + " (Clip) " + breakurl[9]
+                        if episodetitle == '':
+                                finalname = ordernumber + series_title + " (Clip)"
+                        if series_title in episodetitle:
+                                finalname = ordernumber + episodetitle + " (Clip)"
                         else:
-                                finalname = ordernumber + breakurl[2] + " (Clip)" 
+                                finalname = ordernumber + episodetitle + " (Clip)" 
                 #HD title and for everything else
                 else:
                         if len(breakurl[9]) > 4:
-                            print breakurl
-                            finalname = breakurl[3] + " E" + breakurl[6] + " - " + breakurl[2] # + " (" + breakurl[9] + ")"
+                            #finalname = series_title + " E" + str(episode) + " - " + episodetitle
+                            finalname = episodetitle
                         elif len(breakurl[9]) <= 4:
-                            if breakurl[3] in breakurl[2]:
-                                finalname = breakurl[2] + " (Clip)" # (" + breakurl[9] + ")"
+                            if series_title in episodetitle:
+                                finalname = episodetitle + " (Clip)"
                             else:
-                                finalname = breakurl[3] + " - " + breakurl[2] + " (Clip)" # + " (" + breakurl[9] + ")"
+                                finalname = series_title + " - " + episodetitle + " (Clip)"
                 #Clean filename
                 finalname = finalname.replace('\\\'','\'')
                 if "<break>" in pid:
-                    if breakurl[3] == showfilter:
+                    if series_title == showfilter:
                         if typefilter == "Episodes":
                             if len(breakurl[9]) > 4:
                                 passname = finalname.replace(ordernumber,'')
@@ -268,7 +278,7 @@ class Main:
                                                             "Episode": episode,
                                                             "Duration": duration,
                                                             "Plot": plot})
-                                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item,isFolder=True)
+                                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item)
                                 continue
                         elif typefilter == "Clips":
                             if len(breakurl[9]) <= 4:
@@ -281,7 +291,7 @@ class Main:
                                                             "Episode": episode,
                                                             "Duration": duration,
                                                             "Plot": plot})
-                                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item,isFolder=True)
+                                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item)
                                 continue
                 else:
                     passname = finalname.replace(ordernumber,'')

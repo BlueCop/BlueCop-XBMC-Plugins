@@ -2,8 +2,9 @@ import urllib,urllib2,re,sys,os
 import xbmcplugin,xbmcgui
 import demjson
 
-playlistMode = True
-shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
+fanart = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'fanart.jpg'))
+xbmcplugin.setPluginFanart(int(sys.argv[1]), fanart, color2='0xFFFF3300')
+TVShowTitle='South Park'
 
 def getURL( url ):
     try:
@@ -24,41 +25,65 @@ def getURL( url ):
 
 def seasons():
     xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
-    addDir('Random Episode','http://www.southparkstudios.com/episodes/random.php',3,shownail)
+    addRandom('Random Episode','http://www.southparkstudios.com/episodes/random.php',3)
     for sn in range(1,15):
         sn = str(sn)
-        #addDir('Season '+sn,sn,1,'')
         name = 'Season '+sn
-        TVShowTitle='South Park'
         url = sn
         mode = 1
+        iconimage = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'resources','images','season'+sn+'.jpg'))
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=shownail)
+        liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
         liz.setInfo( type="Video", infoLabels={ "Title": name,
                                                 "Season":int(sn),
                                                 "TVShowTitle":TVShowTitle
                                                 })
+        liz.setProperty('fanart_image',fanart)
         xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+
+def addRandom(name,url,mode):
+    iconimage = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'icon.png'))
+    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
+    ok=True
+    liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+    liz.setInfo( type="Video", infoLabels={ "Title": name })
+    liz.setProperty('IsPlayable', 'true')
+    liz.setProperty('fanart_image',fanart)
+    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+    return ok
+
+def randomEpisode(url):
+    data = getURL(url)
+    randomEpisodeid=re.compile('swfobject.embedSWF\("http://media.mtvnservices.com/mgid:cms:content:southparkstudios.com:(.+?)"').findall(data)[0]
+    name = re.compile('<title>South Park Episode Player - South Park: (.+?)</title>').findall(data)[0]
+    name = name.replace("&#039;","'")
+    thumbnail = re.compile('<link rel="image_src" href="(.+?)?width=90&quality=100"').findall(data)[0]
+    playVideo(randomEpisodeid,name,thumbnail)
 
 def episodes(season):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
     url = 'http://www.southparkstudios.com/includes/utils/proxy_feed.php?html=season_json.jhtml%3fseason=' + season
     json = getURL(url)
     episodes = demjson.decode(json)['season']['episode']
     for episode in episodes:
         title = episode['title']
         description = episode['description']
-        thumbnail = episode['thumbnail'].replace('width=55','width=400')
+        thumbnail = episode['thumbnail'].replace('width=55','')
         episodeid = episode['id']
         senumber = episode['episodenumber']
         date = episode['airdate'].replace('.','-')
         seasonnumber = senumber[:-2]
         episodenumber = senumber[len(seasonnumber):]
-        itemname = seasonnumber+'x'+episodenumber+' - '+title
-        TVShowTitle='South Park'
         mode = 2
-        u=sys.argv[0]+"?url="+urllib.quote_plus(episodeid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(itemname)
-        liz=xbmcgui.ListItem(itemname, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
+        u=sys.argv[0]+"?url="+urllib.quote_plus(episodeid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(title)
+        u += "&season="+urllib.quote_plus(seasonnumber)
+        u += "&episode="+urllib.quote_plus(episodenumber)
+        u += "&premiered="+urllib.quote_plus(date)
+        u += "&plot="+urllib.quote_plus(description)
+        u += "&thumbnail="+urllib.quote_plus(thumbnail)
+        ok=True
+        liz=xbmcgui.ListItem(title, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
         liz.setInfo( type="Video", infoLabels={ "Title": title,
                                                 "Season":int(seasonnumber),
                                                 "Episode":int(episodenumber),
@@ -66,41 +91,23 @@ def episodes(season):
                                                 "Plot":description,
                                                 "TVShowTitle":TVShowTitle
                                                 })
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
+        liz.setProperty('IsPlayable', 'true')
+        liz.setProperty('fanart_image',fanart)
+        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-def randomEpisode(url):
-    data = getURL(url)
-    randomEpisodeid=re.compile('swfobject.embedSWF\("http://media.mtvnservices.com/mgid:cms:content:southparkstudios.com:(.+?)"').findall(data)[0]
-    rname=re.compile('<title>South Park Episode Player - South Park: (.+?)</title>').findall(data)[0]
-    rname = rname.replace("&#039;","'")
-    playVideo(randomEpisodeid,rname)
-
-def playVideo(episodeid,rname=''):
-    if rname <> '':
-        dname = rname
-    else:
-        dname = name
+def playVideo(episodeid,name,thumbnail):
+    dname = name
     swfurl = 'http://media.mtvnservices.com/player/release/?v=4.5.3'
     url = 'http://media.mtvnservices.com/player/config.jhtml?uri=mgid%3Acms%3Acontent%3Asouthparkstudios.com%3A'+episodeid+'&group=entertainment&type=network'
     response = getURL(url)
     rtmp=re.compile('<media:content url="(.+?)" type="text/xml" medium="video" duration=".+?" isDefault=".+?" />').findall(response)
-    playlist = xbmc.PlayList(1)
-    playlist.clear() 
-    counter = 0
+    final_urls = []
     for url in rtmp:
-        if counter == 0:
-            iname = dname+' - Intro'
-        else:
-            iname = dname+' - Act '+str(counter)
-        counter += 1
         response = getURL(url)
         rtmps=re.compile('<src>(.+?)</src>').findall(response)
-        print str(rtmps)
         hbitrate = 0
         hwidth = 0
-        h264 = False
         for rtmpbit in rtmps:
             filesplit = rtmpbit.split('/')[-1]
             brsplit  = filesplit.split('_')
@@ -110,18 +117,23 @@ def playVideo(episodeid,rname=''):
             if bitrate > hbitrate or pixels > hpixels:
                 hbitrate = bitrate
                 hpixels = pixels
-                fname = iname +' '+resolution[0]+'x'+resolution[1]+' '+str(bitrate)+'kbps'
-                furl = rtmpbit + " swfurl=" + swfurl + " swfvfy=true"                        
-        if playlistMode == False:
-            addLink(fname,furl)
-        elif playlistMode == True:
-            item = xbmcgui.ListItem(iname)
-            playlist.add(furl, item)
-    if playlistMode == False:
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-    elif playlistMode == True:
-        xbmc.Player().play(playlist)
-        xbmc.executebuiltin('XBMC.ActivateWindow(fullscreenvideo)')
+                furl = rtmpbit + " swfurl=" + swfurl + " swfvfy=true"
+        final_urls.append(furl)
+    stacked_url = 'stack://'
+    for stack in final_urls:
+        if len(final_urls) == final_urls.index(stack):
+            stacked_url += stack.replace(',',',,')
+        else:
+            stacked_url += stack.replace(',',',,')+' , '
+    item=xbmcgui.ListItem(dname, thumbnailImage=thumbnail, path=stacked_url)
+    item.setInfo( type="Video", infoLabels={"Title": dname,
+                                            "Season":season,
+                                            "Episode":episode,
+                                            "premiered":premiered,
+                                            "Plot":plot,
+                                            "TVShowTitle":TVShowTitle
+                                            })
+    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)  
 
 def get_params():
     param=[]
@@ -139,22 +151,6 @@ def get_params():
             if (len(splitparams))==2:
                 param[splitparams[0]]=splitparams[1]
     return param
-
-       
-def addLink(name,url):
-    ok=True
-    liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png")
-    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
-    return ok
-
-def addDir(name,url,mode,iconimage=''):
-    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-    ok=True
-    liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels={ "Title": name })
-    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
-    return ok
-
         
 params=get_params()
 url=None
@@ -168,11 +164,32 @@ except:
 try:
     name=urllib.unquote_plus(params["name"])
 except:
-    pass
+    name=''
 try:
     mode=int(params["mode"])
 except:
     pass
+try:
+    thumbnail=urllib.unquote_plus(params["thumbnail"])
+except:
+    thumbnail=''
+try:
+    season=int(params["season"])
+except:
+    season=0
+try:
+    episode=int(params["episode"])
+except:
+    episode=0
+try:
+    premiered=urllib.unquote_plus(params["premiered"])
+except:
+    premiered=''
+try:
+    plot=urllib.unquote_plus(params["plot"])
+except:
+    plot=''
+
 print "Mode: "+str(mode)
 print "URL: "+str(url)
 print "Name: "+str(name)
@@ -186,7 +203,7 @@ elif mode==1:
 
 elif mode==2:
     print "Get Rtmp"
-    playVideo(url)
+    playVideo(url,name,thumbnail)
 elif mode==3:
     print "Random Episode"
     randomEpisode(url)

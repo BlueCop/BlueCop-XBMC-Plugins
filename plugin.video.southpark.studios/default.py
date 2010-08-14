@@ -2,9 +2,12 @@ import urllib,urllib2,re,sys,os
 import xbmcplugin,xbmcgui
 import demjson
 
+
+pluginhandle = int(sys.argv[1])
 fanart = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'fanart.jpg'))
-xbmcplugin.setPluginFanart(int(sys.argv[1]), fanart, color2='0xFFFF3300')
+xbmcplugin.setPluginFanart(pluginhandle, fanart, color2='0xFFFF3300')
 TVShowTitle='South Park'
+
 
 def getURL( url ):
     try:
@@ -24,7 +27,7 @@ def getURL( url ):
             return link
 
 def seasons():
-    xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
+    xbmcplugin.setContent(pluginhandle, 'seasons')
     addRandom('Random Episode','http://www.southparkstudios.com/episodes/random.php',3)
     for sn in range(1,15):
         sn = str(sn)
@@ -39,7 +42,7 @@ def seasons():
                                                 "TVShowTitle":TVShowTitle
                                                 })
         liz.setProperty('fanart_image',fanart)
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
 
 def addRandom(name,url,mode):
     iconimage = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'icon.png'))
@@ -49,7 +52,7 @@ def addRandom(name,url,mode):
     liz.setInfo( type="Video", infoLabels={ "Title": name })
     liz.setProperty('IsPlayable', 'true')
     liz.setProperty('fanart_image',fanart)
-    ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
     return ok
 
 def randomEpisode(url):
@@ -61,14 +64,14 @@ def randomEpisode(url):
     playVideo(randomEpisodeid,name,thumbnail)
 
 def episodes(season):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
+    xbmcplugin.setContent(pluginhandle, 'episodes')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
     url = 'http://www.southparkstudios.com/includes/utils/proxy_feed.php?html=season_json.jhtml%3fseason=' + season
     json = getURL(url)
     episodes = demjson.decode(json)['season']['episode']
     for episode in episodes:
         title = episode['title']
-        description = episode['description']
+        description = episode['description'].encode('ascii', 'ignore')
         thumbnail = episode['thumbnail'].replace('width=55','')
         episodeid = episode['id']
         senumber = episode['episodenumber']
@@ -93,21 +96,28 @@ def episodes(season):
                                                 })
         liz.setProperty('IsPlayable', 'true')
         liz.setProperty('fanart_image',fanart)
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
-    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+    xbmcplugin.endOfDirectory(pluginhandle)
 
 def playVideo(episodeid,name,thumbnail):
+    if xbmcplugin.getSetting(pluginhandle,"bitrate") == '0':
+            lbitrate = None
+    elif xbmcplugin.getSetting(pluginhandle,"bitrate") == '1':
+            lbitrate = 700
+    elif xbmcplugin.getSetting(pluginhandle,"bitrate") == '2':
+            lbitrate = 600
     dname = name
     swfurl = 'http://media.mtvnservices.com/player/release/?v=4.5.3'
     url = 'http://media.mtvnservices.com/player/config.jhtml?uri=mgid%3Acms%3Acontent%3Asouthparkstudios.com%3A'+episodeid+'&group=entertainment&type=network'
     response = getURL(url)
     rtmp=re.compile('<media:content url="(.+?)" type="text/xml" medium="video" duration=".+?" isDefault=".+?" />').findall(response)
-    final_urls = []
+    stacked_url = 'stack://'
     for url in rtmp:
         response = getURL(url)
         rtmps=re.compile('<src>(.+?)</src>').findall(response)
         hbitrate = 0
         hwidth = 0
+        furl = False
         for rtmpbit in rtmps:
             filesplit = rtmpbit.split('/')[-1]
             brsplit  = filesplit.split('_')
@@ -115,16 +125,12 @@ def playVideo(episodeid,name,thumbnail):
             resolution = brsplit[-2].split('x')
             pixels = int(resolution[0]) * int(resolution[1])
             if bitrate > hbitrate or pixels > hpixels:
-                hbitrate = bitrate
-                hpixels = pixels
-                furl = rtmpbit + " swfurl=" + swfurl + " swfvfy=true"
-        final_urls.append(furl)
-    stacked_url = 'stack://'
-    for stack in final_urls:
-        if len(final_urls) == final_urls.index(stack):
-            stacked_url += stack.replace(',',',,')
-        else:
-            stacked_url += stack.replace(',',',,')+' , '
+                if lbitrate == None or bitrate <= lbitrate:
+                    hbitrate = bitrate
+                    hpixels = pixels
+                    furl = rtmpbit + " swfurl=" + swfurl + " swfvfy=true"
+        if furl is not False:
+            stacked_url += furl.replace(',',',,')+' , '
     item=xbmcgui.ListItem(dname, thumbnailImage=thumbnail, path=stacked_url)
     item.setInfo( type="Video", infoLabels={"Title": dname,
                                             "Season":season,
@@ -133,7 +139,8 @@ def playVideo(episodeid,name,thumbnail):
                                             "Plot":plot,
                                             "TVShowTitle":TVShowTitle
                                             })
-    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)  
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    
 
 def get_params():
     param=[]
@@ -194,13 +201,12 @@ print "Mode: "+str(mode)
 print "URL: "+str(url)
 print "Name: "+str(name)
 if mode==None or url==None or len(url)<1:
-    print "categories"
+    print "Seasons"
     seasons()
-    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+    xbmcplugin.endOfDirectory(pluginhandle)
 elif mode==1:
-    print "Get Eps"
+    print "Episodes"
     episodes(url)
-
 elif mode==2:
     print "Get Rtmp"
     playVideo(url,name,thumbnail)

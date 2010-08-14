@@ -1,4 +1,3 @@
 <settings>
-   <setting id="sort" type="enum" lvalues="30001|30002|30003" label="30000" default="2"/>
-   <setting id="bitrate" type="enum" lvalues="30005|30006|30007|30008|30009|30010" label="30004" default="0"/>
+   <setting id="bitrate" type="enum" lvalues="30005|30006|30007" label="30004" default="0"/>
 </settings>

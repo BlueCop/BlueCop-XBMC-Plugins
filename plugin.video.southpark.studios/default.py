@@ -43,6 +43,7 @@ def seasons():
                                                 })
         liz.setProperty('fanart_image',fanart)
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
+    xbmcplugin.endOfDirectory(pluginhandle)
 
 def addRandom(name,url,mode):
     iconimage = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'icon.png'))
@@ -203,7 +204,6 @@ print "Name: "+str(name)
 if mode==None or url==None or len(url)<1:
     print "Seasons"
     seasons()
-    xbmcplugin.endOfDirectory(pluginhandle)
 elif mode==1:
     print "Episodes"
     episodes(url)

@@ -3,14 +3,18 @@ import os,datetime
 import demjson
 
 DATELOOKUP = "http://www.thedailyshow.com/fragments/timeline/update?coords="
-shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
-pluginhandle = int (sys.argv[1])
 
-if xbmcplugin.getSetting(pluginhandle,"sort") == '0':#Relevance
+pluginhandle = int(sys.argv[1])
+shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
+fanart = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'fanart.jpg'))
+xbmcplugin.setPluginFanart(pluginhandle, fanart, color2='0xFFFF3300')
+
+
+if xbmcplugin.getSetting(pluginhandle,"sort") == '0':
         SORTORDER = 'date'
-elif xbmcplugin.getSetting(pluginhandle,"sort") == '1':#Date Ascending
+elif xbmcplugin.getSetting(pluginhandle,"sort") == '1':
         SORTORDER = 'views'
-elif xbmcplugin.getSetting(pluginhandle,"sort") == '2':#Date Descending
+elif xbmcplugin.getSetting(pluginhandle,"sort") == '2':
         SORTORDER = 'rating'
 
 ################################ Common
@@ -34,29 +38,37 @@ def getURL( url ):
 def addLink(name,url,iconimage='',plot=''):
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
+        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":"The Daily Show"})
+        liz.setProperty('fanart_image',fanart)
+        ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=url,listitem=liz)
         return ok
 
 def addDir(name,url,mode,iconimage=shownail,plot=''):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":"The Daily Show"})
+        liz.setProperty('fanart_image',fanart)
+        ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
         return ok
 
 def pageFragments(url):
-        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+        xbmcplugin.setContent(pluginhandle, 'episodes')
         pageNum = int(url[-1])
         nextPage = pageNum + 1
         nurl = url.replace('page='+str(pageNum),'page='+str(nextPage))
-        if '/box' in nurl:
-            nurl = nurl.replace('/box','')
+        prevPage = pageNum - 1
+        purl = url.replace('page='+str(pageNum),'page='+str(prevPage))
+        if '/box' in nurl or '/box' in purl:
+            nurl = nurl.replace('/box','')                
+            purl = purl.replace('/box','')
         data = getURL(nurl)
         if 'Your search returned zero results' not in data:
             addDir('Next Page',nurl,7)
-        LISTVIDEO(url) 
+        if prevPage >= 1:
+            addDir('Previous Page',purl,7)
+        LISTVIDEOS(url)
+        xbmcplugin.endOfDirectory(pluginhandle,updateListing=True)
 
 ################################ Root listing
 def ROOT():
@@ -65,15 +77,21 @@ def ROOT():
         addDir('News Team','newsteam',2)
         addDir('Segments','segments',4)
         addDir('Guests','guests',3)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
 def FULLEPISODES():
-        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-        for week in range(0,4):
-            url = 'http://www.thedailyshow.com/feeds/full-episode/showcase/258329/'+str(week)+'/343079'
+        xbmcplugin.setContent(pluginhandle, 'episodes')
+        #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
+        full = 'http://www.thedailyshow.com/full-episodes/'
+        data = getURL(full)
+        weeks = re.compile('<a id="(.+?)" class="seaso.+?" href="#">(.+?)</a>').findall(data)
+        for url, week in weeks:
             data = getURL(url)
             episodes=re.compile('<span class="date"><a href="(.+?)">(.+?)</a></span>').findall(data)
             thumbnails=re.compile('<img width="156" height="86" src="(.+?)\?width=156" border="0"/>').findall(data)
             descriptions=re.compile('<span class="description">(.+?)</span>').findall(data)
+            airdates=re.compile('<span class="date">Aired: (.+?)</span>').findall(data)
+            epNumbers=re.compile('<span class="id">Episode (.+?)</span>').findall(data)
             listings = []
             for link, name in episodes:
                 listing = []
@@ -86,13 +104,28 @@ def FULLEPISODES():
             for description in descriptions:
                 marker = descriptions.index(description)
                 listings[marker].append(description)
-            for name, link, thumbnail, plot in listings:
-                #addDir(name,link,10,thumbnail,plot)
+            for airdate in airdates:
+                marker = airdates.index(airdate)
+                listings[marker].append(airdate)
+            for epNumber in epNumbers:
+                marker = epNumbers.index(epNumber)
+                listings[marker].append(epNumber)
+            for name, link, thumbnail, plot, date, seasonepisode in listings:
                 mode = 10
+                season = int(seasonepisode[:-3])
+                episode = int(seasonepisode[-3:])
                 u=sys.argv[0]+"?url="+urllib.quote_plus(link)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
                 liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
-                liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
-                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+                liz.setInfo( type="Video", infoLabels={ "Title": name,
+                                                        "Plot":plot,
+                                                        "Season":season,
+                                                        "Episode": episode,
+                                                        "premiered":date,
+                                                        "TVShowTitle":"The Daily Show"})
+                liz.setProperty('IsPlayable', 'true')
+                liz.setProperty('fanart_image',fanart)
+                xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+        xbmcplugin.endOfDirectory(pluginhandle)
    
 
 def NEWS_TEAM():
@@ -108,6 +141,7 @@ def NEWS_TEAM():
             link = name.replace(' ','+')
             furl = 'http://www.thedailyshow.com/fragments/search/tags/'+link+'?sort='+SORTORDER+'&page=1'
             addDir(name,furl,7)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
         
 def GUESTS():
@@ -117,6 +151,7 @@ def GUESTS():
         for link,name in cats:
             furl = 'http://www.thedailyshow.com/fragments/search/box/guests/'+link+'?page=1'
             addDir(name,furl,7)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
 def SEGMENTS():
         segments=[('Even Stevphen','Even+Stevphen'),
@@ -129,6 +164,7 @@ def SEGMENTS():
         for name, tag in segments:
                 url = 'http://www.thedailyshow.com/fragments/search/tags/'+tag+'?sort='+SORTORDER+'&page=1'
                 addDir(name,url,7)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
 
 ################################ Browse by Date
@@ -140,6 +176,7 @@ def YEARS():
                 year = str(year)
                 ycode = str(int(year)- 1996)
                 addDir(year,ycode,11)
+        xbmcplugin.endOfDirectory(pluginhandle)
                        
 def MONTHES(ycode):
         MONTHES = ['January','February','March','April','May','June','July','August','September','October','November','December'] 
@@ -148,7 +185,6 @@ def MONTHES(ycode):
         dcode = '31'
         url = DATELOOKUP+ycode+','+mcode+','+dcode
         items = demjson.decode(getURL(url))
-        #print items['label']
         mticks = items['ticks']['month']
         for tick in mticks:
                 mcode = mticks.index(tick)
@@ -156,6 +192,7 @@ def MONTHES(ycode):
                         pname = MONTHES[mcode]+' '+year
                         pcode = ycode+','+str(mcode)
                         addDir(pname,pcode,12)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
 def DATES(ymcode):
         dcode = '31'
@@ -173,50 +210,112 @@ def DATES(ymcode):
                         day = str(d+1)
                         dcode = str(d)
                         addDir((month+' '+day+', '+year),(ymcode+','+dcode),8)
+        xbmcplugin.endOfDirectory(pluginhandle)
                         
 def LISTVIDEODATE(ymdcode):
-        xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+        xbmcplugin.setContent(pluginhandle, 'episodes')
         url = DATELOOKUP+ymdcode
         items = demjson.decode(getURL(url))
         dataurl = items['data_url']
-        LISTVIDEO(dataurl)
+        LISTVIDEOS(dataurl)
+        xbmcplugin.endOfDirectory(pluginhandle)
         
 
 ################################ List Videos
 
-def LISTVIDEO(url):
+def LISTVIDEOS(url):
+        xbmcplugin.setContent(pluginhandle, 'episodes')
         data = getURL(url)
         playbackUrls=re.compile('<a href="http://www.thedailyshow.com/watch/(.+?)">').findall(data)
+        thumbnails=re.compile('<img src="(.+?)?width=.+?"').findall(data)
+        names=re.compile('<span class="title"><a href=".+?">(.+?)</a></span>').findall(data)
+        descriptions=re.compile('<span class="description">(.+?)\(.+?\)</span>').findall(data)
+        durations=re.compile('<span class="description">.+?\((.+?)\)</span>').findall(data)
+        epNumbers=re.compile('<span class="episode">Episode #(.+?)</span>').findall(data)
+        airdates=re.compile('<span>Aired.+?</span>(.+?)</div>').findall(data)
         for pb in playbackUrls:
                 url = "http://www.thedailyshow.com/watch/"+pb
-                data = getURL(url)
-                fname = re.compile('<span property="media:title" content="(.+?)">').findall(data)[0]
+                marker = playbackUrls.index(pb)
+                thumbnail = thumbnails[marker]
+                fname = names[marker]
+                description = descriptions[marker]
+                duration = durations[marker]
                 try:
-                    description = re.compile('<span property="dc:description" content="(.+?)">').findall(data)[0]
+                        seasonepisode = epNumbers[marker]
+                        season = int(seasonepisode[:-3])
+                        episode = int(seasonepisode[-3:])
                 except:
-                    description = ''
-                thumbnail = re.compile('<a rel="media:thumbnail" href="(.+?)">').findall(data)[0]
-                uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
-                furl = GRAB_RTMP(uri)
-                addLink(fname,furl,thumbnail,description)
+                        season = 0
+                        episode = 0
+                date = airdates[marker]
+                u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(13)+"&name="+urllib.quote_plus(fname)
+                liz=xbmcgui.ListItem(fname, iconImage="DefaultVideo.png", thumbnailImage=thumbnail)
+                liz.setInfo( type="Video", infoLabels={ "Title": fname,
+                                                        "Episode": episode,
+                                                        "Season": season,
+                                                        "Plot":description,
+                                                        "premiered":date,
+                                                        "Duration": duration,
+                                                        "TVShowTitle":"The Daily Show"})
+                liz.setProperty('IsPlayable', 'true')
+                liz.setProperty('fanart_image',fanart)
+                xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+                
 
+
+################################ Play Video
+                
+def PLAYVIDEO(name,url):
+        data = getURL(url)
+        #try:
+        #        fname = re.compile('property="media:title" content="(.+?)">').findall(data)[0]
+        #except:
+        #        fname = re.compile('<meta name="title" content="(.+?)"').findall(data)[0]
+        try:
+            description = re.compile('<span property="dc:description" content="(.+?)">').findall(data)[0]
+        except:
+            description = ''
+        try:
+            thumbnail = re.compile('<a rel="media:thumbnail" href="(.+?)">').findall(data)[0]
+        except:
+            thumbnail = ''
+        try:
+            date = re.compile('<span property="dc:date" content="(.+?)"></span>').findall(data)[0]
+        except:
+            date = ''
+        uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
+        rtmp = GRAB_RTMP(uri)
+        item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=rtmp)
+        item.setInfo( type="Video", infoLabels={ "Title": name,
+                                                 "Plot":description,
+                                                 "premiered":date,
+                                                 "Season":0,
+                                                 "Episode":0,
+                                                 "TVShowTitle":"The Daily Show"})
+        item.setProperty('fanart_image',fanart)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 ################################ Play Full Episode
                 
-def PLAYVIDEO(name,url):
+def PLAYFULLEPISODE(name,url):
         data = getURL(url)
         uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
         url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=thedailyshow.com'
         data = getURL(url)
+        thumbnail = 'http://www.thedailyshow.com/images/shows/'+re.compile('/images/shows/(.+?)\n').findall(data)[0]
         uris=re.compile('<guid isPermaLink="false">(.+?)</guid>').findall(data)
-        playlist = xbmc.PlayList(1)
-        playlist.clear() 
+        stacked_url = 'stack://'
         for uri in uris:
             rtmp = GRAB_RTMP(uri)
-            item = xbmcgui.ListItem(name)
-            playlist.add(rtmp, item)
-        xbmc.Player().play(playlist)
-        xbmc.executebuiltin('XBMC.ActivateWindow(fullscreenvideo)')
+            stacked_url += rtmp.replace(',',',,')+' , '
+        item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stacked_url)
+        item.setInfo( type="Video", infoLabels={ "Title": name,
+                                                 "Season":0,
+                                                 "Episode":0,
+                                                 "TVShowTitle":"The Daily Show"})
+        item.setProperty('fanart_image',fanart)
+        print stacked_url
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
         
 ################################ Grab rtmp        
 
@@ -314,36 +413,27 @@ print "Name: "+str(name)
 
 if mode==None or url==None or len(url)<1:
         ROOT()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==1:
         YEARS()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==11:
         MONTHES(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==12:
         DATES(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==2:
         NEWS_TEAM()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==3:
         GUESTS()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==4:
         SEGMENTS()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==5:
         FULLEPISODES()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==7:
         pageFragments(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==8:
         LISTVIDEODATE(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 elif mode==9:
-        LISTVIDEO(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
+        LISTVIDEOS(url)
 elif mode==10:
+        PLAYFULLEPISODE(name,url)
+elif mode==13:
         PLAYVIDEO(name,url)

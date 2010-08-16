@@ -53,7 +53,6 @@ def addDir(name,url,mode,iconimage=shownail,plot=''):
         return ok
 
 def pageFragments(url):
-        xbmcplugin.setContent(pluginhandle, 'episodes')
         pageNum = int(url[-1])
         nextPage = pageNum + 1
         nurl = url.replace('page='+str(pageNum),'page='+str(nextPage))
@@ -64,9 +63,9 @@ def pageFragments(url):
             purl = purl.replace('/box','')
         data = getURL(nurl)
         if 'Your search returned zero results' not in data:
-            addDir('Next Page',nurl,7)
+            addDir('Next Page ('+str(nextPage)+')',nurl,7)
         if prevPage >= 1:
-            addDir('Previous Page',purl,7)
+            addDir('Previous Page ('+str(prevPage)+')',purl,7)
         LISTVIDEOS(url)
         xbmcplugin.endOfDirectory(pluginhandle,updateListing=True)
 
@@ -81,7 +80,7 @@ def ROOT():
 
 def FULLEPISODES():
         xbmcplugin.setContent(pluginhandle, 'episodes')
-        #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         full = 'http://www.thedailyshow.com/full-episodes/'
         data = getURL(full)
         weeks = re.compile('<a id="(.+?)" class="seaso.+?" href="#">(.+?)</a>').findall(data)

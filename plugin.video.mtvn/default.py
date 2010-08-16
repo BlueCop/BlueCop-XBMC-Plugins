@@ -89,7 +89,10 @@ def ProcessResponse(response,mode): # Mode 3 Artist, Mode 4 Videos
                 return
         for url, name, thumbnail in response:
                 name = name.replace('&amp;','&').replace('&#039;',"'")
-                addDir(name.encode('utf-8'), url, mode, thumbnail)
+                if mode == 4:
+                        addLink(name.encode('utf-8'), url, mode, thumbnail)
+                else:
+                        addDir(name.encode('utf-8'), url, mode, thumbnail)
         return
 
 def listArtistsAZ(letter):
@@ -177,7 +180,7 @@ def listMTVCOM(mode):
         for artist, thumb, uri in videos:
                 name = artist #+ ' - ' + song
                 name = name.replace('&amp;','&').replace('&#039;',"'").replace('&#039;',"'")
-                addDir(name, uri, 4, thumb)
+                addLink(name, uri, 4, thumb)
         return
                 
 #Get SMIL url and play video
@@ -245,14 +248,15 @@ def playRTMP(url, name):
                 if optsplit[2] == '(vp6/mp3)' and 'mp4:' in _playpath:
                         continue
                 elif optsplit[0] in _playpath and optsplit[1] in _playpath:
-                        item=xbmcgui.ListItem(name, iconImage='', thumbnailImage='')
-                        item.setInfo( type="Video",infoLabels={ "Title": name})
                         rtmpurl = _url + " playpath=" + _playpath + " swfurl=" + swfUrl + " swfvfy=true"
+                        item=xbmcgui.ListItem(name, iconImage='', thumbnailImage='', path=rtmpurl)
+                        item.setInfo( type="Video",infoLabels={ "Title": name})
                 elif optsplit[0] in _playpath:
-                        item=xbmcgui.ListItem(name, iconImage='', thumbnailImage='')
-                        item.setInfo( type="Video",infoLabels={ "Title": name})
                         rtmpurl = _url + " playpath=" + _playpath + " swfurl=" + swfUrl + " swfvfy=true"
-        xbmc.Player(xbmc.PLAYER_CORE_DVDPLAYER).play(rtmpurl, item)
+                        item=xbmcgui.ListItem(name, iconImage='', thumbnailImage='', path=rtmpurl)
+                        item.setInfo( type="Video",infoLabels={ "Title": name})
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        #xbmc.Player(xbmc.PLAYER_CORE_DVDPLAYER).play(rtmpurl, item)
 
    
 def get_params():
@@ -277,9 +281,10 @@ def get_params():
 def addLink(name, url, mode, iconimage='', plot=''):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
-        liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+        liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
         liz.setInfo( type="Video", infoLabels={ "Title": name,
                                                 "plot": plot} )
+        liz.setProperty('IsPlayable', 'true')
         ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
         return ok
 

@@ -109,6 +109,11 @@ def FULLEPISODES():
                 season = int(seasonepisode[:-3])
                 episode = int(seasonepisode[-3:])
                 u=sys.argv[0]+"?url="+urllib.quote_plus(link)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+                u += "&season="+urllib.quote_plus(str(season))
+                u += "&episode="+urllib.quote_plus(str(episode))
+                u += "&premiered="+urllib.quote_plus(date)
+                u += "&plot="+urllib.quote_plus(plot)
+                u += "&thumbnail="+urllib.quote_plus(thumbnail)
                 liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
                 liz.setInfo( type="Video", infoLabels={ "Title": name,
                                                         "Plot":plot,
@@ -127,7 +132,8 @@ def GUESTS():
         segments=[('Author','Author'),
                   ('Expert','Expert'),
                   ('Journalist','Journalist'),
-                  ('Political Figure','Political+Figure')
+                  ('Political Figure','Political+Figure'),
+                  ('Better Know a District','Better+Know+a+District')
                   ]
         for name,link in segments:
             furl = segurl+link
@@ -176,6 +182,11 @@ def LISTVIDEOS(url):
                         episode = 0
                 date = airdates[marker]
                 u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(11)+"&name="+urllib.quote_plus(fname)
+                u += "&season="+urllib.quote_plus(str(season))
+                u += "&episode="+urllib.quote_plus(str(episode))
+                u += "&premiered="+urllib.quote_plus(date)
+                u += "&plot="+urllib.quote_plus(description)
+                u += "&thumbnail="+urllib.quote_plus(thumbnail)
                 liz=xbmcgui.ListItem(fname, iconImage="DefaultVideo.png", thumbnailImage=thumbnail)
                 liz.setInfo( type="Video", infoLabels={ "Title": fname,
                                                         "Episode": episode,
@@ -193,30 +204,14 @@ def LISTVIDEOS(url):
                 
 def PLAYVIDEO(name,url):
         data = getURL(url)
-        #try:
-        #        fname = re.compile('property="media:title" content="(.+?)">').findall(data)[0]
-        #except:
-        #        fname = re.compile('<meta name="title" content="(.+?)"').findall(data)[0]
-        try:
-            description = re.compile('<span property="dc:description" content="(.+?)">').findall(data)[0]
-        except:
-            description = ''
-        try:
-            thumbnail = re.compile('<a rel="media:thumbnail" href="(.+?)">').findall(data)[0] + '?width=400'
-        except:
-            thumbnail = ''
-        try:
-            date = re.compile('<span property="dc:date" content="(.+?)"></span>').findall(data)[0]
-        except:
-            date = ''
         uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
         rtmp = GRAB_RTMP(uri)
         item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=rtmp)
         item.setInfo( type="Video", infoLabels={ "Title": name,
-                                                 "Plot":description,
-                                                 "premiered":date,
-                                                 "Season":0,
-                                                 "Episode":0,
+                                                 "Plot":plot,
+                                                 "premiered":premiered,
+                                                 "Season":int(season),
+                                                 "Episode":int(episode),
                                                  "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
@@ -229,16 +224,18 @@ def PLAYFULLEPISODE(name,url):
         uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
         url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=colbertnation.com'
         data = getURL(url)
-        thumbnail = 'http://www.comedycentral.com/images/shows/'+re.compile('/images/shows/(.+?)\n').findall(data)[0]
         uris=re.compile('<guid isPermaLink="false">(.+?)</guid>').findall(data)
         stacked_url = 'stack://'
         for uri in uris:
             rtmp = GRAB_RTMP(uri)
             stacked_url += rtmp.replace(',',',,')+' , '
+        stacked_url = stacked_url[:-3]
         item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stacked_url)
         item.setInfo( type="Video", infoLabels={ "Title": name,
-                                                 "Season":0,
-                                                 "Episode":0,
+                                                 "Plot":plot,
+                                                 "premiered":premiered,
+                                                 "Season":int(season),
+                                                 "Episode":int(episode),
                                                  "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         print stacked_url
@@ -271,7 +268,6 @@ def GRAB_RTMP(uri):
                 lbitrate = 450
         for rtmp in rtmps:
                 marker = rtmps.index(rtmp)
-                print marker
                 w = int(widths[marker])
                 h = int(heights[marker])
                 bitrate = int(bitrates[marker])
@@ -335,6 +331,27 @@ try:
         mode=int(params["mode"])
 except:
         pass
+try:
+        thumbnail=urllib.unquote_plus(params["thumbnail"])
+except:
+        thumbnail=''
+try:
+        season=int(params["season"])
+except:
+        season=0
+try:
+        episode=int(params["episode"])
+except:
+        episode=0
+try:
+        premiered=urllib.unquote_plus(params["premiered"])
+except:
+        premiered=''
+try:
+        plot=urllib.unquote_plus(params["plot"])
+except:
+        plot=''
+
 
 print "Mode: "+str(mode)
 print "URL: "+str(url)

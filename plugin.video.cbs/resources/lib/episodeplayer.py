@@ -77,7 +77,10 @@ class Main:
                     if stream == 'false':
                         return
 
-            item=xbmcgui.ListItem(name, iconImage=thumbnail, thumbnailImage=thumbnail)
+
+            swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
+            finalurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            item=xbmcgui.ListItem(name, iconImage=thumbnail, thumbnailImage=thumbnail, path=finalurl)
             item.setInfo( type="Video",
                          infoLabels={ "Title": name,
                                       #"Season": season,
@@ -86,15 +89,15 @@ class Main:
                                       #"Plot": plot,
                                        }
                          )
-            swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
-            finalurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
             #item.setProperty("SWFPlayer", swfUrl)
             #item.setProperty("PlayPath", playpath)
-            if xbmcplugin.getSetting(pluginhandle,"dvdplayer") == "true":
-                    player_type = xbmc.PLAYER_CORE_DVDPLAYER
-            else:
-                    player_type = xbmc.PLAYER_CORE_MPLAYER
-            ok=xbmc.Player(player_type).play(finalurl, item)
+            #if xbmcplugin.getSetting(pluginhandle,"dvdplayer") == "true":
+            #        player_type = xbmc.PLAYER_CORE_DVDPLAYER
+            #else:
+            #        player_type = xbmc.PLAYER_CORE_MPLAYER
+            #ok=xbmc.Player(player_type).play(finalurl, item)
+
 
     def httpDownload( self, finalurl, name):
             name = name + '.flv'

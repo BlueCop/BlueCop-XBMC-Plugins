@@ -35,7 +35,7 @@ class Main:
                 #thumb = "http://www.cbs.com" + url + "images/common/show_logo.gif"
                 #Clean names
                 url = '/'+url.replace('&showtype=classics','')+'/'
-                name = name.replace("<br>"," ").replace("&reg","").replace('&trade;','')
+                name = name.replace("<br>"," ").replace("&reg;","").replace('&trade;','').replace('&amp;','&')
                 #Ignore badshow links & showids
                 if "http://" in url:
                         pass

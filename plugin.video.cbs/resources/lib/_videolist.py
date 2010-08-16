@@ -278,6 +278,7 @@ class Main:
                                                             "Episode": episode,
                                                             "Duration": duration,
                                                             "Plot": plot})
+                                item.setProperty('IsPlayable', 'true')
                                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item)
                                 continue
                         elif typefilter == "Clips":
@@ -291,6 +292,7 @@ class Main:
                                                             "Episode": episode,
                                                             "Duration": duration,
                                                             "Plot": plot})
+                                item.setProperty('IsPlayable', 'true')
                                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item)
                                 continue
                 else:
@@ -303,6 +305,7 @@ class Main:
                                                 "Episode": episode,
                                                 "Duration": duration,
                                                 "Plot": plot})
+                    item.setProperty('IsPlayable', 'true')
                     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=item)
                     continue
         #add Clips Dir for HD

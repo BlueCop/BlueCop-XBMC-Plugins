@@ -132,6 +132,7 @@ def playVideo(episodeid,name,thumbnail):
                     furl = rtmpbit + " swfurl=" + swfurl + " swfvfy=true"
         if furl is not False:
             stacked_url += furl.replace(',',',,')+' , '
+    stacked_url = stacked_url[:-3] 
     item=xbmcgui.ListItem(dname, thumbnailImage=thumbnail, path=stacked_url)
     item.setInfo( type="Video", infoLabels={"Title": dname,
                                             "Season":season,

@@ -8,7 +8,7 @@ pluginhandle = int(sys.argv[1])
 shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
 fanart = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),'fanart.jpg'))
 xbmcplugin.setPluginFanart(pluginhandle, fanart, color2='0xFFFF3300')
-
+TVShowTitle = 'The Daily Show' 
 
 if xbmcplugin.getSetting(pluginhandle,"sort") == '0':
         SORTORDER = 'date'
@@ -38,7 +38,7 @@ def getURL( url ):
 def addLink(name,url,iconimage='',plot=''):
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":"The Daily Show"})
+        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":TVShowTitle})
         liz.setProperty('fanart_image',fanart)
         ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=url,listitem=liz)
         return ok
@@ -47,7 +47,7 @@ def addDir(name,url,mode,iconimage=shownail,plot=''):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":"The Daily Show"})
+        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot, "TVShowTitle":TVShowTitle})
         liz.setProperty('fanart_image',fanart)
         ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
         return ok
@@ -120,7 +120,7 @@ def FULLEPISODES():
                                                         "Season":season,
                                                         "Episode": episode,
                                                         "premiered":date,
-                                                        "TVShowTitle":"The Daily Show"})
+                                                        "TVShowTitle":TVShowTitle})
                 liz.setProperty('IsPlayable', 'true')
                 liz.setProperty('fanart_image',fanart)
                 xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
@@ -255,7 +255,7 @@ def LISTVIDEOS(url):
                                                         "Plot":description,
                                                         "premiered":date,
                                                         "Duration": duration,
-                                                        "TVShowTitle":"The Daily Show"})
+                                                        "TVShowTitle":TVShowTitle})
                 liz.setProperty('IsPlayable', 'true')
                 liz.setProperty('fanart_image',fanart)
                 xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
@@ -290,7 +290,7 @@ def PLAYVIDEO(name,url):
                                                  "premiered":date,
                                                  "Season":0,
                                                  "Episode":0,
-                                                 "TVShowTitle":"The Daily Show"})
+                                                 "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
@@ -311,7 +311,7 @@ def PLAYFULLEPISODE(name,url):
         item.setInfo( type="Video", infoLabels={ "Title": name,
                                                  "Season":0,
                                                  "Episode":0,
-                                                 "TVShowTitle":"The Daily Show"})
+                                                 "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         print stacked_url
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)

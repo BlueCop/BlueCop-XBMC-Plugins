@@ -99,7 +99,7 @@ def FULLEPISODES():
                 listings.append(listing)
             for thumbnail in thumbnails:
                 marker = thumbnails.index(thumbnail)
-                listings[marker].append(thumbnail)
+                listings[marker].append(thumbnail+'?width=400')
             for description in descriptions:
                 marker = descriptions.index(description)
                 listings[marker].append(description)
@@ -114,6 +114,11 @@ def FULLEPISODES():
                 season = int(seasonepisode[:-3])
                 episode = int(seasonepisode[-3:])
                 u=sys.argv[0]+"?url="+urllib.quote_plus(link)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+                u += "&season="+urllib.quote_plus(str(season))
+                u += "&episode="+urllib.quote_plus(str(episode))
+                u += "&premiered="+urllib.quote_plus(date)
+                u += "&plot="+urllib.quote_plus(plot)
+                u += "&thumbnail="+urllib.quote_plus(thumbnail)
                 liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
                 liz.setInfo( type="Video", infoLabels={ "Title": name,
                                                         "Plot":plot,
@@ -228,17 +233,17 @@ def LISTVIDEOS(url):
         playbackUrls=re.compile('<a href="http://www.thedailyshow.com/watch/(.+?)">').findall(data)
         thumbnails=re.compile('<img src="(.+?)?width=.+?"').findall(data)
         names=re.compile('<span class="title"><a href=".+?">(.+?)</a></span>').findall(data)
-        descriptions=re.compile('<span class="description">(.+?)\(.+?\)</span>').findall(data)
-        durations=re.compile('<span class="description">.+?\((.+?)\)</span>').findall(data)
+        descriptions=re.compile('<span class="description">(.+?)\(.+?</span>').findall(data)
+        durations=re.compile('<span class="description">.+?\((.+?)</span>').findall(data)
         epNumbers=re.compile('<span class="episode">Episode #(.+?)</span>').findall(data)
         airdates=re.compile('<span>Aired.+?</span>(.+?)</div>').findall(data)
         for pb in playbackUrls:
                 url = "http://www.thedailyshow.com/watch/"+pb
                 marker = playbackUrls.index(pb)
-                thumbnail = thumbnails[marker]
+                thumbnail = thumbnails[marker] + '?width=400'
                 fname = names[marker]
                 description = descriptions[marker]
-                duration = durations[marker]
+                duration = durations[marker].replace(')','')
                 try:
                         seasonepisode = epNumbers[marker]
                         season = int(seasonepisode[:-3])
@@ -248,13 +253,18 @@ def LISTVIDEOS(url):
                         episode = 0
                 date = airdates[marker]
                 u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(13)+"&name="+urllib.quote_plus(fname)
+                u += "&season="+urllib.quote_plus(str(season))
+                u += "&episode="+urllib.quote_plus(str(episode))
+                u += "&premiered="+urllib.quote_plus(date)
+                u += "&plot="+urllib.quote_plus(plot)
+                u += "&thumbnail="+urllib.quote_plus(thumbnail)
                 liz=xbmcgui.ListItem(fname, iconImage="DefaultVideo.png", thumbnailImage=thumbnail)
                 liz.setInfo( type="Video", infoLabels={ "Title": fname,
-                                                        "Episode": episode,
-                                                        "Season": season,
+                                                        "Episode":episode,
+                                                        "Season":season,
                                                         "Plot":description,
                                                         "premiered":date,
-                                                        "Duration": duration,
+                                                        "Duration":duration,
                                                         "TVShowTitle":TVShowTitle})
                 liz.setProperty('IsPlayable', 'true')
                 liz.setProperty('fanart_image',fanart)
@@ -266,30 +276,14 @@ def LISTVIDEOS(url):
                 
 def PLAYVIDEO(name,url):
         data = getURL(url)
-        #try:
-        #        fname = re.compile('property="media:title" content="(.+?)">').findall(data)[0]
-        #except:
-        #        fname = re.compile('<meta name="title" content="(.+?)"').findall(data)[0]
-        try:
-            description = re.compile('<span property="dc:description" content="(.+?)">').findall(data)[0]
-        except:
-            description = ''
-        try:
-            thumbnail = re.compile('<a rel="media:thumbnail" href="(.+?)">').findall(data)[0]
-        except:
-            thumbnail = ''
-        try:
-            date = re.compile('<span property="dc:date" content="(.+?)"></span>').findall(data)[0]
-        except:
-            date = ''
         uri = re.compile('"http://media.mtvnservices.com/(.+?)"/>').findall(data)[0]
         rtmp = GRAB_RTMP(uri)
         item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=rtmp)
         item.setInfo( type="Video", infoLabels={ "Title": name,
-                                                 "Plot":description,
-                                                 "premiered":date,
-                                                 "Season":0,
-                                                 "Episode":0,
+                                                 "Plot":plot,
+                                                 "premiered":premiered,
+                                                 "Season":int(season),
+                                                 "Episode":int(episode),
                                                  "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
@@ -301,16 +295,18 @@ def PLAYFULLEPISODE(name,url):
         uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
         url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=thedailyshow.com'
         data = getURL(url)
-        thumbnail = 'http://www.thedailyshow.com/images/shows/'+re.compile('/images/shows/(.+?)\n').findall(data)[0]
         uris=re.compile('<guid isPermaLink="false">(.+?)</guid>').findall(data)
         stacked_url = 'stack://'
         for uri in uris:
-            rtmp = GRAB_RTMP(uri)
-            stacked_url += rtmp.replace(',',',,')+' , '
+                rtmp = GRAB_RTMP(uri)
+                stacked_url += rtmp.replace(',',',,')+' , '
+        stacked_url = stacked_url[:-3]
         item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=thumbnail, path=stacked_url)
         item.setInfo( type="Video", infoLabels={ "Title": name,
-                                                 "Season":0,
-                                                 "Episode":0,
+                                                 "Plot":plot,
+                                                 "premiered":premiered,
+                                                 "Season":int(season),
+                                                 "Episode":int(episode),
                                                  "TVShowTitle":TVShowTitle})
         item.setProperty('fanart_image',fanart)
         print stacked_url
@@ -343,7 +339,6 @@ def GRAB_RTMP(uri):
                 lbitrate = 450
         for rtmp in rtmps:
                 marker = rtmps.index(rtmp)
-                print marker
                 w = int(widths[marker])
                 h = int(heights[marker])
                 bitrate = int(bitrates[marker])
@@ -356,6 +351,7 @@ def GRAB_RTMP(uri):
                     if pixels > mpixels or bitrate > mbitrate:
                             mpixels = pixels
                             mbitrate = bitrate
+                            furl = 'rtmp'+ rtmp + " swfurl=" + swfurl + " swfvfy=true"
                             #rtmpsplit = rtmp.split('/ondemand')
                             #server = rtmpsplit[0]
                             #path = rtmpsplit[1].replace('.flv','')
@@ -364,7 +360,6 @@ def GRAB_RTMP(uri):
                             #port = ':1935'
                             #app = '/ondemand?ovpfv=2.1.4'
                             #furl = 'rtmp'+server+port+app+path+" playpath="+path+" swfurl="+swfurl+" swfvfy=true"
-                            furl = 'rtmp'+ rtmp + " swfurl=" + swfurl + " swfvfy=true"
         return furl
 
 
@@ -404,6 +399,26 @@ try:
         mode=int(params["mode"])
 except:
         pass
+try:
+        thumbnail=urllib.unquote_plus(params["thumbnail"])
+except:
+        thumbnail=''
+try:
+        season=int(params["season"])
+except:
+        season=0
+try:
+        episode=int(params["episode"])
+except:
+        episode=0
+try:
+        premiered=urllib.unquote_plus(params["premiered"])
+except:
+        premiered=''
+try:
+        plot=urllib.unquote_plus(params["plot"])
+except:
+        plot=''
 
 print "Mode: "+str(mode)
 print "URL: "+str(url)

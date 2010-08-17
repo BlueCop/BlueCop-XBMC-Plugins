@@ -79,18 +79,24 @@ def episodes(season):
         date = episode['airdate'].replace('.','-')
         seasonnumber = senumber[:-2]
         episodenumber = senumber[len(seasonnumber):]
+        try:
+            season = int(seasonnumber)
+            episode = int(episodenumber)
+        except:
+            season = 0
+            episode = 0
         mode = 2
         u=sys.argv[0]+"?url="+urllib.quote_plus(episodeid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(title)
-        u += "&season="+urllib.quote_plus(seasonnumber)
-        u += "&episode="+urllib.quote_plus(episodenumber)
+        u += "&season="+urllib.quote_plus(str(seasonnumber))
+        u += "&episode="+urllib.quote_plus(str(episodenumber))
         u += "&premiered="+urllib.quote_plus(date)
         u += "&plot="+urllib.quote_plus(description)
         u += "&thumbnail="+urllib.quote_plus(thumbnail)
         ok=True
         liz=xbmcgui.ListItem(title, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
         liz.setInfo( type="Video", infoLabels={ "Title": title,
-                                                "Season":int(seasonnumber),
-                                                "Episode":int(episodenumber),
+                                                "Season":season,
+                                                "Episode":episode,
                                                 "premiered":date,
                                                 "Plot":description,
                                                 "TVShowTitle":TVShowTitle

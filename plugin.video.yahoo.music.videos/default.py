@@ -60,17 +60,15 @@ def topVideos():
         addVideos('popular', '100', '401')
 def newVideos():
         addVideos('new', '100', '1')
-        addVideos('popular', '100', '101')
-        addVideos('popular', '100', '201')
-        addVideos('popular', '100', '301')
-        addVideos('popular', '100', '401')
+        addVideos('new', '100', '101')
+        addVideos('new', '100', '201')
+        addVideos('new', '100', '301')
+        addVideos('new', '100', '401')
         
 def reccomendedVideos():
         addVideos('recommended', '100', '1')
-        addVideos('popular', '100', '101')
-        addVideos('popular', '100', '201')
-        addVideos('popular', '100', '301')
-        addVideos('popular', '100', '401')
+        addVideos('recommended', '100', '101')
+
 
 def listSearch(searchtype):
         keyb = xbmc.Keyboard('', 'Search')

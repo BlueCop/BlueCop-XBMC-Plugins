@@ -19,11 +19,13 @@ def getHTML( url ):
                 return link
 
 def SHOWS():
-        url = baseurl + '/shows/'
+        url = baseurl + '/shows/?tab=alphabetical'
         items = getHTML(url)
         shows=re.search('<ul id="showlist">.+?<div id="CONTENT" class="clearfix">', items, re.DOTALL).group(0)
         shows=re.compile('<h3>\s*<a href="(.+?)" title="(.+?)">(.+?)</a>\s*</h3>\s*<a href="(.+?)" class="show_frame"><img src="(.+?)"').findall(shows, re.DOTALL)
         for category, showname, name2, category2, thumb in shows:
+                if showname == "Guys Choice 2010" or "2009" in showname or "The Ultimate" in showname:
+                        continue
                 showname = showname.replace('&amp;','&').replace('&#039;',"'")
                 category = baseurl + category
                 addDir(str(showname),category,1,thumb)
@@ -34,15 +36,17 @@ def SHOWROOT(url):
         videos = re.compile('<a href="(.+?)"  id="(.+?)">(.+?)</a></li>').findall(tabs, re.DOTALL)
         for url,collectionid,name in videos:
                 url = baseurl + url
-                if name == 'Full Episodes' or name == 'Full Episode':
+                if name == 'Full Episodes' or name == 'Full Episode' or name == 'Episodes':
                         LISTVIDEOS(url)
-                elif 'Blog' in name or 'Games' in name or 'Articles' in name or 'Home' in name:
+                elif 'Blog' in name or 'Games' in name or 'Articles' in name or 'Home' in name or 'Poll' in name or 'Photos' in name or 'Comic' in name or 'Game' in name or 'Loads' in name or 'Checklists' in name or 'Bio' in name:
                         continue
                 else:
                         addDir(name,url,2,'')
 
 
 def LISTVIDEOS(url):
+        xbmcplugin.setContent(pluginhandle, 'episodes')
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         items = getHTML(url)
         shows=re.compile('<a href="(.+?)" class="tn_frame clearfix musicvideos" title="(.+?)">\s*<img src="(.+?)"').findall(items, re.DOTALL)
         for episode,name,thumb in shows:
@@ -53,34 +57,32 @@ def LISTVIDEOS(url):
 
 def VIDEOLINKS(url,name):
         items = getHTML(url)
-        configurl=re.compile('\("CONFIG_URL", (.+?)\);').findall(items)[0]
-        if configurl == 'config_url':
-                configurl = re.compile('var config_url = "(.+?)";').findall(items)[0]
-        else:
-                configurl = configurl.replace('"','')
+        try:
+                configurl=re.compile('\("CONFIG_URL", (.+?)\);').findall(items)[0]
+        except:
+                configurl = re.compile('<param name="flashvars" value="CONFIG_URL=(.+?)"').findall(items)[0]
+        configurl = configurl.replace('"','')
         print 'CONFIG_URL:\t' + str(configurl)
         url = baseurl + configurl.replace('%26','&')
         configxml = getHTML(url)
-        mrssurl = re.compile('<feed>(.+?)</feed>').findall(configxml, re.DOTALL)[0]
+        mrssurl = re.compile('<feed>(.+?)</feed>').findall(configxml, re.DOTALL)
+        if 'endOfPlayRelatedList' in mrssurl[0]:
+                mrssurl = mrssurl[1]
+        else:
+                mrssurl = mrssurl[0]
         mrssurl = mrssurl.replace('&amp;','&')
         ifilmid = re.compile('ifilmId=(.+?)\&').findall(mrssurl)
         mrssxml = getHTML(mrssurl)
         match=re.compile("<media:content type='text/xml' medium='video' isDefault='true' duration='(.+?)' url='(.+?)'").findall(mrssxml)
-        #playlist = xbmc.PlayList( xbmc.PLAYLIST_VIDEO )
-        #playlist.clear()
         stacked_url = 'stack://'
         for param,guid in match:
-                guid = guid
                 items = getHTML(guid)
                 videos=re.compile('<src>(.+?)</src>').findall(items, re.DOTALL)
                 print len(videos)
                 if len(videos) == 1:
                         for link in videos:
                                 link = link.replace('&amp;','&')
-                                #item=xbmcgui.ListItem(name, iconImage='', thumbnailImage='')
-                                #item.setInfo( type="Video",infoLabels={ "Title": name})
-                                #playlist.add(link, item)
-                                stacked_url = link #.replace(',',',,')+' , '
+                                stacked_url += link.replace(',',',,')+' , '
                 else:
                         segments = []
                         for link in videos:
@@ -92,22 +94,15 @@ def VIDEOLINKS(url,name):
                                 elif '_300.flv' in link and (xbmcplugin.getSetting(pluginhandle,"quality") == '2'):
                                         segments.append(link)
                         for url in segments:
-                                #breakurl = url.split('/ondemand/')
-                                #fcsvhost = breakurl[0].replace('rtmp://','')
-                                #playpath = breakurl[1].replace('.flv','')
-                                #rtmpurl = 'rtmp://' + ip + ':80/ondemand?_fcs_vhost=' + fcsvhost
                                 swfUrl = "http://media.mtvnservices.com/player/release/?v=4.5.3"
                                 rtmpurl = url + " swfurl=" + swfUrl + " swfvfy=true"
                                 stacked_url += rtmpurl.replace(',',',,')+' , '
-                                #item=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage='')
-                                #item.setInfo( type="Video",infoLabels={ "Title": name})
-                                #playlist.add(rtmpurl, item)
         stacked_url = stacked_url[:-3]
+        print 'FINAL URL'
         print stacked_url
         item = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage='', path=stacked_url)
         item.setInfo( type="Video",infoLabels={ "Title": name})
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-        #xbmc.Player(xbmc.PLAYER_CORE_DVDPLAYER).play( playlist )
 
 
 def get_params():

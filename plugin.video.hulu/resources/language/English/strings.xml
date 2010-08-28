@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+	<!--settings labels-->
+	<string id="30001">Hulu Username</string>
+	<string id="30002">Hulu Password</string>
+	<string id="30003">Enable Login</string>
+
+	<string id="30004">Quality</string>
+	<string id="30015">Ask</string>
+	<string id="30023">720p 3500K</string>
+	<string id="30024">720p 2500K</string>
+	<string id="30025">720p 1800K</string>
+	<string id="30016">480p 1000K</string>
+	<string id="30017">480p 650K</string>
+	<string id="30018">480p 400K</string>
+	<string id="30020">VP6 High</string>
+	<string id="30021">VP6 Medium</string>
+	<string id="30022">VP6 Low</string>
+
+	<string id="30026">Enable captions</string>
+
+	<string id="30005">Items Per Page</string>
+</strings>

@@ -1,0 +1,4 @@
+[B]Version 2.5.0[/B]
+
+- preview release of Hulu Plus support
+

@@ -40,7 +40,7 @@ class Main:
                 fanart = art
                 isVideo = False
             except:
-                art = common.args.fanart
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
                 fanart = common.args.fanart
             try:
                 thumbnail_url_16x9_large = item.find('thumbnail_url_16x9_large').string

@@ -1,3 +1,7 @@
+[B]Version 2.5.1[/B]
+
+- change default icon to hulu for any listing without one. 
+
 [B]Version 2.5.0[/B]
 
 - preview release of Hulu Plus support

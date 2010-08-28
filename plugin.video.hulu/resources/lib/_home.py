@@ -38,6 +38,6 @@ class Main:
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"search_icon.png"))
                 plot = "Search content currently available on Hulu.com"
             else:
-                thumbnail = ''
+                thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
                 plot = ''
             common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,plot=plot)

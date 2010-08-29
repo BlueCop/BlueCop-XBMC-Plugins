@@ -40,8 +40,16 @@ class Main:
                 fanart = art
                 isVideo = False
             except:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-                fanart = common.args.fanart
+                try:
+                    canonical_name = item.find('show_canonical_name').string
+                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                    isVideo = True
+                except:
+                    if common.args.fanart == '':
+                        art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+                    else:
+                        art = common.args.fanart
+                    fanart = common.args.fanart
             try:
                 thumbnail_url_16x9_large = item.find('thumbnail_url_16x9_large').string
                 art = thumbnail_url_16x9_large

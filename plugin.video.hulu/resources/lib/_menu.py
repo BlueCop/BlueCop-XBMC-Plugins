@@ -35,6 +35,13 @@ class Main:
             if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
             try:
+                if 'True' == item.find('is_plus_web_only').string:
+                    isPlus = True
+                    if (common.settings['enable_plus'] == 'false'):
+                        continue
+            except:
+                isPlus = False
+            try:
                 canonical_name = item.find('canonical_name').string
                 art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                 fanart = art
@@ -101,9 +108,17 @@ class Main:
             except:
                 mpaa = ''
             try:
+                ishd = item.find('has_hd').string
+                if 'True' == ishd:
+                    resolution = '720'
+                else:
+                    resolution = '480'
+            except:
+                resolution = ''   
+            try:
                 media_type = item.find('media_type').string
             except:
-                media_type = False
+                media_type = False         
             try:
                 videoid = item.find('video_id').string
                 isVideo = True
@@ -152,9 +167,13 @@ class Main:
                                                      "TVShowTitle":show_name,
                                                      "Studio":company_name,
                                                      "Year":year,
+                                                     "MPAA":mpaa,
                                                      "Rating":rating,
                                                      "Votes":votes,
-                                                     "mpaa":mpaa})
+                                                     "VideoResolution":resolution,
+                                                     "VideoCodec":"h264",
+                                                     "AudioCodec":"aac"
+                                                     })
             item.setProperty('fanart_image',fanart)
             if isVideo == False:
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True)

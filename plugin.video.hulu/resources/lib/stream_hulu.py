@@ -252,7 +252,10 @@ class Main:
         #common.login()
         #getCID
         print common.args.url
-        html=common.getHTML(common.args.url)
+        try:
+            html=common.getHTML(common.args.url)
+        except:
+            html=common.getHTML(common.args.url)
         p=re.compile('so.addVariable\("content_id", "(.+?)"\);')
         ecid=p.findall(html)[0]
         cid=self.decrypt_cid(ecid)

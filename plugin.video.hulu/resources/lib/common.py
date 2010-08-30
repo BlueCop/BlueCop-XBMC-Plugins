@@ -55,6 +55,7 @@ settings['perpage'] = page[perpage]
 settings['login_name'] = xbmcplugin.getSetting(  handle,"login_name" )
 settings['login_pass'] = xbmcplugin.getSetting(  handle,"login_pass" )
 settings['enable_login'] = xbmcplugin.getSetting(  handle,"enable_login" )
+settings['enable_plus'] = xbmcplugin.getSetting( handle, "enable_plus" )
 
 """
     Clean Non-Ascii characters from names for XBMC

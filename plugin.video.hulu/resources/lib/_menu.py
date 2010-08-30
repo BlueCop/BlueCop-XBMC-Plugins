@@ -15,22 +15,43 @@ pluginhandle = int(sys.argv[1])
 
 class Main:
     def __init__( self ):
-            self.addMenuItems()
+            if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
+                perpage = '100'
+            else:
+                perpage = common.settings['perpage']
+            self.addMenuItems(perpage)
             xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )
 
 
-    def addMenuItems( self ):
-        if '?' in common.args.url:
-            url = 'http://m.hulu.com'+common.args.url+'&dp_id=huludesktop&package_id=2&limit='+common.settings['perpage']+'&page=1'
+    def addMenuItems( self, perpage, url=common.args.url ):
+        if '?' in url:
+            itemsurl = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&total=1'
         else:
-            url = 'http://m.hulu.com'+common.args.url+'?dp_id=huludesktop&package_id=2&limit='+common.settings['perpage']+'&page=1'
+            itemsurl = 'http://m.hulu.com'+url+'?dp_id=huludesktop&package_id=2&total=1'
+        html=common.getFEED(itemsurl)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        items = menuitems=tree.findAll('items')
+        for counts in items:
+            try:
+                total_count=int(counts.find('total_count').string)
+            except:
+                total_count=0
+        if '?' in url:
+            url = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
+        else:
+            url = 'http://m.hulu.com'+url+'?dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
         html=common.getFEED(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         menuitems=tree.findAll('item')
+        del tree
         for item in menuitems:
             display=unicode(common.cleanNames(item.find('display').string)).encode('utf-8')
-            displayname = display
             url=item.find('items_url').string
+            if display == 'All' and total_count == 1:
+                print url
+                self.addMenuItems('2000',url)
+                return
+            displayname = display
             mode=item.find('cmtype').string
             if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
@@ -175,8 +196,14 @@ class Main:
                                                      "AudioCodec":"aac"
                                                      })
             item.setProperty('fanart_image',fanart)
+            if int(perpage) < int(total_count):
+                total_items = int(perpage)
+            else:
+                total_items = int(total_count)
             if isVideo == False:
-                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True)
+                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
                 item.setProperty('IsPlayable', 'true')
-                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
+
+

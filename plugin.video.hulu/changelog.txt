@@ -1,3 +1,10 @@
+[B]Version 2.5.4[/B]
+
+- Flattened "All" listing and forces 2000 items for listing.
+- Added item count to directory listings
+- Limit Popular, Recent and Featured Videos to 100 items
+- No paging support. Custom per pages for different lists will be added with paging support
+
 [B]Version 2.5.3[/B]
 
 - added Hulu Plus filtering for non Plus Members

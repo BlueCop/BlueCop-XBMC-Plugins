@@ -157,7 +157,7 @@ class Main:
                 displayname = displayname + ' ('+str(dtotal_count)+')'
                 if dtotal_count == 0:
                     continue
-            elif common.args.mode == 'Menu':
+            elif common.args.mode == 'Menu' and isVideo == False:
                 dtotal_count = self.getTotalCount( url )
                 if dtotal_count <> 1:
                     displayname = displayname + ' ('+str(dtotal_count)+')'

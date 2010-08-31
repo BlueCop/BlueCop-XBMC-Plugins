@@ -51,6 +51,7 @@ class Main:
             url=item.find('items_url').string
             if display == 'All' and total_count == 1:
                 print url
+                common.args.mode = 'All'
                 self.addMenuItems('2000',url)
                 return
             displayname = display

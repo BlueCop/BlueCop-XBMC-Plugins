@@ -22,8 +22,7 @@ class Main:
             self.addMenuItems(perpage)
             xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )
 
-
-    def addMenuItems( self, perpage, url=common.args.url ):
+    def getTotalCount( self, url ):
         if '?' in url:
             itemsurl = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&total=1'
         else:
@@ -33,9 +32,12 @@ class Main:
         items = menuitems=tree.findAll('items')
         for counts in items:
             try:
-                total_count=int(counts.find('total_count').string)
+                return int(counts.find('total_count').string)
             except:
-                total_count=0
+                return 0
+                
+    def addMenuItems( self, perpage, url=common.args.url ):
+        total_count = self.getTotalCount( url )
         if '?' in url:
             url = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
         else:
@@ -147,7 +149,20 @@ class Main:
                 isVideo = False
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
+                dtotal_count = self.getTotalCount( url )
+                displayname = displayname + ' ('+str(dtotal_count)+')'
                 isVideo = False
+            elif common.args.mode == 'ShowPage':
+                dtotal_count = self.getTotalCount( url )
+                displayname = displayname + ' ('+str(dtotal_count)+')'
+                if dtotal_count == 0:
+                    continue
+            elif common.args.mode == 'Menu':
+                dtotal_count = self.getTotalCount( url )
+                if dtotal_count <> 1:
+                    displayname = displayname + ' ('+str(dtotal_count)+')'
+                elif dtotal_count == 0:
+                    continue
             elif isVideo == True:
                 url="http://www.hulu.com/watch/"+videoid
                 mode = 'TV_play'

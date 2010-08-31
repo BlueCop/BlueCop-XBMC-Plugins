@@ -32,12 +32,9 @@ def modes( ):
         elif common.args.mode.endswith('_play'):
             import resources.lib.stream_hulu as stream_media
             stream_media.Main()
-        elif common.args.mode.endswith('Menu'):
+        elif common.args.mode.endswith('Menu') or common.args.mode.endswith('Page'):
             import resources.lib._menu as menu
             menu.Main()
-        elif common.args.mode.endswith('Page'):
-            import resources.lib._menu as menu
-            menu.Main() 
         else:
             import xbmcgui
             xbmcgui.Dialog().ok('common.args.mode',common.args.mode)

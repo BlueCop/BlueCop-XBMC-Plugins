@@ -252,26 +252,29 @@ class Main:
         #common.login()
         #getCID
         print common.args.url
-        try:
-            html=common.getHTML(common.args.url)
-        except:
-            html=common.getHTML(common.args.url)
-        p=re.compile('so.addVariable\("content_id", "(.+?)"\);')
-        ecid=p.findall(html)[0]
-        cid=self.decrypt_cid(ecid)
-        #getEID
-        eid=self.cid2eid(cid)
+        if 'http://' in common.args.url:
+            try:
+                html=common.getHTML(common.args.url)
+            except:
+                html=common.getHTML(common.args.url)
+            p=re.compile('so.addVariable\("content_id", "(.+?)"\);')
+            ecid=p.findall(html)[0]
+            cid=self.decrypt_cid(ecid)
+            #getEID
+            eid=self.cid2eid(cid)
 
-        #grab eid from failsafe url
-        #p=re.compile('<embed src="http://www.hulu.com/embed/(.+?)" type="application/x-shockwave-flash" allowFullScreen="true"')
-        #eid=p.findall(html)[0]
+            #grab eid from failsafe url
+            #p=re.compile('<embed src="http://www.hulu.com/embed/(.+?)" type="application/x-shockwave-flash" allowFullScreen="true"')
+            #eid=p.findall(html)[0]
 
-        eidurl="http://r.hulu.com/videos?eid="+eid
-        #getPID
-        html=common.getHTML(eidurl)
-        cidSoup=BeautifulStoneSoup(html)
-        pid=cidSoup.findAll('pid')[0].contents[0]
-        pid=self.decrypt_id(pid)
+            eidurl="http://r.hulu.com/videos?eid="+eid
+            #getPID
+            html=common.getHTML(eidurl)
+            cidSoup=BeautifulStoneSoup(html)
+            pid=cidSoup.findAll('pid')[0].contents[0]
+            pid=self.decrypt_id(pid)
+        else:
+            pid=common.args.url
         m=md5.new()
         m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
         auth=m.hexdigest()

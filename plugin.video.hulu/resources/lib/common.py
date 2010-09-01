@@ -23,7 +23,6 @@ exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", "
 
 
 
-
 """
     DEFINE URLS
 """

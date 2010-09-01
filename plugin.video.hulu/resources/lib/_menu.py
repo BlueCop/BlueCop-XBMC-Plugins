@@ -138,6 +138,7 @@ class Main:
                 else:
                     resolution = '480'
             except:
+                ishd = 'False' 
                 resolution = ''   
             try:
                 media_type = item.find('media_type').string
@@ -165,7 +166,9 @@ class Main:
                 elif dtotal_count == 0:
                     continue
             elif isVideo == True:
-                url="http://www.hulu.com/watch/"+videoid
+                pid= item.find('pid').string
+                url=pid
+                #url="http://www.hulu.com/watch/"+videoid
                 mode = 'TV_play'
                 if media_type == 'TV':
                     xbmcplugin.setContent(pluginhandle, 'episodes')
@@ -178,6 +181,8 @@ class Main:
                         displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
                     else:
                         displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
+                    if 'True' == ishd:
+                        displayname += ' (HD)'
             if art == None:
                 art = ''
       
@@ -191,8 +196,8 @@ class Main:
             u += '&episode="'+urllib.quote_plus(common.cleanNames(str(episode_number)))+'"'
             u += '&tvshowtitle="'+urllib.quote_plus(common.cleanNames(show_name))+'"'
             u += '&premiered="'+urllib.quote_plus(common.cleanNames(premiered))+'"'
-            u += '&art="'+urllib.quote_plus(art)+'"'
-            u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+            u += '&art="'+urllib.quote_plus(common.cleanNames(art))+'"'
+            u += '&fanart="'+urllib.quote_plus(common.cleanNames(fanart))+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,

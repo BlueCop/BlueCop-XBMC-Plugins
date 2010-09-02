@@ -1,3 +1,7 @@
+[B]Version 2.5.8[/B]
+
+- UTF-8 encoding fix
+
 [B]Version 2.5.7[/B]
 
 - various fixes

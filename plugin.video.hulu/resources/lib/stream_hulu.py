@@ -13,8 +13,8 @@ from array import array
 from aes import AES
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
-reload(sys)
-sys.setdefaultencoding("utf-8")
+#reload(sys)
+#sys.setdefaultencoding("utf-8")
 
 pluginhandle = int(sys.argv[1])
 xmldeckeys = [
@@ -161,9 +161,10 @@ class Main:
             if(line['encrypted'] == 'true'):
                 sub = self.decrypt_subs(line.string)
                 sub = self.clean_subs(sub)
-                sub = BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]
+                sub = unicode(BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
+
             else:
-                sub = BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]
+                sub = unicode(BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
 
             begin_time = int(line['start'])
             seconds = int(math.floor(begin_time/1000))

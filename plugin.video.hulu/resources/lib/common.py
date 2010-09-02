@@ -10,9 +10,6 @@ import sys
 import os
 import cookielib
 
-#reload(sys)
-sys.setdefaultencoding("utf-8")
-
 """
     PARSE ARGV
 """

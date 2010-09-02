@@ -1,3 +1,8 @@
+[B]Version 2.5.7[/B]
+
+- various fixes
+- Enables subtitles
+
 [B]Version 2.5.6[/B]
 
 - Use pid from feed

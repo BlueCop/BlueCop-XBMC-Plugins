@@ -10,6 +10,8 @@ import sys
 import os
 import cookielib
 
+#reload(sys)
+sys.setdefaultencoding("utf-8")
 
 """
     PARSE ARGV
@@ -22,11 +24,10 @@ class _Info:
 exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"','\'')), )
 
 
-
 """
     DEFINE URLS
 """
-BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu" #?show_id=0&dp_id=huludesktop&package_id=2&page=1
+BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu?show_id=0&dp_id=huludesktop&package_id=2&page=1"
 
 #define etc.
 login_url   = "https://secure.hulu.com/account/authenticate"
@@ -132,8 +133,6 @@ def login():
         return False
 
     cj = cookielib.LWPCookieJar()
-    #if os.path.isfile(COOKIEFILE):
-    #    os.remove(COOKIEFILE)
     if os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
 

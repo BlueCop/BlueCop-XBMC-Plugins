@@ -24,7 +24,7 @@ class Main:
         menuitems=tree.findAll('item')
         for item in menuitems:
             display=item.find('display').string
-            items_url=item.find('items_url').string
+            items_url='http://m.hulu.com'+item.find('items_url').string
             cmtype=item.find('cmtype').string
             if cmtype == 'None' or display == 'Help' or display == 'Profiles' or display == 'Now Playing':
                 continue

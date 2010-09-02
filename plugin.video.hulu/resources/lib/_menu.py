@@ -19,14 +19,16 @@ class Main:
                 perpage = '100'
             else:
                 perpage = common.settings['perpage']
+            xbmcplugin.setPluginCategory( pluginhandle, category=common.args.name )
             self.addMenuItems(perpage)
-            xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )
+            xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
+            xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
 
-    def getTotalCount( self, url ):
-        if '?' in url:
-            itemsurl = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&total=1'
+    def getTotalCount( self, itemsurl ):
+        if '?' in itemsurl:
+            itemsurl += '&dp_id=huludesktop&package_id=2&total=1'
         else:
-            itemsurl = 'http://m.hulu.com'+url+'?dp_id=huludesktop&package_id=2&total=1'
+            itemsurl += '?dp_id=huludesktop&package_id=2&total=1'
         html=common.getFEED(itemsurl)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         items = menuitems=tree.findAll('items')
@@ -39,23 +41,23 @@ class Main:
     def addMenuItems( self, perpage, url=common.args.url ):
         total_count = self.getTotalCount( url )
         if '?' in url:
-            url = 'http://m.hulu.com'+url+'&dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
+            url += '&dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
         else:
-            url = 'http://m.hulu.com'+url+'?dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
+            url += '?dp_id=huludesktop&package_id=2&limit='+perpage+'&page=1'
         html=common.getFEED(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         menuitems=tree.findAll('item')
         del tree
         for item in menuitems:
             display=unicode(common.cleanNames(item.find('display').string)).encode('utf-8')
-            url=item.find('items_url').string
+            url='http://m.hulu.com'+item.find('items_url').string
+            mode=item.find('cmtype').string
             if display == 'All' and total_count == 1:
                 print url
                 common.args.mode = 'All'
                 self.addMenuItems('2000',url)
                 return
             displayname = display
-            mode=item.find('cmtype').string
             if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
             try:
@@ -149,13 +151,20 @@ class Main:
                 isVideo = True
             except:
                 isVideo = False
+                
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
                 dtotal_count = self.getTotalCount( url )
-                displayname = displayname + ' ('+str(dtotal_count)+')'
+                #displayname = displayname + ' ('+str(dtotal_count)+')'
+                episode_number = dtotal_count
+                isVideo = False
+            elif mode == 'ShowPage':
+                xbmcplugin.setContent(pluginhandle, 'tvshows')
                 isVideo = False
             elif common.args.mode == 'ShowPage':
+                xbmcplugin.setContent(pluginhandle, 'seasons')
                 dtotal_count = self.getTotalCount( url )
+                episode_number = dtotal_count
                 displayname = displayname + ' ('+str(dtotal_count)+')'
                 if dtotal_count == 0:
                     continue
@@ -168,6 +177,7 @@ class Main:
             elif isVideo == True:
                 pid= item.find('pid').string
                 url=pid
+                #URL of video
                 #url="http://www.hulu.com/watch/"+videoid
                 mode = 'TV_play'
                 if media_type == 'TV':
@@ -183,21 +193,13 @@ class Main:
                         displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
                     if 'True' == ishd:
                         displayname += ' (HD)'
-            if art == None:
-                art = ''
       
             u = sys.argv[0]
-            u += '?url="'+urllib.quote_plus(common.cleanNames(url))+'"'
-            u += '&mode="'+urllib.quote_plus(common.cleanNames(mode))+'"'
-            u += '&name="'+urllib.quote_plus(common.cleanNames(display))+'"'
-            u += '&plot="'+urllib.quote_plus(common.cleanNames(description))+'"'
-            u += '&genre="'+urllib.quote_plus(common.cleanNames(genre))+'"'
-            u += '&season="'+urllib.quote_plus(common.cleanNames(str(season_number)))+'"'
-            u += '&episode="'+urllib.quote_plus(common.cleanNames(str(episode_number)))+'"'
-            u += '&tvshowtitle="'+urllib.quote_plus(common.cleanNames(show_name))+'"'
-            u += '&premiered="'+urllib.quote_plus(common.cleanNames(premiered))+'"'
-            u += '&art="'+urllib.quote_plus(common.cleanNames(art))+'"'
-            u += '&fanart="'+urllib.quote_plus(common.cleanNames(fanart))+'"'
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="'+urllib.quote_plus(mode)+'"'
+            u += '&name="'+urllib.quote_plus(display)+'"'
+            u += '&art="'+urllib.quote_plus(art)+'"'
+            u += '&fanart="'+urllib.quote_plus(fanart)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,

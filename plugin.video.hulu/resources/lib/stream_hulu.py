@@ -13,9 +13,6 @@ from array import array
 from aes import AES
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
-#reload(sys)
-#sys.setdefaultencoding("utf-8")
-
 pluginhandle = int(sys.argv[1])
 xmldeckeys = [
              ['4878B22E76379B55C962B18DDBC188D82299F8F52E3E698D0FAF29A40ED64B21', 'WA7hap7AGUkevuth'],

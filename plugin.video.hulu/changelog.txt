@@ -1,3 +1,8 @@
+[B]Version 2.6.0[/B]
+
+- Added paging
+- Added more per page settings
+
 [B]Version 2.5.8[/B]
 
 - UTF-8 encoding fix

@@ -26,6 +26,7 @@ class Main:
             display=item.find('display').string
             items_url='http://m.hulu.com'+item.find('items_url').string
             cmtype=item.find('cmtype').string
+            fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
             if cmtype == 'None' or display == 'Help' or display == 'Profiles' or display == 'Now Playing':
                 continue
             elif display == 'TV':
@@ -40,4 +41,4 @@ class Main:
             else:
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
                 plot = ''
-            common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,plot=plot)
+            common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,plot=plot,page='1',perpage='25')

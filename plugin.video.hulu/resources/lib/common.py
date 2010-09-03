@@ -45,9 +45,14 @@ handle = int(sys.argv[1])
 #settings general
 settings['quality'] = xbmcplugin.getSetting( handle,"quality")
 settings['enable_captions'] = xbmcplugin.getSetting( handle, "enable_captions" )
+#per page settings
 page = ['25','50','100','250','500','1000','2000']
 perpage = int(xbmcplugin.getSetting(  handle,"perpage" ))
 settings['perpage'] = page[perpage]
+popperpage = int(xbmcplugin.getSetting(  handle,"popperpage" ))
+settings['popperpage'] = page[popperpage]
+allperpage = int(xbmcplugin.getSetting(  handle,"allperpage" ))
+settings['allperpage'] = page[allperpage]
 #settings login
 settings['login_name'] = xbmcplugin.getSetting(  handle,"login_name" )
 settings['login_pass'] = xbmcplugin.getSetting(  handle,"login_pass" )
@@ -76,9 +81,15 @@ try:
 except:
     args.fanart=''
 
-def addDirectory(name, url='', mode='default', thumb='', icon='', fanart=args.fanart, plot='', genre='', showid='', season=''):
+def addDirectory(name, url='', mode='default', thumb='', icon='', fanart=args.fanart, plot='', genre='', showid='', season='', page = 1,perpage='',popular='false'):
     ok=True
-    u = sys.argv[0]+'?url="'+urllib.quote_plus(url)+'"&mode="'+mode+'"&name="'+urllib.quote_plus(cleanNames(name))+'"&fanart="'+urllib.quote_plus(fanart)+'"&plot="'+urllib.quote_plus(cleanNames(plot))+'"&showid="'+str(showid)+'"&season="'+str(season)+'"&genre="'+cleanNames(genre)+'"'
+    u = sys.argv[0]
+    u += '?url="'+urllib.quote_plus(url)+'"'
+    u += '&mode="'+urllib.quote_plus(mode)+'"'
+    u += '&name="'+urllib.quote_plus(name)+'"'
+    u += '&page="'+urllib.quote_plus(page)+'"'
+    u += '&perpage="'+urllib.quote_plus(perpage)+'"'
+    u += '&popular="'+urllib.quote_plus(popular)+'"'
     liz=xbmcgui.ListItem(name, iconImage=icon, thumbnailImage=icon)
     liz.setInfo( type="Video", infoLabels={ "Title":name, "Plot":cleanNames(plot), "Genre":genre})
     liz.setProperty('fanart_image',fanart)

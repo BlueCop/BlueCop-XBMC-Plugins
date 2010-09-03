@@ -19,6 +19,8 @@
 
 	<string id="30026">Enable Captions</string>
 
-	<string id="30005">Items Per Page</string>
+	<string id="30005">General Per Page</string>
+	<string id="30007">Popular/Recent/Featured Per Page</string>
+	<string id="30008">Alphabetical Per Page</string>
 	<string id="30006">Enable Hulu Plus</string>
 </strings>

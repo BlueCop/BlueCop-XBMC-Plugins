@@ -117,10 +117,7 @@ class Main:
                         fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
                     else:
                         art = common.args.fanart
-                    #if common.args.fanart == '':
-                    #    fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
-                    #else:
-                    #    fanart = common.args.fanart
+                        fanart = common.args.fanart
             try:
                 thumbnail_url_16x9_large = item.find('thumbnail_url_16x9_large').string
                 art = thumbnail_url_16x9_large

@@ -81,7 +81,7 @@ try:
 except:
     args.fanart=''
 
-def addDirectory(name, url='', mode='default', thumb='', icon='', fanart=args.fanart, plot='', genre='', showid='', season='', page = 1,perpage='',popular='false'):
+def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='http://assets.huluim.com/companies/key_art_hulu.jpg', plot='', genre='', showid='', season='', page = 1,perpage='',popular='false',updatelisting='false'):
     ok=True
     u = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
@@ -90,6 +90,7 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart=args.fa
     u += '&page="'+urllib.quote_plus(page)+'"'
     u += '&perpage="'+urllib.quote_plus(perpage)+'"'
     u += '&popular="'+urllib.quote_plus(popular)+'"'
+    u += '&updatelisting="'+urllib.quote_plus(updatelisting)+'"'
     liz=xbmcgui.ListItem(name, iconImage=icon, thumbnailImage=icon)
     liz.setInfo( type="Video", infoLabels={ "Title":name, "Plot":cleanNames(plot), "Genre":genre})
     liz.setProperty('fanart_image',fanart)
@@ -118,16 +119,20 @@ def getHTML( url ):
     return response
 
 def getFEED( url ):
-    print 'HULU --> common :: getFEED :: url = '+url
-    cj = cookielib.LWPCookieJar()
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                         ('x-flash-version', '10,0,32,18'),
-                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
-    usock=opener.open(url)
-    response=usock.read()
-    usock.close()
-    return response
+    try:
+        print 'HULU --> common :: getFEED :: url = '+url
+        cj = cookielib.LWPCookieJar()
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
+                             ('x-flash-version', '10,0,32,18'),
+                             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
+        usock=opener.open(url)
+        response=usock.read()
+        usock.close()
+        return response
+    except:
+        return False
+        
 
 
 """

@@ -1,5 +1,9 @@
 [B]Version 2.6.0[/B]
 
+- fixed page and update listing bugs
+
+[B]Version 2.6.0[/B]
+
 - Added paging
 - Added more per page settings
 

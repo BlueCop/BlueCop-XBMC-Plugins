@@ -8,6 +8,7 @@ import sys
 import urllib
 import urllib2
 import math
+import time
 
 from BeautifulSoup import BeautifulStoneSoup
 
@@ -17,9 +18,7 @@ class Main:
     def __init__( self ):
         try:
             perpage = common.args.perpage
-            updatelisting = True
         except:
-            updatelisting=False
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
                 perpage = common.settings['popperpage']
             else:
@@ -27,7 +26,7 @@ class Main:
         xbmcplugin.setPluginCategory( pluginhandle, category=common.args.name )
         xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
         self.addMenuItems(perpage,common.args.page)
-        if updatelisting == True:
+        if common.args.updatelisting == 'true':
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
         else:
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
@@ -52,6 +51,8 @@ class Main:
         if int(perpage) < int(total_count):
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
                 popular='true'
+            else:
+                popular='false'
             current_page = int(pagenumber)
             next_page = int(pagenumber)+1
             prev_page = int(pagenumber)-1         
@@ -61,18 +62,23 @@ class Main:
                 npage_end = total_count
             if npage_begin < total_count:
                 next_name = 'Next Page ('+str(npage_begin)+'-'+str(npage_end)+' of '+str(total_count)+')'
-                common.addDirectory(next_name,url,common.args.mode,page=str(next_page),perpage=perpage,popular='true')
+                nextthumb=xbmc.translatePath(os.path.join(common.imagepath,"next.png"))
+                common.addDirectory(next_name,url,common.args.mode,page=str(next_page),icon=nextthumb,perpage=perpage,popular=popular,updatelisting='true')
             if prev_page > 0:
                 ppage_begin = int(perpage)*(prev_page-1)+1
                 ppage_end = int(perpage)*prev_page
                 prev_name = 'Previous Page ('+str(ppage_begin)+'-'+str(ppage_end)+' of '+str(total_count)+')'
-                common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),perpage=perpage,popular='true')
+                prevthumb=xbmc.translatePath(os.path.join(common.imagepath,"prev.png"))
+                common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,updatelisting='true')
 
         if '?' in url:
             url += '&dp_id=huludesktop&package_id=2&limit='+perpage+'&page='+pagenumber
         else:
             url += '?dp_id=huludesktop&package_id=2&limit='+perpage+'&page='+pagenumber
         html=common.getFEED(url)
+        while html == False:
+            html=common.getFEED(url)
+            time.sleep(2)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         menuitems=tree.findAll('item')
         del tree
@@ -106,14 +112,15 @@ class Main:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                     isVideo = True
                 except:
-                    if common.args.fanart == '':
+                    if common.args.fanart == '' or common.args.fanart == 'http://assets.huluim.com/companies/key_art_hulu.jpg':
                         art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-                    else:
-                        art = common.args.fanart
-                    if common.args.fanart == '':
                         fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
                     else:
-                        fanart = common.args.fanart
+                        art = common.args.fanart
+                    #if common.args.fanart == '':
+                    #    fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
+                    #else:
+                    #    fanart = common.args.fanart
             try:
                 thumbnail_url_16x9_large = item.find('thumbnail_url_16x9_large').string
                 art = thumbnail_url_16x9_large
@@ -226,9 +233,11 @@ class Main:
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
                 if season_number <> 0 and episode_number <> 0:
                     if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or common.args.popular == 'true':
-                        displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
+                        #displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
+                        displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
                     else:
-                        displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
+                        #displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
+                        displayname = str(season_number)+'x'+str(episode_number)+' - '+display
                     if 'True' == ishd:
                         displayname += ' (HD)'
             if art == None:
@@ -242,6 +251,7 @@ class Main:
             u += '&art="'+urllib.quote_plus(art)+'"'
             u += '&fanart="'+urllib.quote_plus(fanart)+'"'
             u += '&popular="false"'
+            u += '&updatelisting="false"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,

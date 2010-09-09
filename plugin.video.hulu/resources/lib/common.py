@@ -2,7 +2,8 @@ import xbmcplugin
 
 import xbmc
 import xbmcgui
-import xbmcaddon
+#import xbmcaddon
+import addoncompat
 
 import urllib
 import urllib2
@@ -31,8 +32,7 @@ login_url   = "https://secure.hulu.com/account/authenticate"
 #define file locations
 COOKIEFILE = 'special://temp/hulu-cookies.lwp'
 imagepath   = os.path.join(os.getcwd().replace(';', ''),'resources','images')
-addon = xbmcaddon.Addon(id='plugin.video.hulu')
-
+#addon = xbmcaddon.Addon(id='plugin.video.hulu')
 
 
 """
@@ -43,21 +43,21 @@ settings={}
 handle = int(sys.argv[1])
 
 #settings general
-settings['quality'] = xbmcplugin.getSetting( handle,"quality")
-settings['enable_captions'] = xbmcplugin.getSetting( handle, "enable_captions" )
+settings['quality'] = addoncompat.get_setting("quality")
+settings['enable_captions'] = addoncompat.get_setting("enable_captions")
 #per page settings
 page = ['25','50','100','250','500','1000','2000']
-perpage = int(xbmcplugin.getSetting(  handle,"perpage" ))
+perpage = int(addoncompat.get_setting("perpage"))
 settings['perpage'] = page[perpage]
-popperpage = int(xbmcplugin.getSetting(  handle,"popperpage" ))
+popperpage = int(addoncompat.get_setting("popperpage"))
 settings['popperpage'] = page[popperpage]
-allperpage = int(xbmcplugin.getSetting(  handle,"allperpage" ))
+allperpage = int(addoncompat.get_setting("allperpage" ))
 settings['allperpage'] = page[allperpage]
 #settings login
-settings['login_name'] = xbmcplugin.getSetting(  handle,"login_name" )
-settings['login_pass'] = xbmcplugin.getSetting(  handle,"login_pass" )
-settings['enable_login'] = xbmcplugin.getSetting(  handle,"enable_login" )
-settings['enable_plus'] = xbmcplugin.getSetting( handle, "enable_plus" )
+settings['login_name'] = addoncompat.get_setting("login_name")
+settings['login_pass'] = addoncompat.get_setting("login_pass")
+settings['enable_login'] = addoncompat.get_setting("enable_login")
+settings['enable_plus'] = addoncompat.get_setting("enable_plus")
 
 """
     Clean Non-Ascii characters from names for XBMC

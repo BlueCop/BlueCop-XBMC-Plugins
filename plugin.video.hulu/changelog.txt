@@ -1,4 +1,8 @@
-[B]Version 2.6.0[/B]
+[B]Version 2.6.2[/B]
+
+- updated addon settings for compatability with xbmc4xbox
+
+[B]Version 2.6.1[/B]
 
 - fixed page and update listing bugs
 

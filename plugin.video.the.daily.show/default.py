@@ -21,9 +21,16 @@ elif xbmcplugin.getSetting(pluginhandle,"sort") == '2':
 def getURL( url ):
     try:
         print 'The Daily Show --> getURL :: url = '+url
-        req = urllib2.Request(url)
-        req.addheaders = [('Referer', 'http://www.thedailyshow.com/videos'),
-                          ('Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)')]
+        txdata = None
+        txheaders = {
+            'Referer': 'http://www.thedailyshow.com/videos/',
+            'X-Forwarded-For': '12.13.14.15',
+            'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US;rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)',	
+        }
+        req = urllib2.Request(url, txdata, txheaders)
+        #req = urllib2.Request(url)
+        #req.addheaders = [('Referer', 'http://www.thedailyshow.com/videos'),
+        #                  ('Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)')]
         response = urllib2.urlopen(req)
         link=response.read()
         response.close()

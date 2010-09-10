@@ -1,23 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addons>
-<addon id="plugin.video.adult.swim"
-       name="Adult Swim"
-       version="0.1"
-       provider-name="BlueCop">
-  <requires>
-    <import addon="xbmc.python" version="1.0"/>
-  </requires>
-  <extension point="xbmc.python.pluginsource"
-            library="default.py">
-        <provides>video</provides>
-  </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary></summary>
-    <description></description>
-    <platform>all</platform>
-  </extension>
-</addon>
-
 <addon id="plugin.video.cbs"
        name="CBS"
        version="1.2.3"
@@ -76,24 +58,6 @@
   <extension point="xbmc.addon.metadata">
     <summary>Music Videos from MTV Networks (MTV, VH1, CMT and Logo)</summary>
     <description>Music Videos</description>
-    <platform>all</platform>
-  </extension>
-</addon>
-
-<addon id="plugin.video.nbc.universal"
-       name="NBC Universal"
-       version="1.2"
-       provider-name="BlueCop">
-  <requires>
-    <import addon="xbmc.python" version="1.0"/>
-  </requires>
-  <extension point="xbmc.python.pluginsource"
-            library="default.py">
-        <provides>video</provides>
-  </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary></summary>
-    <description></description>
     <platform>all</platform>
   </extension>
 </addon>

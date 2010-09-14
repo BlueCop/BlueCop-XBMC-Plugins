@@ -24,11 +24,15 @@ def getURL( url ):
     else:
         return link
 
-def addLink(name,url,mode,iconimage='',plot=''):
+def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname=''):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
+        liz.setInfo( type="Video", infoLabels={ "Title": name,
+                                                "Plot":plot,
+                                                "Season":season,
+                                                "Episode":episode,
+                                                "TVShowTitle":showname})
         liz.setProperty('IsPlayable', 'true')
         ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
         return ok
@@ -96,7 +100,8 @@ def SHOW(scid):
                                         addDir(name,sscid,mode)
         xbmcplugin.endOfDirectory(pluginhandle)
         
-def EPISODE(cid):
+def EPISODE(name, cid):
+        showname = name
         xbmcplugin.setContent(pluginhandle, 'episodes')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
@@ -108,19 +113,25 @@ def EPISODE(cid):
                 name = episode.find('title').string
                 thumbnail = episode.find('thumbnailurl').string
                 plot = episode.find('description').string
+                try:
+                    season_episode = thumbnail.split('_')[1]
+                    seasonNum = int(season_episode[:-2])
+                    episodeNum = int(season_episode[-2:])
+                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
+                except:
+                    seasonNum = 0
+                    episodeNum = 0
                 segments = episode.findAll('segment')
                 if len(segments) == 0:
                     url = episodeId
                     mode = 4
-                    addLink(name,url,mode,thumbnail,plot)
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
                 else:
+                    url = ''
                     for segment in segments:
-                            url = segment['id']
-                            segname = segment.find('title').string
-                            fname = name +' '+segname
-                            mode = 4 #PLAY
-                            addLink(fname,url,mode,thumbnail,plot)
-
+                            url += segment['id']+'<segment>'
+                    mode = 5 #PLAYEPISODE
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
         xbmcplugin.endOfDirectory(pluginhandle)
 
 def getAUTH(aifp,window,tokentype,vid,filename):
@@ -132,14 +143,14 @@ def getAUTH(aifp,window,tokentype,vid,filename):
                       'profile' : 'tnt',
                       'path' : filename
                       }
-        data = urllib.urlencode(parameters) # Use urllib to encode the parameters
+        data = urllib.urlencode(parameters)
         request = urllib2.Request(authUrl, data)
-        response = urllib2.urlopen(request) # This request is sent in HTTP POST
+        response = urllib2.urlopen(request)
         link = response.read(200000)
         response.close()
         return re.compile('<token>(.+?)</token>').findall(link)[0]
 
-def PLAY(vid):
+def GET_RTMP(vid):
         url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -147,21 +158,34 @@ def PLAY(vid):
         #stream details
         filename = files[0].string
         if 'http://' in filename:
-            item = xbmcgui.ListItem(path=filename)
-            return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            filename = filename
+            return filename
         else:
             filename = filename[1:len(filename)-4]
-        serverDetails = tree.find('akamai')
-        server = serverDetails.find('src').string.split('://')[1]
-        #get auth
-        tokentype = serverDetails.find('authtokentype').string
-        window = serverDetails.find('window').string
-        aifp = serverDetails.find('aifp').string
-        auth=getAUTH(aifp,window,tokentype,vid,filename)
-        
-        swfUrl = 'http://www.tnt.tv/dramavision/tnt_video.swf'
-        rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
-        item = xbmcgui.ListItem(path=rtmp)
+            serverDetails = tree.find('akamai')
+            server = serverDetails.find('src').string.split('://')[1]
+            #get auth
+            tokentype = serverDetails.find('authtokentype').string
+            window = serverDetails.find('window').string
+            aifp = serverDetails.find('aifp').string
+            auth=getAUTH(aifp,window,tokentype,vid,filename)      
+            swfUrl = 'http://www.tnt.tv/dramavision/tnt_video.swf'
+            rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
+            return rtmp
+
+def PLAYEPISODE(vids):
+        vids = vids.split('<segment>')
+        url = 'stack://'
+        for vid in vids:
+            if vid <> '':
+                url += GET_RTMP(vid).replace(',',',,')+' , '
+        url = url[:-3]
+        item = xbmcgui.ListItem(path=url)
+        return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    
+def PLAY(vid):
+        url = GET_RTMP(vid)
+        item = xbmcgui.ListItem(path=url)
         return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 
@@ -218,6 +242,8 @@ elif mode==1:
 elif mode==2:
         SHOW(url)
 elif mode==3:
-        EPISODE(url)
+        EPISODE(name,url)
 elif mode==4:
         PLAY(url)
+elif mode==5:
+        PLAYEPISODE(url)

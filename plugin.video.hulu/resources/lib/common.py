@@ -53,6 +53,8 @@ popperpage = int(addoncompat.get_setting("popperpage"))
 settings['popperpage'] = page[popperpage]
 allperpage = int(addoncompat.get_setting("allperpage" ))
 settings['allperpage'] = page[allperpage]
+searchperpage = int(addoncompat.get_setting("searchperpage" ))
+settings['searchperpage'] = page[searchperpage]
 #settings login
 settings['login_name'] = addoncompat.get_setting("login_name")
 settings['login_pass'] = addoncompat.get_setting("login_pass")

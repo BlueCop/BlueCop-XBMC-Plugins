@@ -35,6 +35,9 @@ def modes( ):
         elif common.args.mode.endswith('Menu') or common.args.mode.endswith('Page'):
             import resources.lib._menu as menu
             menu.Main()
+        elif common.args.mode.endswith('Search'):
+            import resources.lib._search as search
+            search.Main()
         else:
             import xbmcgui
             xbmcgui.Dialog().ok('common.args.mode',common.args.mode)

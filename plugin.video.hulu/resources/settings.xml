@@ -10,6 +10,7 @@
 	<setting id="perpage" type="enum" label="30005" values="25|50|100|250|500|1000|2000" default="3"/>
 	<setting id="popperpage" type="enum" label="30007" values="25|50|100|250|500|1000|2000" default="2"/>
 	<setting id="allperpage" type="enum" label="30008" values="25|50|100|250|500|1000|2000" default="4"/>
+	<setting id="searchperpage" type="enum" label="30009" values="25|50|100|250|500|1000|2000" default="2"/>
 
 	<!--login-->
 	<setting type="sep" />

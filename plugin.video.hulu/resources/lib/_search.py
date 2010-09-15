@@ -38,7 +38,7 @@ class Main:
         total_count= int(tree.find('count').string)
         del tree
         for item in menuitems:
-            display=unicode(common.cleanNames(item.find('title').string)).encode('utf-8')
+            display=item.find('title').string.encode( "utf-8" )
             url= item.find('pid').string
             mode = 'TV_play'
             displayname = display
@@ -76,7 +76,7 @@ class Main:
             except:
                 episode_number = 0
             try:
-                show_name = item.find('name').string
+                show_name = item.find('name').string.encode( "utf-8" )
             except:
                 show_name = ''                 
             try:

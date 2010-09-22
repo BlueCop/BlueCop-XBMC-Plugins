@@ -67,7 +67,7 @@ settings['enable_plus'] = addoncompat.get_setting("enable_plus")
 
 def cleanNames(string):
     try:
-        string = string.replace("'","").replace(unicode(u'\u201c'), '"').replace(unicode(u'\u201d'), '"').replace(unicode(u'\u2019'),'\'').replace(unicode(u'\u2026'),'...').replace(unicode(u'\u2018'),'\'').replace(unicode(u'\u2013'),'-')
+        string = string.replace("'","").replace(unicode(u'\u201c'), '"').replace(unicode(u'\u201d'), '"').replace(unicode(u'\u2019'),'').replace(unicode(u'\u2026'),'...').replace(unicode(u'\u2018'),'').replace(unicode(u'\u2013'),'-')
         return string
     except:
         return string
@@ -83,7 +83,7 @@ try:
 except:
     args.fanart=''
 
-def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='http://assets.huluim.com/companies/key_art_hulu.jpg', plot='', genre='', showid='', season='', page = 1,perpage='',popular='false',updatelisting='false'):
+def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='http://assets.huluim.com/companies/key_art_hulu.jpg', plot='', genre='', showid='', season='', page = '1',perpage='',popular='false',updatelisting='false'):
     ok=True
     u = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'

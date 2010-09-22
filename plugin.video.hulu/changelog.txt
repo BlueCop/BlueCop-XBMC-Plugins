@@ -1,3 +1,27 @@
+[B]Version 2.6.4[/B]
+
+- intial offsite search support for
+Adult Swim
+Cartoon Network
+CBS
+TNT
+TBS
+MTV
+VH1
+CMT
+Logo
+Atom
+Comedy Central
+The Daily Show
+South Park Digital Studios
+Spike
+TV Land
+Revision3
+Funny or Die
+HBO
+Nickelodeon
+NickJr
+
 [B]Version 2.6.3[/B]
 
 - added search

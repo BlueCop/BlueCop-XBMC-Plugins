@@ -17,29 +17,45 @@ pluginhandle = int(sys.argv[1])
 class Main:
     def __init__( self ):
         perpage = common.settings['searchperpage']
-        keyb = xbmc.Keyboard('', 'Search')
-        keyb.doModal()
-        if (keyb.isConfirmed()):
-            search = urllib.quote_plus(keyb.getText())
-            self.addMenuItems(perpage,common.args.page,search)
-            if common.args.updatelisting == 'true':
-                xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
-            else:
+        if common.args.updatelisting == 'true':
+            search = common.args.url
+            self.addMenuItems(perpage,common.args.page,search,'0')
+            xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
+        else:
+            keyb = xbmc.Keyboard('', 'Search')
+            keyb.doModal()
+            if (keyb.isConfirmed()):
+                search = urllib.quote_plus(keyb.getText())
+                self.addMenuItems(perpage,common.args.page,search,'1')
                 xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
       
-    def addMenuItems( self, perpage, pagenumber ,url ):
-        url = 'http://m.hulu.com/search?items_per_page='+perpage+'&hulu_only=1&dp_identifier=huludesktop&package_id=2&query='+url
+    def addMenuItems( self, perpage, pagenumber , search, huluonly ):
+        url = 'http://m.hulu.com/search?items_per_page='+perpage+'&hulu_only='+huluonly+'&dp_identifier=huludesktop&package_id=2&query='+search
         html=common.getFEED(url)
         while html == False:
             html=common.getFEED(url)
             time.sleep(2)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        menuitems=tree.findAll('video')
         total_count= int(tree.find('count').string)
+        if huluonly == '1' and total_count == 0:
+            self.addMenuItems(perpage,pagenumber,search,'0')
+            return
+        elif huluonly == '1':
+            searchicon = xbmc.translatePath(os.path.join(common.imagepath,"search_icon.png"))
+            common.addDirectory('Search Off Hulu',search,'Search', thumb=searchicon, icon=searchicon, updatelisting='true')
+        menuitems=tree.findAll('video')
         del tree
         for item in menuitems:
-            display=item.find('title').string.encode( "utf-8" )
-            url= item.find('pid').string
+            #display=item.find('title').string.encode( "utf-8" )
+            display=unicode(common.cleanNames(item.find('title').string)).encode('utf-8')
+            try:
+                url= item.find('pid').string
+                offsite= 'false'
+                source_site= 'Hulu'
+            except:
+                url= item.find('url').string
+                offsite= item.find('offsite').string
+                source_site= item.find('source-site').string.encode('utf-8')
             mode = 'TV_play'
             displayname = display
             try:
@@ -78,7 +94,13 @@ class Main:
             try:
                 show_name = item.find('name').string.encode( "utf-8" )
             except:
-                show_name = ''                 
+                try:
+                    show_name = item.find('show-name').string.encode( "utf-8" )
+                except:
+                    try:
+                        show_name = item.find('channel').string.encode( "utf-8" )
+                    except:
+                        show_name = ''
             try:
                 duration = float(item.find('duration').string)
                 hour = int(math.floor(duration / 60 / 60))
@@ -94,8 +116,12 @@ class Main:
                 premiered = item.find('original-premiere-date').string.replace('T00:00:00Z','')
                 year = int(premiered.split('-')[0])
             except:
-                premiered = ''
-                year = 0
+                try:
+                    premiered = item.find('air-date').string.replace('/','-')
+                    year = int(premiered.split('-')[0])
+                except:
+                    premiered = ''
+                    year = 0
             try:
                 company_name = item.find('company-name').string
             except:
@@ -123,20 +149,30 @@ class Main:
                 media_type = item.find('media-type').string
             except:
                 media_type = False
+
+            if art == None:
+                art = ''
+            if show_name == False or show_name == None:
+                show_name = ''
+                
+            if season_number <> 0 and episode_number <> 0:
+                displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
+            elif show_name <> '' and show_name not in display:
+                displayname = show_name+' - '+display
+                
             if media_type == 'TV':
                 xbmcplugin.setContent(pluginhandle, 'episodes')
             elif media_type == 'Film':
                 xbmcplugin.setContent(pluginhandle, 'movies')
-                show_name = company_name
-            if season_number <> 0 and episode_number <> 0:
-                displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
-            else:
-                displayname = show_name+' - '+display
+
+
             if 'True' == ishd:
                 displayname += ' (HD)'
-            if art == None:
-                art = ''
-      
+            if 'true' == offsite:
+                displayname += ' ('+source_site+')'
+                mode = 'TV_playoffsite'
+                
+
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
@@ -144,6 +180,7 @@ class Main:
             u += '&page="1"'
             u += '&art="'+urllib.quote_plus(art)+'"'
             u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+            u += '&sourcesite="'+urllib.quote_plus(source_site)+'"'
             u += '&popular="false"'
             u += '&updatelisting="false"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)

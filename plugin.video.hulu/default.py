@@ -32,6 +32,9 @@ def modes( ):
         elif common.args.mode.endswith('_play'):
             import resources.lib.stream_hulu as stream_media
             stream_media.Main()
+        elif common.args.mode.endswith('_playoffsite'):
+            import resources.lib.stream_offsite as stream_media
+            stream_media.Main()
         elif common.args.mode.endswith('Menu') or common.args.mode.endswith('Page'):
             import resources.lib._menu as menu
             menu.Main()

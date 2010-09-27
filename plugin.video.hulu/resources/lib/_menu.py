@@ -83,7 +83,7 @@ class Main:
         menuitems=tree.findAll('item')
         del tree
         for item in menuitems:
-            display=unicode(common.cleanNames(item.find('display').string)).encode('utf-8')
+            display=item.find('display').string.encode('utf-8')
             url='http://m.hulu.com'+item.find('items_url').string
             mode=item.find('cmtype').string
             if display == 'All' and total_count == 1:
@@ -141,7 +141,7 @@ class Main:
             except:
                 episode_number = 0
             try:
-                show_name = item.find('show_name').string
+                show_name = item.find('show_name').string.encode('utf-8')
             except:
                 show_name = ''                 
             try:
@@ -210,6 +210,9 @@ class Main:
                 displayname = displayname + ' ('+str(dtotal_count)+')'
                 if dtotal_count == 0:
                     continue
+            elif common.args.name == 'Networks' or common.args.name == 'Studios':
+                fanart = "http://assets.huluim.com/companies/key_art_"+canonical_name.replace('-','_')+".jpg"
+                art = fanart
             elif common.args.mode == 'Menu' and isVideo == False:
                 dtotal_count = self.getTotalCount( url )
                 if dtotal_count <> 1:

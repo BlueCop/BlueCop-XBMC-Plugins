@@ -1,3 +1,9 @@
+[B]Version 2.6.5[/B]
+
+- Added artwork for Networks & Studios
+- Huge speed up for Network & Studio lists
+
+
 [B]Version 2.6.4[/B]
 
 - intial offsite search support for

@@ -47,7 +47,7 @@ class Main:
         del tree
         for item in menuitems:
             #display=item.find('title').string.encode( "utf-8" )
-            display=unicode(common.cleanNames(item.find('title').string)).encode('utf-8')
+            display=item.find('title').string.encode('utf-8')
             try:
                 url= item.find('pid').string
                 offsite= 'false'
@@ -176,7 +176,7 @@ class Main:
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
-            u += '&name="'+urllib.quote_plus(display)+'"'
+            #u += '&name="'+urllib.quote_plus(display)+'"'
             u += '&page="1"'
             u += '&art="'+urllib.quote_plus(art)+'"'
             u += '&fanart="'+urllib.quote_plus(fanart)+'"'

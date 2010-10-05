@@ -28,7 +28,7 @@ def getURL( url ):
 
 def seasons():
     xbmcplugin.setContent(pluginhandle, 'seasons')
-    addRandom('Random Episode','http://www.southparkstudios.com/episodes/random.php',3)
+    #addRandom('Random Episode','http://www.southparkstudios.com/episodes/random.php',3)
     for sn in range(1,15):
         sn = str(sn)
         name = 'Season '+sn
@@ -67,7 +67,8 @@ def randomEpisode(url):
 def episodes(season):
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
-    url = 'http://www.southparkstudios.com/includes/utils/proxy_feed.php?html=season_json.jhtml%3fseason=' + season
+    #url = 'http://www.southparkstudios.com/includes/utils/proxy_feed.php?html=season_json.jhtml%3fseason=' + season'
+    url = 'http://www.southparkstudios.com/feeds/full-episode/carousel/'+season+'/342853'
     json = getURL(url)
     episodes = demjson.decode(json)['season']['episode']
     for episode in episodes:
@@ -115,9 +116,11 @@ def playVideo(episodeid,name,thumbnail):
             lbitrate = 600
     dname = name
     swfurl = 'http://media.mtvnservices.com/player/release/?v=4.5.3'
-    url = 'http://media.mtvnservices.com/player/config.jhtml?uri=mgid%3Acms%3Acontent%3Asouthparkstudios.com%3A'+episodeid+'&group=entertainment&type=network'
+    url =  'http://www.southparkstudios.com/feeds/video-player/mrss/mgid%3Acms%3Acontent%3Asouthparkstudios.com%3A'+episodeid
+    #url = 'http://media.mtvnservices.com/player/config.jhtml?uri=mgid%3Acms%3Acontent%3Asouthparkstudios.com%3A'+episodeid+'&group=entertainment&type=network'
     response = getURL(url)
-    rtmp=re.compile('<media:content url="(.+?)" type="text/xml" medium="video" duration=".+?" isDefault=".+?" />').findall(response)
+    #rtmp=re.compile('<media:content url="(.+?)" type="text/xml" medium="video" duration=".+?" isDefault=".+?" />').findall(response)
+    rtmp=re.compile('<media:content type=".+?" medium=".+?" duration=".+?" isDefault=".+?" url="(.+?)" />').findall(response)
     stacked_url = 'stack://'
     for url in rtmp:
         response = getURL(url)

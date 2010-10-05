@@ -89,7 +89,7 @@ def FULLEPISODES():
         for url, week in weeks:
             data = getURL(url)
             episodes=re.compile('<span class="date"><a href="(.+?)">(.+?)</a></span>').findall(data)
-            thumbnails=re.compile('<img width="156" height="86" src="(.+?)\?width=156" border="0"/>').findall(data)
+            thumbnails=re.compile('<img width=".+?" height=".+?" src="(.+?)\?width=.+?".+?/>').findall(data)
             descriptions=re.compile('<span class="description">(.+?)</span>').findall(data)
             airdates=re.compile('<span class="date">Aired: (.+?)</span>').findall(data)
             epNumbers=re.compile('<span class="id">Episode (.+?)</span>').findall(data)
@@ -111,6 +111,7 @@ def FULLEPISODES():
             for epNumber in epNumbers:
                 marker = epNumbers.index(epNumber)
                 listings[marker].append(epNumber)
+            print listings
             for name, link, thumbnail, plot, date, seasonepisode in listings:
                 mode = 10
                 season = int(seasonepisode[:-3])

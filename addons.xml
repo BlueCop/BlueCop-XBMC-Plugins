@@ -125,7 +125,7 @@
 
 <addon id="plugin.video.the.colbert.report"
        name="The Colbert Report"
-       version="0.2"
+       version="1.0.3"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
@@ -143,7 +143,7 @@
 
 <addon id="plugin.video.the.daily.show"
        name="The Daily Show"
-       version="0.3"
+       version="1.0.4"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>

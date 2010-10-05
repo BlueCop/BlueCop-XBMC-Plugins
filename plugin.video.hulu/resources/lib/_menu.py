@@ -246,12 +246,6 @@ class Main:
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
-            u += '&name="'+urllib.quote_plus(display)+'"'
-            u += '&page="1"'
-            u += '&art="'+urllib.quote_plus(art)+'"'
-            u += '&fanart="'+urllib.quote_plus(fanart)+'"'
-            u += '&popular="false"'
-            u += '&updatelisting="false"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,
@@ -278,6 +272,12 @@ class Main:
             else:
                 total_items = int(total_count)
             if isVideo == False:
+                u += '&name="'+urllib.quote_plus(display)+'"'
+                u += '&art="'+urllib.quote_plus(art)+'"'
+                u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+                u += '&page="1"'
+                u += '&popular="false"'
+                u += '&updatelisting="false"'
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
                 item.setProperty('IsPlayable', 'true')

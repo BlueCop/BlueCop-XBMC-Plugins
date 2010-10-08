@@ -45,7 +45,7 @@ handle = int(sys.argv[1])
 #settings general
 settings['quality'] = addoncompat.get_setting("quality")
 #settings cdn
-cdns = ['level3','limelight','akamia']
+cdns = ['level3','limelight','akamai']
 defualtcdn = int(addoncompat.get_setting("defaultcdn"))
 settings['defaultcdn'] = cdns[defualtcdn]
 #setting captions

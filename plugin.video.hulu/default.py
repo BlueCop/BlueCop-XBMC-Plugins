@@ -15,7 +15,7 @@ import resources.lib.common as common
 __plugin__ = "Hulu"
 __authors__ = "BlueCop, hyc, rwparris2, retalogic"
 __credits__ = "zoltar12 for the original hulu plugin, BlueCop for h264 & flv url changes"
-__version__ = "2.6.6"
+__version__ = "2.6.7"
 
 
 #temp#

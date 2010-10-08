@@ -20,8 +20,13 @@
 	<string id="30026">Enable Captions</string>
 
 	<string id="30005">General Per Page</string>
+	<string id="30006">Enable Hulu Plus</string>
 	<string id="30007">Popular/Recent/Featured Per Page</string>
 	<string id="30008">Alphabetical Per Page</string>
 	<string id="30009">Search Results</string>
-	<string id="30006">Enable Hulu Plus</string>
+
+	<string id="30027">Default CDN</string>
+	<string id="30028">level3</string>
+	<string id="30029">limelight</string>
+	<string id="30030">akamia</string>
 </strings>

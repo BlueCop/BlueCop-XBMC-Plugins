@@ -271,7 +271,7 @@ class Main:
                     streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
                 if qt > 6 and 'H264' in vid['profile']: continue
                 if qtext in vid['profile']:
-                    if vid['cdn'] == 'akamai':
+                    if vid['cdn'] == common.settings['defaultcdn']:
                         selectedStream = [vid['server'],vid['stream'],vid['token']]
                         print selectedStream
                         cdn = vid['cdn']
@@ -302,16 +302,18 @@ class Main:
 
             if "level3" in cdn:
                 appName += "?" + token
-                # drop extension from name
                 stream = stream[0:len(stream)-4]
                 newUrl = server + " app=" + appName
 
             elif "limelight" in cdn:
                 appName += '?' + token
-                newUrl = server + " app=" + appName
+                stream = stream[0:len(stream)-4]
+                newUrl = server + '?' + token + " app=" + appName
 
             elif "akamai" in cdn:
-                newUrl = server + "?_fcs_vhost=" + hostname + "&" + token
+                appName += '?' + token
+                newUrl = server + '?' + token
+                #newUrl = server + "?_fcs_vhost=" + hostname + "&" + token
 
             else:
                 xbmcgui.Dialog().ok('Unsupported Content Delivery Network',cdn+' is unsupported at this time')
@@ -322,8 +324,8 @@ class Main:
             print "playPath -- > " + stream
 
             #define item
-            SWFPlayer = 'http://www.hulu.com/player.swf'
-            newUrl += " swfurl=" + SWFPlayer + " playpath=" + stream + " pageurl=" + common.args.url
+            SWFPlayer = 'http://www.hulu.com/site-player/72770/playback.swf?cb=3.0.1.72770'
+            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " swfvfy=true"
             item = xbmcgui.ListItem(path=newUrl)
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 

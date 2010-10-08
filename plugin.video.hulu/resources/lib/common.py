@@ -44,6 +44,11 @@ handle = int(sys.argv[1])
 
 #settings general
 settings['quality'] = addoncompat.get_setting("quality")
+#settings cdn
+cdns = ['level3','limelight','akamia']
+defualtcdn = int(addoncompat.get_setting("defaultcdn"))
+settings['defaultcdn'] = cdns[defualtcdn]
+#setting captions
 settings['enable_captions'] = addoncompat.get_setting("enable_captions")
 #per page settings
 page = ['25','50','100','250','500','1000','2000']

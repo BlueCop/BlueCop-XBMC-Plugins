@@ -52,7 +52,10 @@ class Main:
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
                 popular='true'
             else:
-                popular='false'
+                try:
+                    popular = common.args.popular
+                except:
+                    popular='false'
             current_page = int(pagenumber)
             next_page = int(pagenumber)+1
             prev_page = int(pagenumber)-1         

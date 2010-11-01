@@ -272,7 +272,7 @@ class Main:
             else:
                 total_items = int(total_count)
             if isVideo == False:
-                u += '&name="'+urllib.quote_plus(display)+'"'
+                u += '&name="'+urllib.quote_plus(display.replace("'",""))+'"'
                 u += '&art="'+urllib.quote_plus(art)+'"'
                 u += '&fanart="'+urllib.quote_plus(fanart)+'"'
                 u += '&page="1"'

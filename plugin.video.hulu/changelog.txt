@@ -1,3 +1,9 @@
+[B]Version 2.7.0[/B]
+
+- Rearranged Settings Panel
+- Changed Default Settings
+- Added settings for SWF Verify
+
 [B]Version 2.6.9[/B]
 
 - Fix for Popular, Recent, and Featured video names after second page.

@@ -42,9 +42,9 @@ imagepath   = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 settings={}
 handle = int(sys.argv[1])
 
-#settings general
+#settings Advanced
 settings['quality'] = addoncompat.get_setting("quality")
-#settings cdn
+settings['swfverify'] = addoncompat.get_setting("swfverify")
 cdns = ['level3','limelight','akamai']
 defualtcdn = int(addoncompat.get_setting("defaultcdn"))
 settings['defaultcdn'] = cdns[defualtcdn]

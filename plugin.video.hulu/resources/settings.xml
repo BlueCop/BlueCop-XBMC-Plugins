@@ -1,25 +1,36 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 
-	<!--general-->
-	<setting type="sep" />
-	<setting id="quality" type="enum" lvalues="30015|30023|30024|30025|30016|30017|30018|30020|30021|30022" label="30004" default="0"/>
-	<setting id="defaultcdn" type="enum" lvalues="30028|30029|30030" label="30027" default="0"/>
-        <setting id='enable_captions' type ="bool" label="30026" default="0"/>
-        
-	<setting type="sep" />
-	<setting id="perpage" type="enum" label="30005" values="25|50|100|250|500|1000|2000" default="3"/>
-	<setting id="popperpage" type="enum" label="30007" values="25|50|100|250|500|1000|2000" default="2"/>
-	<setting id="allperpage" type="enum" label="30008" values="25|50|100|250|500|1000|2000" default="4"/>
-	<setting id="searchperpage" type="enum" label="30009" values="25|50|100|250|500|1000|2000" default="2"/>
+	<!-- General -->
+	<category label="30101">
+		<setting type="sep" />
+        	<setting id='enable_captions' type ="bool" label="30026" default="false"/>
+        	<setting type="sep" />
+		<setting id="perpage" type="enum" label="30005" values="25|50|100|250|500|1000|2000" default="3"/>
+		<setting id="popperpage" type="enum" label="30007" values="25|50|100|250|500|1000|2000" default="2"/>
+		<setting id="allperpage" type="enum" label="30008" values="25|50|100|250|500|1000|2000" default="4"/>
+		<setting id="searchperpage" type="enum" label="30009" values="25|50|100|250|500|1000|2000" default="2"/>
+        	<setting type="sep" />
+	</category>
 
-	<!--login-->
-	<setting type="sep" />
-	<setting id='enable_plus' type ="bool" label="30006" default="0"/>
-	<setting id='enable_login' type ="bool" label="30003" default="0"/>
-	<setting type="sep" />
-	<setting id="login_name" type="text" label="30001" default=""/>
-	<setting id="login_pass" type="text" label="30002" enable="!eq(-1,)" option="hidden" default=""/>
-	<setting type="sep" />
+	<!-- Hulu+ Login -->
+	<category label="30102">
+		<setting type="sep" />
+		<setting id='enable_plus' type ="bool" label="30006" default="true"/>
+		<setting id='enable_login' type ="bool" label="30003" default="false"/>
+		<setting type="sep" />
+		<setting id="login_name" type="text" label="30001" default=""/>
+		<setting id="login_pass" type="text" label="30002" enable="!eq(-1,)" option="hidden" default=""/>
+		<setting type="sep" />
+	</category>
 
+
+	<!-- Advanced -->
+	<category label="30103">
+		<setting type="sep" />
+		<setting id="quality" type="enum" lvalues="30015|30023|30024|30025|30016|30017|30018|30020|30021|30022" label="30004" default="1"/>
+		<setting id="defaultcdn" type="enum" lvalues="30028|30029|30030" label="30027" default="1"/>
+		<setting id="swfverify" type ="bool" label="30031" default="true"/>
+		<setting type="sep" />		
+	</category>
 </settings>

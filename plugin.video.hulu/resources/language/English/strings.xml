@@ -5,7 +5,7 @@
 	<string id="30002">Hulu Password</string>
 	<string id="30003">Enable Login</string>
 
-	<string id="30004">Quality</string>
+	<string id="30004">Quality Selection</string>
 	<string id="30015">Ask</string>
 	<string id="30023">720p 3500K</string>
 	<string id="30024">720p 2500K</string>
@@ -29,4 +29,9 @@
 	<string id="30028">level3</string>
 	<string id="30029">limelight</string>
 	<string id="30030">akamai</string>
+	<string id="30031">SWF Verify</string>
+
+	<string id="30101">General</string>
+	<string id="30102">Hulu+ Login</string>
+	<string id="30103">Advanced</string>
 </strings>

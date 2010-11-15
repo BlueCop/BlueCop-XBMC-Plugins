@@ -324,8 +324,11 @@ class Main:
             print "playPath -- > " + stream
 
             #define item
-            SWFPlayer = 'http://www.hulu.com/site-player/72770/playback.swf?cb=3.0.1.72770'
-            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " swfvfy=true"
+            SWFPlayer = 'http://www.hulu.com/site-player/72770/playback.swf'
+            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer
+            if (common.settings['swfverify'] == 'true'):
+                newUrl += " swfvfy=true"
+            
             item = xbmcgui.ListItem(path=newUrl)
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 

@@ -3,7 +3,8 @@ import os,datetime
 from BeautifulSoup import BeautifulStoneSoup
 pluginhandle = int(sys.argv[1])
 
-getCollections = 'http://www.tbs.com/video/navigation/getCollections.jsp?oid=185669'
+getCollections = 'http://www.tbs.com/video/navigation/getCollections.jsp'
+getCollectionById = 'http://www.tbs.com/video/navigation/getCollectionById/'
 
 ################################ Common
 def getURL( url ):
@@ -51,85 +52,64 @@ def addDir(name,url,mode,iconimage='',plot=''):
         return ok
 
 ################################ Root listing
-def ROOT():
+def ROOT(): # No mode - Root Listing
         #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        url = getCollections
+        url = getCollections + '?oid=185669'
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         for collection in collections:
                 cid = collection['id']
                 name = collection.find('name').string
-                if name == 'feature - not show in nav' or name == 'shows' or name == 'exclusives':
+                if name == 'feature - not show in nav':
                         continue
-                else:
-                        SHOWS(name.title(), cid)
-                #mode = 1 #SHOWS() Mode
-                #addDir(name.title(),cid,mode)
-        #xbmcplugin.endOfDirectory(pluginhandle)
+                mode = 1 #SHOWS() Mode
+                addDir(name.title(),cid,mode)
+        xbmcplugin.endOfDirectory(pluginhandle)
 
-def SHOWS(name, cid):
-        xbmcplugin.setContent(pluginhandle, 'shows')
+def LISTS(name, cid): # Mode 1 - Collections lists
+        #xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        if name == 'Full Episodes':
-            mode = 3 #EPISODE() Mode
-            url = getCollections
-            html=getURL(url)
-            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            collections = tree.findAll('collection')
-            for collection in collections:
-                    if collection['id'] == cid:
-                            subcollections = collection.findAll('subcollection')
-                            for subcollection in subcollections:
-                                    scid = subcollection['id']
-                                    name = subcollection.find('name').string.title()
-                                    addDir(name,scid,mode)
-        else:
-            mode = 2 #EPISODE() Mode
-            url = getCollections
-            html=getURL(url)
-            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            collections = tree.findAll('collection')
-            for collection in collections:
-                    if collection['id'] == cid:
-                            subcollections = collection.findAll('subcollection',recursive=False)
-                            for subcollection in subcollections:
-                                    scid = subcollection['id']
-                                    name = subcollection.find('name').string.title()
-                                    addDir(name,scid,mode)
-        xbmcplugin.endOfDirectory(pluginhandle)  
-
-def SHOW(scid):
-        xbmcplugin.setContent(pluginhandle, 'shows')
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        url = getCollections
+        url = getCollections + '?oid=' + cid
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         for collection in collections:
-                subcollections = collection.findAll('subcollection')
-                for subcollection in subcollections:
-                        if subcollection['id'] == scid:
-                                subsubcollections = subcollection.findAll('subcollection',recursive=False)
-                                for subsubcollection in subsubcollections:
-                                        sscid = subsubcollection['id']
-                                        name = subsubcollection.find('name').string
-                                        mode = 3 #EPISODE() Mode
-                                        addDir(name,sscid,mode)
+                cid = collection['id']
+                name = collection.find('name').string
+                mode = 2
+                addDir(name,cid,mode)
+        xbmcplugin.endOfDirectory(pluginhandle)  
+
+def SHOW(cid): # Mode 2 - SubCollections lists
+        xbmcplugin.setContent(pluginhandle, 'shows')
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
+        url = getCollections + '?oid=' + cid
+        html=getURL(url)
+        if '<collections total_collections="0">' in html:
+            EPISODE('', cid)
+            return
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        collections = tree.findAll('collection')
+        for collection in collections:
+                cid = collection['id']
+                name = collection.find('name').string
+                mode = 3
+                addDir(name,cid,mode)
         xbmcplugin.endOfDirectory(pluginhandle)
         
 def EPISODE(name, cid):
         showname = name
         xbmcplugin.setContent(pluginhandle, 'episodes')
-        url = 'http://www.tbs.com/video/navigation/getCollectionById/?oid='+cid
+        url = getCollectionById + '?oid=' + cid
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         episodes = tree.findAll('episode')
         for episode in episodes:
                 episodeId = episode['id']
-                name = episode.find('title').string
-                thumbnail = episode.find('thumbnailurl').string
-                plot = episode.find('description').string
+                name = episode.find('title').string.encode( "utf-8" )
+                thumbnail = episode.find('thumbnailurl').string.encode( "utf-8" )
+                plot = episode.find('description').string.encode( "utf-8" )
                 try:
                     season_episode = thumbnail.split('_')[1]
                     seasonNum = int(season_episode[:-2])
@@ -254,7 +234,7 @@ print "Name: "+str(name)
 if mode==None or url==None or len(url)<1:
         ROOT()
 elif mode==1:
-        SHOWS(name,url)
+        LISTS(name,url)
 elif mode==2:
         SHOW(url)
 elif mode==3:

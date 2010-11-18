@@ -238,7 +238,7 @@ def LISTVIDEODATE(ymdcode):
 def LISTVIDEOS(url):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         data = getURL(url)
-        playbackUrls=re.compile('<a href="http://www.thedailyshow.com/watch/(.+?)">').findall(data)
+        playbackUrls=re.compile('<a href="http://www.thedailyshow.com/watch/(.+?)".+?>').findall(data)
         thumbnails=re.compile("<img width='.+?' height='.+?' src='(.+?)'").findall(data)
         names=re.compile('<span class="title"><a href=".+?">(.+?)</a></span>').findall(data)
         descriptions=re.compile('<span class="description">(.+?)\(.+?</span>').findall(data)

@@ -2,7 +2,7 @@ import urllib,urllib2,re,xbmcplugin,xbmcgui
 import os,datetime
 import demjson
 
-DATELOOKUP = "http://www.thedailyshow.com/fragments/timeline/update?coords="
+DATELOOKUP = "http://www.thedailyshow.com/feeds/timeline/coordinates/"
 
 pluginhandle = int(sys.argv[1])
 shownail = xbmc.translatePath(os.path.join(os.getcwd().replace(';', ''),"icon.png"))
@@ -94,7 +94,7 @@ def FULLEPISODES():
         for url, week in weeks:
             data = getURL(url)
             episodes=re.compile('<span class="date"><a href="(.+?)">(.+?)</a></span>').findall(data)
-            thumbnails=re.compile('<img width=".+?" height=".+?" src="(.+?)\?width=.+?".+?/>').findall(data)
+            thumbnails=re.compile("<img width='.+?' height='.+?' src='(.+?)'.+?/>").findall(data)
             descriptions=re.compile('<span class="description">(.+?)</span>').findall(data)
             airdates=re.compile('<span class="date">Aired: (.+?)</span>').findall(data)
             epNumbers=re.compile('<span class="id">Episode (.+?)</span>').findall(data)
@@ -106,7 +106,7 @@ def FULLEPISODES():
                 listings.append(listing)
             for thumbnail in thumbnails:
                 marker = thumbnails.index(thumbnail)
-                listings[marker].append(thumbnail+'?width=400')
+                listings[marker].append(thumbnail)
             for description in descriptions:
                 marker = descriptions.index(description)
                 listings[marker].append(description)
@@ -151,7 +151,7 @@ def NEWS_TEAM():
                 names.append(name)
         for name in names:
             link = name.replace(' ','+')
-            furl = 'http://www.thedailyshow.com/fragments/search/tags/'+link+'?sort='+SORTORDER+'&page=1'
+            furl = 'http://www.thedailyshow.com/feeds/search?keywords=&tags='+link+'&sortOrder=desc&sortBy='+SORTORDER+'&page=1'
             addDir(name,furl,7)
         xbmcplugin.endOfDirectory(pluginhandle)
 
@@ -161,7 +161,7 @@ def GUESTS():
         data = getURL(gurl)
         cats=re.compile('<option value="(.+?)">(.+?)</option>').findall(data)
         for link,name in cats:
-            furl = 'http://www.thedailyshow.com/fragments/search/box/guests/'+link+'?page=1'
+            furl = 'http://www.thedailyshow.com/feeds/search?guestCategory='+link+'&sortOrder=desc&sortBy='+SORTORDER+'&page=1'
             addDir(name,furl,7)
         xbmcplugin.endOfDirectory(pluginhandle)
 
@@ -174,7 +174,7 @@ def SEGMENTS():
                   ('Back in Black','Back+in+Black')
                   ]
         for name, tag in segments:
-                url = 'http://www.thedailyshow.com/fragments/search/tags/'+tag+'?sort='+SORTORDER+'&page=1'
+                url = 'http://www.thedailyshow.com/feeds/search?keywords=&tags='+link+'&sortOrder=desc&sortBy='+SORTORDER+'&page=1'
                 addDir(name,url,7)
         xbmcplugin.endOfDirectory(pluginhandle)
 
@@ -228,7 +228,7 @@ def LISTVIDEODATE(ymdcode):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         url = DATELOOKUP+ymdcode
         items = demjson.decode(getURL(url))
-        dataurl = items['data_url']
+        dataurl = items['feedURL']
         LISTVIDEOS(dataurl)
         xbmcplugin.endOfDirectory(pluginhandle)
         
@@ -239,7 +239,7 @@ def LISTVIDEOS(url):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         data = getURL(url)
         playbackUrls=re.compile('<a href="http://www.thedailyshow.com/watch/(.+?)">').findall(data)
-        thumbnails=re.compile('<img src="(.+?)?width=.+?"').findall(data)
+        thumbnails=re.compile("<img width='.+?' height='.+?' src='(.+?)'").findall(data)
         names=re.compile('<span class="title"><a href=".+?">(.+?)</a></span>').findall(data)
         descriptions=re.compile('<span class="description">(.+?)\(.+?</span>').findall(data)
         durations=re.compile('<span class="description">.+?\((.+?)</span>').findall(data)
@@ -248,7 +248,7 @@ def LISTVIDEOS(url):
         for pb in playbackUrls:
                 url = "http://www.thedailyshow.com/watch/"+pb
                 marker = playbackUrls.index(pb)
-                thumbnail = thumbnails[marker] + '?width=400'
+                thumbnail = thumbnails[marker]
                 fname = names[marker]
                 description = descriptions[marker]
                 duration = durations[marker].replace(')','')

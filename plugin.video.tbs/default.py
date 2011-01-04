@@ -79,6 +79,8 @@ def LISTS(name, cid): # Mode 1 - Collections lists
                 name = collection.find('name').string
                 mode = 2
                 addDir(name,cid,mode)
+        if name == 'Full Episodes':
+                addDir('Conan','233111',2)
         xbmcplugin.endOfDirectory(pluginhandle)  
 
 def SHOW(cid): # Mode 2 - SubCollections lists

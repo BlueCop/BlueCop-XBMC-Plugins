@@ -69,6 +69,8 @@ def ROOT(): # No mode - Root Listing
 
 def LISTS(name, cid): # Mode 1 - Collections lists
         #xbmcplugin.setContent(pluginhandle, 'shows')
+        if name == 'Full Episodes':
+                addDir('Conan','233111',2)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         url = getCollections + '?oid=' + cid
         html=getURL(url)
@@ -79,8 +81,6 @@ def LISTS(name, cid): # Mode 1 - Collections lists
                 name = collection.find('name').string
                 mode = 2
                 addDir(name,cid,mode)
-        if name == 'Full Episodes':
-                addDir('Conan','233111',2)
         xbmcplugin.endOfDirectory(pluginhandle)  
 
 def SHOW(cid): # Mode 2 - SubCollections lists

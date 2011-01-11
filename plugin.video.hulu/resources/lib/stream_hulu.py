@@ -251,7 +251,7 @@ class Main:
             smilSoup=BeautifulStoneSoup(tmp, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
             print smilSoup.prettify()
         except:
-            xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retriving or decrypting the SMIL file.')
+            xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retrieving or decrypting the SMIL file.')
             return
         
         #getRTMP

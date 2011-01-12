@@ -9,6 +9,8 @@ import md5
 import base64
 import math
 import os
+import hmac
+import operator
 from array import array
 from aes import AES
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
@@ -67,6 +69,22 @@ class Main:
             v2 = ecb.decrypt(tmp)
             if (re.match("[0-9A-Za-z_-]{32}", v2)):
                 return v2
+
+    def content_sig(self, pid):
+        hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'
+        parameters = {'video_id' : pid,
+                      'v' : '850037518',
+                      'ts' : '1294866343',
+                      'np' : '1',
+                      'vp' : '1',
+                      'pp' : 'hulu',
+                      'dp_id' : 'hulu'}
+        sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
+        data = ''
+        for item1, item2 in sorted_parameters:
+            data += item1 + item2
+        sig = hmac.new(hmac_key, data)
+        return sig.hexdigest()
 
     def pid_auth(self, pid):
         m=md5.new()
@@ -239,12 +257,13 @@ class Main:
 
         #get closed captions/subtitles
         print common.settings['enable_captions']
-        if (common.settings['enable_captions'] == 'true'):
-            self.checkCaptions(pid)
+        #if (common.settings['enable_captions'] == 'true'):
+        #    self.checkCaptions(pid)
 
         #getSMIL
         try:
-            smilURL = "http://s.hulu.com/select.ashx?pid=" + pid + "&auth=" + self.pid_auth(pid) + "&v=713434170&np=1&pp=hulu&dp_id=hulu&cb=499"
+            #smilURL = "http://s.hulu.com/select.ashx?pid=" + pid + "&auth=" + self.pid_auth(pid) + "&v=713434170&np=1&pp=hulu&dp_id=hulu&cb=499"
+            smilURL = 'http://s.hulu.com/select?video_id=' + pid + '&v=850037518&ts=1294866343&np=1&vp=1&pp=hulu&dp_id=hulu&&bcs=' + self.content_sig(pid)
             print 'HULU --> SMILURL: ' + smilURL
             smilXML=common.getHTML(smilURL)
             tmp=self.decrypt_SMIL(smilXML)

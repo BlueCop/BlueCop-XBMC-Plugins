@@ -223,7 +223,7 @@ class Main:
                 elif dtotal_count == 0:
                     continue
             elif isVideo == True:
-                pid= item.find('pid').string
+                pid= item.find('content_id').string
                 url=pid
                 #URL of video
                 #url="http://www.hulu.com/watch/"+videoid

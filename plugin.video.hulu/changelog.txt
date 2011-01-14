@@ -1,3 +1,7 @@
+[B]Version 2.7.2[/B]
+
+- Fix for hulu search
+
 [B]Version 2.7.1[/B]
 
 - Update for Hulu site changes

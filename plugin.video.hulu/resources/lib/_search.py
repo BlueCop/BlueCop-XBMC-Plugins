@@ -49,7 +49,7 @@ class Main:
             #display=item.find('title').string.encode( "utf-8" )
             display=item.find('title').string.encode('utf-8')
             try:
-                url= item.find('pid').string
+                url= item.find('content-id').string
                 offsite= 'false'
                 source_site= 'Hulu'
             except:

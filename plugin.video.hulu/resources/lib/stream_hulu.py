@@ -263,7 +263,7 @@ class Main:
         #getSMIL
         try:
             #smilURL = "http://s.hulu.com/select.ashx?pid=" + pid + "&auth=" + self.pid_auth(pid) + "&v=713434170&np=1&pp=hulu&dp_id=hulu&cb=499"
-            smilURL = 'http://s.hulu.com/select?video_id=' + pid + '&v=850037518&ts=1294866343&np=1&vp=1&pp=hulu&dp_id=hulu&&bcs=' + self.content_sig(pid)
+            smilURL = 'http://s.hulu.com/select?video_id=' + pid + '&v=850037518&ts=1294866343&np=1&vp=1&pp=hulu&dp_id=hulu&bcs=' + self.content_sig(pid)
             print 'HULU --> SMILURL: ' + smilURL
             smilXML=common.getHTML(smilURL)
             tmp=self.decrypt_SMIL(smilXML)

@@ -1,10 +1,12 @@
 import xbmc
 import xbmcplugin
-from xbmcgui import Dialog
+import xbmcgui
 
 import common
 import os
 import sys
+
+from BeautifulSoup import BeautifulSoup
 
 pluginhandle = int (sys.argv[1])
 
@@ -15,70 +17,15 @@ class Main:
 
    
     def addMainHomeItems( self ):
-        namecount = 0
-        if (xbmcplugin.getSetting(pluginhandle,'recent') == '0') or (xbmcplugin.getSetting(pluginhandle,'recent') == '2'):
-            namecount += 1
-            common.addDirectory(str(namecount) + ". Latest Videos",
-                                common.ALL_RECENT_URL,
-                                "Latest",
-                                xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                                xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                                plot = "Latest Videos Added to CBS.com")
-        if (xbmcplugin.getSetting(pluginhandle,'popular') == '0') or (xbmcplugin.getSetting(pluginhandle,'popular') == '2'):
-            namecount += 1
-            common.addDirectory(str(namecount) + ". Most Popular",
-                                common.ALL_POPULAR_URL,
-                                "Popular",
-                                xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                                xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                                plot = "Most Popular Episodes and Clips from CBS.com")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". All Shows",
-                            common.ALL_SHOWS_URL,
-                            "Shows",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". Primetime",
-                            common.ALL_SHOWS_URL,
-                            "ShowsPrimetime",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". Daytime",
-                            common.ALL_SHOWS_URL,
-                            "ShowsDaytime",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". Late Night",
-                            common.ALL_SHOWS_URL,
-                            "ShowsLate",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". TV Classics",
-                            common.ALL_SHOWS_URL,
-                            "ShowsClassics",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        namecount += 1
-        common.addDirectory(str(namecount) + ". Specials",
-                            common.ALL_SHOWS_URL,
-                            "ShowsSpecials",
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png")),
-                            plot = "")
-        if (xbmcplugin.getSetting(pluginhandle,'hdcat') == 'true'):
-            namecount += 1
-            common.addDirectory(str(namecount) + ". HD Videos",
-                                common.HDVIDEOS_URL,
-                                "HD",
-                                xbmc.translatePath(os.path.join(common.imagepath,"hd_icon.png")),
-                                xbmc.translatePath(os.path.join(common.imagepath,"hd_icon.png")),
-                                plot = "")
+        tvicon = xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png"))
+        #Video lists
+        common.addDirectory('Most Popular','popular','Videos')
+        common.addDirectory('Latest Videos','latest','Videos')
+        common.addDirectory('Full Episodes','fullep','Videos')
+        #Show types
+        data = common.getHTML(common.BASE_URL)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        categories=tree.findAll(attrs={'class' : 'head'})
+        for item in categories:
+            name = item.string
+            common.addDirectory(name,mode="Shows")

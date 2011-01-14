@@ -1,31 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-	<string id="30000">Use DVD Player instead of regular player</string>
-	<string id="30001">Ask</string>
-	<string id="30002">480p</string>
-	<string id="30003">720p</string>
-	<string id="30004">Default HD Quality</string>
-	<string id="30030">1080p</string>
-
-	<string id="30005">Ask</string>
-	<string id="30006">Play</string>
-	<string id="30007">Download</string>
-	<string id="30008">Play and Download</string>
-	<string id="30009">Download Setting (http only)</string>
-	<string id="30010">Download path</string>
-
-	<string id="30011">High Resolution Thumbnails</string>
-
-	<string id="30022">List 'HD Videos' Category</string>
-	<string id="30013">List 'Latest' Category</string>
-	<string id="30014">List 'Popular' Category</string>
-	<string id="30015">Shows and Home</string>
-	<string id="30016">Shows Only</string>
-	<string id="30017">Home Only</string>
-	<string id="30018">Disabled</string>
-	<string id="30019">List 'Editor's Picks' Category (Shows Only)</string>
-	<string id="30020">List 'Clips' Category (Shows Only)</string>
-	<string id="30021">List 'All Videos' Category (Shows Only)</string>
+	<string id="30001">Default Quality</string>
+	<string id="30002">384x216@332kbps</string>
+	<string id="30003">640x360@464kbps</string>
+	<string id="30004">640x360@764kbps</string>
+	<string id="30005">640x360@1264kbps</string>
+	<string id="30006">1280x720@2064kbps</string>
 
 	<string id="30041">U.S. Proxy port</string>
 	<string id="30040">U.S. Proxy IP</string>

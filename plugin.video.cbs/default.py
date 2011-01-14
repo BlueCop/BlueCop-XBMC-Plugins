@@ -16,7 +16,7 @@ import resources.lib.common as common
 __plugin__ = "CBS"
 __authors__ = "BlueCop"
 __credits__ = "hulu and fancast plugins"
-__version__ = "1.2"
+__version__ = "1.3.0"
 
 
 print "\n\n\n\n\n\n\nstart of CBS plugin\n\n\n\n\n\n"
@@ -34,32 +34,9 @@ def modes( ):
         elif common.args.mode.startswith('Shows'):
             import resources.lib._shows as shows
             shows.Main()
-        elif common.args.mode.startswith('All'):
+        elif common.args.mode.startswith('Videos'):
             import resources.lib._videolist as videolist
             videolist.Main()
-        elif common.args.mode.startswith('Latest'):
-            import resources.lib._videolist as videolist
-            videolist.Main()
-        elif common.args.mode.startswith('Popular'):
-            import resources.lib._videolist as videolist
-            videolist.Main()
-        elif common.args.mode.startswith('Editorial'):
-            import resources.lib._videolist as videolist
-            videolist.Main()                         
-        elif common.args.mode.startswith('Clips'):
-            import resources.lib._videolist as videolist
-            videolist.Main()
-        elif common.args.mode.startswith('List'):
-            import resources.lib._videolist as videolist
-            videolist.Main()
-        elif common.args.mode.startswith('Seasons'):
-            import resources.lib._videolist as videolist
-            videolist.Main()
-        elif common.args.mode.startswith('HD'):
-            #import resources.lib._hd as videolist
-            #videolist.Main()
-            import resources.lib._hd as hd
-            hd.Main()
         else:
             import xbmcgui
             xbmcgui.Dialog().ok('common.args.mode',common.args.mode)

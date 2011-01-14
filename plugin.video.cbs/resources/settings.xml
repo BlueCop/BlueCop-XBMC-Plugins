@@ -1,20 +1,5 @@
 <settings>
-   <setting id="dvdplayer" type="bool" label="30000" default="true"/>
-   <setting id="largethumbs" type ="bool" label="30011" default="true"/>
-   <setting id="hdcat" type ="bool" label="30022" default="true"/>
-   <!-- 0.Ask 1. 480p 2. 720p -->
-   <setting id="hdquality" type="enum" lvalues="30001|30002|30003|30030" label="30004" default="0"/>
-   <!-- 0.Shows and All 1.Shows Only 2. All Only 3.Disabled-->
-   <setting id="recent" type="enum" lvalues="30015|30016|30017|30018" label="30013" default="0"/>
-   <!-- 0.Shows and All 1.Shows Only 2. All Only 3.Disabled-->
-   <setting id="popular" type="enum" lvalues="30015|30016|30017|30018" label="30014" default="0"/>
-   <setting id="editorial" type ="bool" label="30019" default="true"/>
-   <setting id="clips" type ="bool" label="30020" default="true"/>
-   <setting id="all" type ="bool" label="30021" default="false"/>
-   <!-- 0.Ask 1.Play 2.  Download 3. Download and Play -->
-   <setting id="download" type="enum" lvalues="30005|30006|30007|30008" label="30009" default="1"/>
-   <setting id="download_path" type="folder" source="video" label="30010"  option="writeable" default="E:\"/>
-
+   <setting id="quality" type="enum" lvalues="30006|30005|30004|30003|30002" label="30001" default="0"/>
    <setting id="us_proxy_enable" type="bool" label="30039" default="false"/>
    <setting id="us_proxy" type="text" label="30040" default="208.100.40.34"/>
    <setting id="us_proxy_port" type="text" label="30041" default="80"/>

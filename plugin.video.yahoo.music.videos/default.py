@@ -1,11 +1,12 @@
 __plugin__ = "Yahoo Music Videos Plugin"
 __authors__ = "BlueCop"
 __credits__ = ""
-__version__ = "0.1"
+__version__ = "0.0.3"
 
 import urllib, urllib2
 import os, re, sys, md5, string
 import xbmc, xbmcgui, xbmcplugin
+from BeautifulSoup import BeautifulSoup
 
 
 pluginhandle = int (sys.argv[1])
@@ -41,16 +42,21 @@ def listCategories():
         addDir('Top Videos', 'artists', 1)
         addDir('New Videos', 'artists', 2)
         addDir('Reccomended Videos', 'artists', 3)
+        addDir('Search', 'artists', 5)
+        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
         return
 
-def addVideos(datatype, results, start):
+def addVideos(datatype, results, start, query = ''):
         url = 'http://new.music.yahoo.com/playlistMgrGetContents?datatype='+datatype+'&results='+results+'&start='+start
+        if datatype == 'search':
+                url += '&query='+query
         data=getURL(url)
         videos=re.compile('<div class="ymusic_mediaInfo" img73=".+?" img130="(.+?)" aname="(.+?)" aid="(.+?)" vname="(.+?)" vid="(.+?)">').findall(data)
         for thumbnail, artistName, artistID, videoName, videoID in videos:
                 thumbnail = thumbnail.replace('size=146x88','size=438x264')
+                artistName = unicode(BeautifulSoup(artistName,convertEntities=BeautifulSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
+                videoName = unicode(BeautifulSoup(videoName,convertEntities=BeautifulSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
                 addLink(artistName+' - '+videoName, videoID, 10, thumbnail)       
-
 
 def topVideos():
         addVideos('popular', '100', '1')
@@ -58,29 +64,27 @@ def topVideos():
         addVideos('popular', '100', '201')
         addVideos('popular', '100', '301')
         addVideos('popular', '100', '401')
+        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 def newVideos():
         addVideos('new', '100', '1')
         addVideos('new', '100', '101')
         addVideos('new', '100', '201')
         addVideos('new', '100', '301')
         addVideos('new', '100', '401')
+        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
         
 def reccomendedVideos():
         addVideos('recommended', '100', '1')
         addVideos('recommended', '100', '101')
+        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 
 
-def listSearch(searchtype):
+def Search():
         keyb = xbmc.Keyboard('', 'Search')
         keyb.doModal()
         if (keyb.isConfirmed()):
-                search = keyb.getText()
-                if searchtype == 'searchArtist':
-                        artists = mtvn.artistSearch(search)
-                        ProcessResponse(artists,3)
-                elif searchtype == 'searchVideo':
-                        videos = mtvn.videoSearch(search)
-                        ProcessResponse(videos,4)
+                search = urllib.quote_plus(keyb.getText())
+                addVideos('search', '100', '1', search)
                 xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
         return
                 
@@ -165,25 +169,24 @@ print "\n\n\n\n\n\n\nstart of MTVN plugin\n\n\n\n\n\n"
 if mode==None or url==None or len(url)<1:
         print ""
         listCategories()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 
 elif mode==1:
         print ""+url
         topVideos()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
+
 elif mode==2:
         print ""+url
         newVideos()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
+
 elif mode==3:
         print ""+url
         reccomendedVideos()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]),updateListing=False,cacheToDisc=True)
 
-#SEARCH ARTISTS or VIDEOS
+
+#SEARCH 
 elif mode==5:
         print ""+url
-        listSearch(url)
+        Search()
 
 #Play Video
 elif mode==10:

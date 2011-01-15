@@ -1,5 +1,9 @@
 [B]Version 2.7.2[/B]
 
+- Fix for subtitles
+
+[B]Version 2.7.2[/B]
+
 - Fix for hulu search
 
 [B]Version 2.7.1[/B]

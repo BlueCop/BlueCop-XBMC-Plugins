@@ -217,7 +217,8 @@ class Main:
         return True
 
     def checkCaptions(self, pid):
-        html = common.getHTML('http://www.hulu.com/videos/transcripts/'+pid+'.xml')
+        url = 'http://www.hulu.com/captions?content_id='+pid
+        html = common.getHTML(url)
         capSoup = BeautifulStoneSoup(html)
         hasSubs = capSoup.find('en')
         if(hasSubs):
@@ -257,8 +258,8 @@ class Main:
 
         #get closed captions/subtitles
         print common.settings['enable_captions']
-        #if (common.settings['enable_captions'] == 'true'):
-        #    self.checkCaptions(pid)
+        if (common.settings['enable_captions'] == 'true'):
+            self.checkCaptions(pid)
 
         #getSMIL
         try:

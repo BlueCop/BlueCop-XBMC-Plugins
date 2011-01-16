@@ -19,10 +19,14 @@ class Main:
         page = common.args.page
         series = common.args.series
         if s == 'showlist':
-            common.addDirectory('All Videos'    ,'all'      ,'Videos'   ,series)
-            common.addDirectory('Latest Videos' ,'latest'   ,'Videos'   ,series)
-            common.addDirectory('Full Episodes' ,'fullep'   ,'Videos'   ,series)
-            common.addDirectory('Clips'         ,'clips'    ,'Videos'   ,series)
+            if self.TESTPAGE('all',series) == True:
+                common.addDirectory('All Videos'    ,'all'      ,'Videos'   ,series)
+            if self.TESTPAGE('latest',series) == True:
+                common.addDirectory('Latest Videos' ,'latest'   ,'Videos'   ,series)
+            if self.TESTPAGE('fullep',series) == True:
+                common.addDirectory('Full Episodes' ,'fullep'   ,'Videos'   ,series)
+            if self.TESTPAGE('clips',series) == True:
+                common.addDirectory('Clips'         ,'clips'    ,'Videos'   ,series)
         else:
             data = common.getVIDEOS(s,series,page)
             self.ADDPAGES(data, s, series, page)
@@ -31,6 +35,14 @@ class Main:
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
         else:
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
+
+    def TESTPAGE( self, s, series ):
+        data = common.getVIDEOS(s,series,'undefined')
+        if 'No videos found' in data:
+            return False
+        else:
+            return True
+        
 
     def ADDPAGES( self, data, s, series, page ):
         do_hide     =   re.compile('do_hide\((.+?),(.+?)\);').findall(data)

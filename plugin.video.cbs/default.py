@@ -16,7 +16,7 @@ import resources.lib.common as common
 __plugin__ = "CBS"
 __authors__ = "BlueCop"
 __credits__ = "hulu and fancast plugins"
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 
 print "\n\n\n\n\n\n\nstart of CBS plugin\n\n\n\n\n\n"

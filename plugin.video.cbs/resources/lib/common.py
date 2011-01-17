@@ -32,7 +32,7 @@ imagepath = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 
 settings={}
 #settings general
-quality = ['DSI24FPS16x9-2064K', 'DSI24FPS16x9-1264K', 'DSI24FPS16x9-764K', 'DSI24FPS16x9-464K', 'DSI24FPS16x9-332K']
+quality = ['2162458', '1362458', '772426', '472458', '340426']
 selectquality = int(xbmcplugin.getSetting(pluginhandle,'quality'))
 settings['quality'] = quality[selectquality]
 

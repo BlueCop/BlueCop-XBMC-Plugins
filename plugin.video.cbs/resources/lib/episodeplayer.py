@@ -16,27 +16,20 @@ class Main:
             pid = common.args.pid
             #url containing video link
             url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
-            link=common.getHTML(url)                 
+            link=common.getHTML(url)
+            print link
             if "rtmp://" in link:
-                    stripurls = re.compile('<video src="rtmp://(.+?)" system-bitrate=".+?" width="(.+?)" height="(.+?)" profile="(.+?)"').findall(link)
-                    #if common.settings['quality'] in stripurls:
-                    #   for stripurl, w, h ,profile in stripurls:
-                    #       print profile
-                    #       print common.settings['quality']
-                    #       if common.settings['quality'] == profile:
-                    #           cleanurl = stripurl.replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').split('<break>')
-                    #           finalurl = "rtmp://" + cleanurl[0]
-                    #           if ".mp4" in cleanurl[1]:
-                    #                   playpath = 'mp4:' + cleanurl[1]
-                    #           else:
-                    #                   playpath = cleanurl[1].replace('.flv','')
-                    #           break
-                    #else:
-                    hpixels = 0
-                    for stripurl, w, h ,profile in stripurls:    
-                        pixels = int(w) * int(h)
-                        if pixels > hpixels:
-                            hpixels = pixels
+                    stripurls = re.compile('<video src="rtmp://(.+?)" system-bitrate="(.+?)" width="(.+?)" height="(.+?)" profile="(.+?)"').findall(link)
+                    #hpixels = 0
+                    hbitrate = -1
+                    sbitrate = int(common.settings['quality'])
+                    for stripurl, bitrate, w, h, profile in stripurls:    
+                        #pixels = int(w) * int(h)
+                        #if pixels > hpixels:
+                        #    hpixels = pixels
+                        bitrate = int(bitrate)
+                        if bitrate > hbitrate and bitrate < sbitrate:
+                            hbitrate = bitrate
                             cleanurl = stripurl.replace('&amp;','&').replace('&lt;','<').replace('&gt;','>').split('<break>')
                             finalurl = "rtmp://" + cleanurl[0]
                             if ".mp4" in cleanurl[1]:

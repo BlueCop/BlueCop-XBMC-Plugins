@@ -16,7 +16,10 @@ class Main:
             pid = common.args.pid
             #url containing video link
             url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
-            link=common.getHTML(url)
+            if (common.settings['proxy'] == 'true'):
+                link=common.getHTML(url,True)
+            else:
+                link=common.getHTML(url)
             print link
             if "rtmp://" in link:
                     stripurls = re.compile('<video src="rtmp://(.+?)" system-bitrate="(.+?)" width="(.+?)" height="(.+?)" profile="(.+?)"').findall(link)

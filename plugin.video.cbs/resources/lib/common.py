@@ -35,6 +35,7 @@ settings={}
 quality = ['2162458', '1362458', '772426', '472458', '340426']
 selectquality = int(xbmcplugin.getSetting(pluginhandle,'quality'))
 settings['quality'] = quality[selectquality]
+settings['proxy'] = xbmcplugin.getSetting(pluginhandle,'us_proxy_enable')
 
 
 
@@ -58,15 +59,7 @@ def addDirectory(name, url='', mode='', series='', page='undefined', updatelist=
 
 def getVIDEOS( s , series_title, b):
     try:
-        url = 'http://www.cbs.com/video/_process.php'
-        us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
-
-        if (xbmcplugin.getSetting(pluginhandle,'us_proxy_enable') == 'true'):
-                 print 'Using proxy: ' + us_proxy
-                 proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-                 opener = urllib2.build_opener(proxy_handler)
-                 urllib2.install_opener(opener)
-                 
+        url = 'http://www.cbs.com/video/_process.php'     
         print 'CBS --> common :: postHTTP :: url = '+url
         values = {'_b':b,
                   '_s':s,
@@ -83,15 +76,14 @@ def getVIDEOS( s , series_title, b):
     else:
         return link
 
-def getHTML( url ):
+def getHTML( url, enableproxy = False ):
     try:
-        us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
-
-        if (xbmcplugin.getSetting(pluginhandle,'us_proxy_enable') == 'true'):
-                 print 'Using proxy: ' + us_proxy
-                 proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-                 opener = urllib2.build_opener(proxy_handler)
-                 urllib2.install_opener(opener)
+        if enableproxy == True:
+            us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
+            print 'Using proxy: ' + us_proxy
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            urllib2.install_opener(opener)
 
         print 'CBS --> common :: getHTML :: url = '+url
         req = urllib2.Request(url)

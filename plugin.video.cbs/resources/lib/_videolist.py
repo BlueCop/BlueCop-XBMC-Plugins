@@ -19,14 +19,14 @@ class Main:
         page = common.args.page
         series = common.args.series
         if s == 'showlist':
-            if self.TESTPAGE('all',series) == True:
-                common.addDirectory('All Videos'    ,'all'      ,'Videos'   ,series)
-            if self.TESTPAGE('latest',series) == True:
-                common.addDirectory('Latest Videos' ,'latest'   ,'Videos'   ,series)
-            if self.TESTPAGE('fullep',series) == True:
+            if self.TESTPAGE('fullep'   ,series)    == True:                
                 common.addDirectory('Full Episodes' ,'fullep'   ,'Videos'   ,series)
-            if self.TESTPAGE('clips',series) == True:
-                common.addDirectory('Clips'         ,'clips'    ,'Videos'   ,series)
+            if self.TESTPAGE('latest'   ,series)    == True:
+                common.addDirectory('Latest Videos' ,'latest'   ,'Videos'   ,series)
+            if self.TESTPAGE('clips'    ,series)    == True:
+                common.addDirectory('Clips'         ,'clips'    ,'Videos'   ,series) 
+            if self.TESTPAGE('all'      ,series)    == True:
+                common.addDirectory('All Videos'    ,'all'      ,'Videos'   ,series)
         else:
             data = common.getVIDEOS(s,series,page)
             self.ADDPAGES(data, s, series, page)

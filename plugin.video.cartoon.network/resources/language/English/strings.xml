@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+    <string id="30000">Use DVD Player instead of regular player</string>
+
+	<string id="30005">Ask</string>
+	<string id="30006">Play</string>
+	<string id="30007">Download</string>
+	<string id="30008">Play and Download</string>
+	<string id="30009">Download Setting (http only)</string>
+    <string id="30010">Download path</string>
+
+	<string id="30012">Action Category</string>
+	<string id="30013">Comedy Category</string>
+	<string id="30014">Extras and Other Category</string>
+
+    <string id="30015">Directory Category</string>
+    <string id="30016">Flatten Category</string>
+    <string id="30017">Disable Category</string>
+</strings>

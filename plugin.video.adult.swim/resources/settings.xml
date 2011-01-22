@@ -1,10 +1,5 @@
 <settings>
-   <!-- <setting id="dvdplayer" type="bool" label="30000" default="true"/> -->
-   <!-- 0.Directory Category 1. Flatten Category 2.Disable Category-->
-   <setting id="action" type="enum" lvalues="30015|30016|30017" label="30012" default="0"/>
+   <!--<setting id="action" type="enum" lvalues="30015|30016|30017" label="30012" default="0"/>
    <setting id="comedy" type="enum" lvalues="30015|30016|30017" label="30013" default="0"/>
-   <setting id="other" type="enum" lvalues="30015|30016|30017" label="30014" default="0"/>
-   <!--0.Ask 1.Play  2. Download 3. Play and Download   -->
-   <!-- <setting id="download" type="enum" lvalues="30005|30006|30007|30008" label="30009" default="0"/>
-   <setting id="download_path" type="folder" source="video" label="30010"  option="writeable" default="E:\"/> -->
+   <setting id="other" type="enum" lvalues="30015|30016|30017" label="30014" default="0"/> -->
 </settings>

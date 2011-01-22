@@ -1,214 +1,142 @@
-'''
-        [adult swim] v0.2 for XBMC
-                
-'''
-
-__plugin__ = "[adult swim]"
-__author__ = "thecheese,BlueCop(XBMC fixes and updated)"
-__url__ = ""
-__svn__ = ""
+__plugin__ = "adult swim"
+__author__ = "BlueCop,thecheese(orginal boxee version)"
 __version__ = "0.3"
 
 import urllib, urllib2, re, md5
 import string, os, time, datetime
 import xbmc, xbmcgui, xbmcplugin
-from adultswim_api import *
-
-
-#grab to root directory and assign the image forlder a var
-rootDir = os.getcwd()
-if rootDir[-1] == ';':rootDir = rootDir[0:-1]
-imageDir = os.path.join(rootDir, 'resources', 'thumbnails') + '/'
-resourceDir = os.path.join(rootDir, 'resources')
+from BeautifulSoup import BeautifulStoneSoup
 
 pluginhandle = int(sys.argv[1])
 
+CONFIGURATION_URL = 'http://asfix.adultswim.com/staged/configuration.xml'
+getAllEpisodes = 'http://asfix.adultswim.com/asfix-svc/episodeSearch/getAllEpisodes'
+
+
 #lists initial categories and caches them
 def listCategories():
-        xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        aswim = AdultSwim()
-        categories = aswim.getCategories()
+        data = getURL(CONFIGURATION_URL)
+        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        categories = tree.find('logiccategories').findAll('category')
         for category in categories:
-                if category['name'] == 'Action' and (xbmcplugin.getSetting(pluginhandle,'action') == '1'):
-                        shows = aswim.getShowsByCategory( category['id'] )
-                        for show in shows:
-                                addDir(show['name'], 'showTypes?id='+show['id'], 3 , 'DefaultFolder.png')          
-                elif category['name'] == 'Action' and (xbmcplugin.getSetting(pluginhandle,'action') == '0'):
-                        addDir(' '+category['name'], 'listShowsByCat?cid='+category['id'], 2 , 'DefaultFolder.png', category['description'])
-                elif category['name'] == 'Action' and (xbmcplugin.getSetting(pluginhandle,'action') == '2'):
-                        pass
-                elif category['name'] == 'Comedy' and (xbmcplugin.getSetting(pluginhandle,'comedy') == '1'):
-                        shows = aswim.getShowsByCategory( category['id'] )
-                        for show in shows:
-                                addDir(show['name'], 'showTypes?id='+show['id'], 3 , 'DefaultFolder.png')    
-                elif category['name'] == 'Comedy' and (xbmcplugin.getSetting(pluginhandle,'comedy') == '0'):
-                        addDir(' '+category['name'], 'listShowsByCat?cid='+category['id'], 2 , 'DefaultFolder.png', category['description'])
-                elif category['name'] == 'Comedy' and (xbmcplugin.getSetting(pluginhandle,'comedy') == '2'):
-                        pass
-                elif category['name'] == 'Other' and (xbmcplugin.getSetting(pluginhandle,'other') == '1'):
-                        shows = aswim.getShowsByCategory( category['id'] )
-                        for show in shows:
-                                addDir(show['name'], 'showTypes?id='+show['id'], 3 , 'DefaultFolder.png')    
-                elif category['name'] == 'Other' and (xbmcplugin.getSetting(pluginhandle,'other') == '0'):
-                        addDir(' '+category['name'], 'listShowsByCat?cid='+category['id'], 2 , 'DefaultFolder.png', category['description'])
-                elif category['name'] == 'Other' and (xbmcplugin.getSetting(pluginhandle,'other') == '2'):
-                        pass
-
-        #f = open(os.path.join(resourceDir, 'categories.xml'),'wb')
-        #f.write(response)
+                name = category['name']
+                description = category['description']
+                categoryid = category['categoryid']
+                addDir(name, categoryid, 1, description)
+                
+                
         
 #lists shows for a particular category
-def listShowsByCat(url):
+def listShowsByCat(categoryid):
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        aswim = AdultSwim()
-        params = qs2dict(url.split('?')[1])
-        shows = aswim.getShowsByCategory( params['cid'] )
-        for show in shows:
-                addDir(show['name'], 'showTypes?id='+show['id'], 3 , 'DefaultFolder.png')
-
+        data = getURL(CONFIGURATION_URL)
+        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        categories = tree.find('logiccategories').findAll('category')
+        for category in categories:
+                if categoryid == category['categoryid']:
+                        shows = category.findAll('collection')
+                        for show in shows:
+                                showid = show['id']
+                                name = show['name']
+                                addDir(name, showid, 2)
 
 #lists episodes by show id              
 def showTypes(showid):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        aswim = AdultSwim()
-        url = showid+'&filterByEpisodeType=PRE,EPI'
-        params = qs2dict(url.split('?')[1])
-        episodes = aswim.getEpisodesByShow( params['id'], params['filterByEpisodeType'] )        
-        if len(episodes) == 0:
-                url = showid+'&filterByEpisodeType=CLI'
-                params = qs2dict(url.split('?')[1])
-                episodes = aswim.getEpisodesByShow( params['id'], params['filterByEpisodeType'] )
-                for episode in episodes:
-                        name = episode['title']+' (Clip)'
-                        addLink(name,
-                                'initEpisode?ids='+episode['id'],
-                                5,
-                                episode['thumbnail'],
-                                episode['description']
-                                #episode['collectionTitle'],
-                                #episode['collectionCategoryType'],
-                                )
-                return
-
-        for episode in episodes:
-                if episode['episodeType'] <> 'CLI':
-                        name = episode['epiSeasonNumber']+'x'+episode['episodeNumber']+' - '+episode['title']
-                        addLink(name,
-                                'initEpisode?ids='+episode['id'],
-                                5,
-                                episode['thumbnail'],
-                                episode['description'])
-        
-
-        addDir(" Clips", showid+'&filterByEpisodeType=CLI', 4 , 'DefaultFolder.png', 'Clips')
-
-        #addDir(" Full Episodes", url+'&filterByEpisodeType=PRE,EPI', 4 , imageDir + 'video.png', 'Full Episodes')
+        listVideos(showid,'PRE,EPI')                
 
 
 #lists episodes by show id
-def listEpisodes(url):
-        aswim = AdultSwim()
-        params = qs2dict(url.split('?')[1])
-        episodes = aswim.getEpisodesByShow( params['id'], params['filterByEpisodeType'] )
-        
-        if len(episodes) == 0:
-                xbmcgui.Dialog().ok("[adult swim]", "No entries found.")
-                return
-
+def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sortBy='DESC', categoryName='',):
+        url = getAllEpisodes
+        url += '?limit='+limit
+        url += '&offset='+offset
+        url += '&sortByDate='+sortBy
+        url += '&categoryName='+categoryName
+        url += '&filterByEpisodeType='+filterByEpisodeType
+        url += '&filterByCollectionId='+CollectionID
+        url += '&networkName=AS'
+        data = getURL(url)
+        tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        episodes = tree.findAll('episode')
         for episode in episodes:
-                name = episode['title']+' (Clip)'
-                addLink(name,
-                        'initEpisode?ids='+episode['id'],
-                        5,
-                        episode['thumbnail'], episode['description'])
+                showtitle = episode['collectiontitle']
+                title = episode['title']
+                segids = episode.find('value').string
+                name = showtitle+' - '+title
+                addLink(name,segids,3)
+                
 
-
-def getVideoURL(id):
-        params = qs2dict(url.split('?')[1])
-        aswim = AdultSwim()
-        episodes = aswim.getEpisodesByIDs( params['ids'] )
+def getVideoURL(segids):
+        getPlaylist
+        segids= segids.split('#')
         stacked_url = 'stack://'
-        for episode in episodes:
-                for segment in episode['segments']:
-                        response = aswim.getPlaylist(segment['id'])
-                        match = re.compile('href="(.+?)"').findall(response)
-                        title = episode['collectionTitle'] + ' - ' + episode['title']
-                        stacked_url += match[0].replace(',',',,')+' , '
-        stream = 'true'#httpDownload(playlist_urls,name)
-        if stream == 'false':
-                return
+        for segid in segids:
+                video = getPlaylist(segid)
+                stacked_url += video.replace(',',',,')+' , '
         stacked_url = stacked_url[:-3]
         item = xbmcgui.ListItem(path=stacked_url)
         print stacked_url
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-        #xbmc.sleep(200)
-        #xbmc.executebuiltin('XBMC.ActivateWindow(FullscreenVideo)')
+                
+	
+def getURL( url, data=None, token=None):
+        print url
+        headers = { 
+                'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
+                'Referer':'http://www.adultswim.com/video/ASFix.swf'
+        }
+        if data:
+                data = urllib.urlencode(data)
+        if token:
+                headers['x-prefect-token'] = token
+        req = urllib2.Request(url, data, headers)
+        response = urllib2.urlopen(req)
+        data = response.read()
+        response.close()
+        return data
 
-def httpDownload( playlist_urls, name):
-        def Download(url,dest):
-                    dp = xbmcgui.DialogProgress()
-                    dp.create('Downloading','',name)
-                    urllib.urlretrieve(url,dest,lambda nb, bs, fs, url=url: _pbhook(nb,bs,fs,url,dp))
-        def _pbhook(numblocks, blocksize, filesize, url=None,dp=None):
-                    try:
-                                    percent = min((numblocks*blocksize*100)/filesize, 100)
-                                    dp.update(percent)
-                    except:
-                                    percent = 100
-                                    dp.update(percent)
-                    if dp.iscanceled():
-                                    dp.close()
-        flv_file = None
-        stream = 'false'
-        C = 0
-        if (xbmcplugin.getSetting(pluginhandle,'download') == '0'):
-                dia = xbmcgui.Dialog()
-                ret = dia.select(xbmc.getLocalizedString( 30011 ),[xbmc.getLocalizedString( 30006 ),xbmc.getLocalizedString( 30007 ),xbmc.getLocalizedString( 30008 ),xbmc.getLocalizedString( 30012 )])
-                if (ret == 0):
-                        stream = 'true'
-                elif (ret == 1):
-                        for url in playlist_urls:
-                                C = C + 1
-                                flv_file = xbmc.translatePath(os.path.join(xbmcplugin.getSetting(pluginhandle,'download_Path'), name+'-part'+str(C)+'.flv'))
-                                Download(url,flv_file)
-                elif (ret == 2):
-                        for url in playlist_urls:
-                                C = C + 1
-                                flv_file = xbmc.translatePath(os.path.join(xbmcplugin.getSetting(pluginhandle,'download_Path'), name+'-part'+str(C)+'.flv'))
-                                Download(url,flv_file)
-                        stream = 'true'
-                else:
-                        return stream
-        #Play
-        elif (xbmcplugin.getSetting(pluginhandle,'download') == '1'):
-                stream = 'true'
-        #Download
-        elif (xbmcplugin.getSetting(pluginhandle,'download') == '2'):
-                for url in playlist_urls:
-                        C = C + 1
-                        flv_file = xbmc.translatePath(os.path.join(xbmcplugin.getSetting(pluginhandle,'download_Path'), name+'-part'+str(C)+'.flv'))
-                        Download(url,flv_file)
-        #Download & Play
-        elif (xbmcplugin.getSetting(pluginhandle,'download') == '3'):
-                for url in playlist_urls:
-                        C = C + 1
-                        flv_file = xbmc.translatePath(os.path.join(xbmcplugin.getSetting(pluginhandle,'download_Path'), name+'-part'+str(C)+'.flv'))
-                        Download(url,flv_file)
-                stream = 'true'            
-        if (flv_file != None and os.path.isfile(flv_file)):
-                finalurl =str(flv_file)
-        return stream
+def getPlaylist(pid):
+        try:
+                getVideoPlaylist    = 'http://asfix.adultswim.com/asfix-svc/episodeservices/getVideoPlaylist'
+                stime = getServerTime()
+                url = getVideoPlaylist + '?id=' + pid + '&r=' + stime
+                print 'Adult Swim --> getplaylist :: url = '+url
+                token = stime + '-' + md5.new(stime + pid + '-22rE=w@k4raNA').hexdigest()
+                headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
+                           'Host': 'asfix.adultswim.com',
+                           'Referer':'http://www.adultswim.com/video/ASFix.swf',
+                           'x-prefect-token': token
+                           }
+                req = urllib2.Request(url,'',headers)    
+                response = urllib2.urlopen(req)
+                link=response.read()
+                response.close()
+        except urllib2.URLError, e:
+                print 'Error error: ', e.error
+                return False
+        else:
+                tree = BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                refs = tree.findAll('ref')
+                for ref in refs:
+                        if ref.find(attrs={'name' : 'mimeType'})['value'] == 'null':
+                                return ref['href']
+
+def getServerTime():
+        SERVER_TIME_URL  = 'http://asfix.adultswim.com/asfix-svc/services/getServerTime'
+        data = getURL( SERVER_TIME_URL )
+        tree = BeautifulStoneSoup(data)
+        return tree.find('time').string
 
 
 """
         addLink()
 """
-def addLink(name,url,mode,iconimage, plot=''):
+def addLink(name, url, mode, plot='', iconimage='DefaultVideo.png'):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-        ok=True
         liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
         if plot:
                 liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
@@ -222,7 +150,7 @@ def addLink(name,url,mode,iconimage, plot=''):
 """
         addDir()
 """
-def addDir(name,url,mode,iconimage, plot=''):
+def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png'):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
@@ -292,16 +220,12 @@ if mode==None or url==None or len(url)<1:
         print "CATEGORY INDEX : "
         listCategories()
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==2:
+elif mode==1:
         listShowsByCat(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==3:
+elif mode==2:
         showTypes(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==4:
-        listEpisodes(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-        xbmcplugin.endOfDirectory(handle=int(sys.argv[1]),cacheToDisc=True)
-elif mode==5:
+elif mode==3:
         getVideoURL(url)
 

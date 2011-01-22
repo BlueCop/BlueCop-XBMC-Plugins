@@ -122,7 +122,8 @@ def getPlaylist(pid):
                 tree = BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
                 refs = tree.findAll('ref')
                 for ref in refs:
-                        if ref.find(attrs={'name' : 'mimeType'})['value'] == 'null':
+                        value = ref.find(attrs={'name' : 'mimeType'})['value']
+                        if value == 'null' or value == 'video/x-flv':
                                 return ref['href']
 
 def getServerTime():

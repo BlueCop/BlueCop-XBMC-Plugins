@@ -43,10 +43,16 @@ def listShowsByCat(categoryid):
                                 addDir(name, showid, 2)
 
 #lists episodes by show id              
-def showTypes(showid):
+def showRoot(showid):
         xbmcplugin.setContent(pluginhandle, 'episodes')
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        addDir('Clips', showid, 3)
         listVideos(showid,'PRE,EPI')                
+
+def showClips(showid):
+        xbmcplugin.setContent(pluginhandle, 'episodes')
+        #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        listVideos(showid,'CLI','0','200')
 
 
 #lists episodes by show id
@@ -65,9 +71,53 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
         for episode in episodes:
                 showtitle = episode['collectiontitle']
                 title = episode['title']
+                episodeType = episode['episodetype']
+                try:
+                        seasonNum = int(episode['episeasonnumber'])
+                except:
+                        seasonNum = 0
+                try:
+                        episodeNum = int(episode['episodenumber'])
+                except:
+                        episodeNum = 0
+                thumbnailUrl = episode['thumbnailurl']
+                genre = episode['collectioncategorytype']
+                ranking = episode['ranking']
+                rating = episode['rating']
+                expirationDate = episode['expirationdate']
+                description = episode.find('description').contents[1].strip()
                 segids = episode.find('value').string
-                name = showtitle+' - '+title
-                addLink(name,segids,3)
+                if seasonNum == 0 or episodeNum == 0:
+                        name = title
+                        if episodeType == 'CLI':
+                                name += ' (Clip)'
+                        elif episodeType == 'PRE':
+                                name += ' (Preview)'
+                elif episodeType == 'EPI':
+                        name = str(seasonNum)+'x'+str(episodeNum)+' - '+title
+                elif episodeType == 'CLI':
+                        name = title+' (Clip from '+str(seasonNum)+'x'+str(episodeNum)+')'
+                elif episodeType == 'PRE':
+                        name = title+' (Preview for '+str(seasonNum)+'x'+str(episodeNum)+')'
+                segments = episode.findAll('segment')
+                duration = 0.00
+                for segment in segments:
+                        duration += float(segment['duration']) 
+                u=sys.argv[0]+"?url="+urllib.quote_plus(segids)+"&mode="+str(10)
+                item=xbmcgui.ListItem(name, iconImage=thumbnailUrl, thumbnailImage=thumbnailUrl)
+                item.setInfo( type="Video", infoLabels={ "Title": title,
+                                                         "TVShowTitle":showtitle,
+                                                         "Season":seasonNum,
+                                                         "Episode":episodeNum,
+                                                         "Plot": description,
+                                                         "Genre":genre,
+                                                         "Rating":float(ranking),
+                                                         "Mpaa":rating,
+                                                         "Premiered":expirationDate,
+                                                         "Duration":str(int(duration/60))
+                                                         })
+                item.setProperty('IsPlayable', 'true')
+                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item)
                 
 
 def getVideoURL(segids):
@@ -134,31 +184,13 @@ def getServerTime():
 
 
 """
-        addLink()
-"""
-def addLink(name, url, mode, plot='', iconimage='DefaultVideo.png'):
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-        if plot:
-                liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-        else:
-                liz.setInfo( type="Video", infoLabels={ "Title": name } )
-        liz.setProperty('IsPlayable', 'true')
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
-        return ok
-
-
-"""
         addDir()
 """
 def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png'):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-        if plot:
-                liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-        else:
-                liz.setInfo( type="Video", infoLabels={ "Title": name } )
+        liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
         ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
         return ok
 
@@ -225,8 +257,11 @@ elif mode==1:
         listShowsByCat(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==2:
-        showTypes(url)
+        showRoot(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==3:
+        showClips(url)
+        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+elif mode==10:
         getVideoURL(url)
 

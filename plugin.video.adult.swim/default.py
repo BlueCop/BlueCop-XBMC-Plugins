@@ -56,13 +56,13 @@ def showRoot(showid):
 def showClips(showid):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        listVideos(showid,'CLI','0','200')
+        listVideos(showid,'CLI','0','500')
 
 def browseAll(url):
         if url == 'full':
-                listVideos('','PRE,EPI','0','200',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','PRE,EPI','0','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
         elif url == 'clips':
-                listVideos('','CLI','0','200',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','CLI','0','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
                 
 
 #lists episodes

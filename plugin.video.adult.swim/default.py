@@ -59,11 +59,20 @@ def showClips(showid):
         listVideos(showid,'CLI','0','500')
 
 def browseAll(url):
+
         if url == 'full':
                 listVideos('','PRE,EPI','0','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','PRE,EPI','30','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','PRE,EPI','60','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','PRE,EPI','90','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                #listVideos('','PRE,EPI','120','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                #listVideos('','PRE,EPI','150','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                #listVideos('','PRE,EPI','180','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
         elif url == 'clips':
                 listVideos('','CLI','0','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
-                
+                listVideos('','CLI','30','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','CLI','60','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                listVideos('','CLI','90','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)                
 
 #lists episodes
 def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sortBy='DESC', sortMethod='sortByDate', categoryName='',showseriestitle=False):

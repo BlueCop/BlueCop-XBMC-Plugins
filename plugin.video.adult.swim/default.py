@@ -104,7 +104,7 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                 genre = episode['collectioncategorytype']
                 ranking = episode['ranking']
                 rating = episode['rating']
-                expirationDate = episode['expirationdate']
+                expirationDate = episode['expirationdate'].replace(' 12:00 AM','')
                 description = cleanxml(episode.find('description').contents[1].strip())
                 segids = episode.find('value').string
                 if seasonNum == 0 or episodeNum == 0:

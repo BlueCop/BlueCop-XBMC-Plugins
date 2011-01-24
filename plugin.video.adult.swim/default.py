@@ -15,7 +15,9 @@ getAllEpisodes = 'http://asfix.adultswim.com/asfix-svc/episodeSearch/getAllEpiso
 
 #lists initial categories and caches them
 def listCategories():
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
+        addDir('Full Episodes', 'full', 4)
+        addDir('Clips', 'clips', 4)
         data = getURL(CONFIGURATION_URL)
         tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         categories = tree.find('logiccategories').findAll('category')
@@ -24,6 +26,7 @@ def listCategories():
                 description = category['description']
                 categoryid = category['categoryid']
                 addDir(name, categoryid, 1, description)
+
                 
                 
         
@@ -47,20 +50,27 @@ def showRoot(showid):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         addDir('Clips', showid, 3)
-        listVideos(showid,'PRE,EPI')                
+        listVideos(showid,'PRE,EPI')
 
+#lists Clips by show id 
 def showClips(showid):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         listVideos(showid,'CLI','0','200')
 
+def browseAll(url):
+        if url == 'full':
+                listVideos('','PRE,EPI','0','200',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+        elif url == 'clips':
+                listVideos('','CLI','0','200',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+                
 
-#lists episodes by show id
-def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sortBy='DESC', categoryName='',):
+#lists episodes
+def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sortBy='DESC', sortMethod='sortByDate', categoryName='',showseriestitle=False):
         url = getAllEpisodes
         url += '?limit='+limit
         url += '&offset='+offset
-        url += '&sortByDate='+sortBy
+        url += '&'+sortMethod+'='+sortBy
         url += '&categoryName='+categoryName
         url += '&filterByEpisodeType='+filterByEpisodeType
         url += '&filterByCollectionId='+CollectionID
@@ -99,6 +109,8 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                         name = title+' (Clip from '+str(seasonNum)+'x'+str(episodeNum)+')'
                 elif episodeType == 'PRE':
                         name = title+' (Preview for '+str(seasonNum)+'x'+str(episodeNum)+')'
+                if showseriestitle == True:
+                        name = showtitle+' - '+name
                 segments = episode.findAll('segment')
                 duration = 0.00
                 for segment in segments:
@@ -261,6 +273,9 @@ elif mode==2:
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==3:
         showClips(url)
+        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+elif mode==4:
+        browseAll(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==10:
         getVideoURL(url)

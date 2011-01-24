@@ -25,9 +25,7 @@ def listCategories():
                 name = category['name']
                 description = category['description']
                 categoryid = category['categoryid']
-                addDir(name, categoryid, 1, description)
-
-                
+                addDir(name, categoryid, 1, description)                
                 
         
 #lists shows for a particular category
@@ -72,7 +70,10 @@ def browseAll(url):
                 listVideos('','CLI','0','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
                 listVideos('','CLI','30','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
                 listVideos('','CLI','60','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
-                listVideos('','CLI','90','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)                
+                listVideos('','CLI','90','30',sortMethod='sortByEpisodeRanking',showseriestitle=True)
+
+def cleanxml(data):
+        return unicode(BeautifulStoneSoup(data,convertEntities=BeautifulStoneSoup.XML_ENTITIES).contents[0]).encode( "utf-8" )
 
 #lists episodes
 def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sortBy='DESC', sortMethod='sortByDate', categoryName='',showseriestitle=False):
@@ -85,7 +86,7 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
         url += '&filterByCollectionId='+CollectionID
         url += '&networkName=AS'
         data = getURL(url)
-        tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
         episodes = tree.findAll('episode')
         for episode in episodes:
                 showtitle = episode['collectiontitle']
@@ -104,7 +105,7 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                 ranking = episode['ranking']
                 rating = episode['rating']
                 expirationDate = episode['expirationdate']
-                description = episode.find('description').contents[1].strip()
+                description = cleanxml(episode.find('description').contents[1].strip())
                 segids = episode.find('value').string
                 if seasonNum == 0 or episodeNum == 0:
                         name = title

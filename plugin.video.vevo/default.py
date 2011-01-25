@@ -46,7 +46,6 @@ def listArtist(url):
 def listArtistVideos(url):
         data = getURL(url)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        #print tree.prettify()
         videos = tree.findAll(attrs={'class' : 'listThumb'})
         for video in videos:
                 url = BASE_URL+video.find(attrs={'class' : 'playOverlay'})['href']
@@ -184,7 +183,7 @@ elif mode==2:
         listArtist(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==3:
-        listArtist(url)
+        listArtistVideos(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==10:
         getVideo(url)

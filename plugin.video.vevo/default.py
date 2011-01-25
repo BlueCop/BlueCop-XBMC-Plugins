@@ -177,7 +177,7 @@ if mode==None or url==None:
         listCategories()
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==1:
-        listAZ()
+        listAZ(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==2:
         listArtist(url)

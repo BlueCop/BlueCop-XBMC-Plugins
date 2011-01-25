@@ -9,27 +9,31 @@ pluginhandle = int(sys.argv[1])
 BASE_URL = 'http://www.vevo.com'
 
 def listCategories():
-        addDir('A-Z', '', 1)            
+        addDir('A-Z', 'http://www.vevo.com/artists/index/a-z?alpha=', 1)
+        addDir('On Tour', 'http://www.vevo.com/artists/on-tour', 2)
+        addDir('Most Recent', 'http://www.vevo.com/artists?order=MostRecent', 2)
+        addDir('Most Viewed Artists', 'http://www.vevo.com/artists?order=MostViewedToday', 2)
+        addDir('Most Liked Artists', 'http://www.vevo.com/artists?order=MostFavoritedToday', 2)
 
-def listAZ():
-        addDir('#', 'http://www.vevo.com/artists/index/a-z?alpha='+urllib.quote_plus('#'), 2)
+def listAZ(url):
+        addDir('#', url+urllib.quote_plus('#'), 2)
         alphabet=set(string.ascii_uppercase)
         for letter in alphabet:
-                url = 'http://www.vevo.com/artists/index/a-z?alpha='+letter
+                url = url+letter
                 addDir(letter, url, 2)
         return
 
-def listByLetter(url):
+def listArtist(url):
         data = getURL(url)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
         try:
                 pagenext = tree.find(attrs={'class' : 'next'})
-                addDir(pagenext.string, BASE_URL+pagenext['href'], 2)
+                addDir(pagenext.string+' Page', BASE_URL+pagenext['href'], 2)
         except:
                 print 'No Next Page'
         try:
                 pageprev = tree.find(attrs={'class' : 'prev'})
-                addDir(pageprev.string, BASE_URL+pageprev['href'], 2)
+                addDir(pageprev.string+' Page', BASE_URL+pageprev['href'], 2)
         except:
                 print 'No Previous Page'
         artists = tree.findAll(attrs={'class' : 'listThumb'})
@@ -39,7 +43,7 @@ def listByLetter(url):
                 title = artist.a.img['alt']
                 addDir(title, url, 3, iconimage=thumbnail)
 
-def listArtist(url):
+def listArtistVideos(url):
         data = getURL(url)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
         #print tree.prettify()
@@ -177,13 +181,10 @@ elif mode==1:
         listAZ()
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==2:
-        listByLetter(url)
+        listArtist(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==3:
         listArtist(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==4:
-        browseAll(url)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 elif mode==10:
         getVideo(url)

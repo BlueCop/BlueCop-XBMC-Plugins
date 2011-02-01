@@ -24,7 +24,7 @@ def getURL( url ):
     else:
         return link
 
-def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname=''):
+def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',duration=''):
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
         ok=True
         liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
@@ -32,6 +32,7 @@ def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname=''):
                                                 "Plot":plot,
                                                 "Season":season,
                                                 "Episode":episode,
+                                                "Duration":duration,
                                                 "TVShowTitle":showname})
         liz.setProperty('IsPlayable', 'true')
         ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
@@ -48,7 +49,8 @@ def addDir(name,url,mode,iconimage='',plot=''):
 ################################ Root listing
 def ROOT():
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        url = 'http://www.tnt.tv/processors/services/getCollections.do?id=62028'
+        url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
+        #url = 'http://www.tnt.tv/processors/services/getCollections.do?id=62028'
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -68,7 +70,7 @@ def SHOWS(name, cid):
             mode = 3 #EPISODE() Mode
         else:
             mode = 2 #SHOW() Mode
-        url = 'http://www.tnt.tv/processors/services/getCollections.do?id=62028'
+        url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -84,7 +86,7 @@ def SHOWS(name, cid):
 def SHOW(scid):
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        url = 'http://www.tnt.tv/processors/services/getCollections.do?id=62028'
+        url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
         html=getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -113,29 +115,37 @@ def EPISODE(name, cid):
                 name = episode.find('title').string
                 thumbnail = episode.find('thumbnailurl').string
                 plot = episode.find('description').string
+                duration = episode.find('duration').string
                 try:
-                    season_episode = thumbnail.split('_')[1]
-                    seasonNum = int(season_episode[:-2])
-                    episodeNum = int(season_episode[-2:])
-                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
+                    seasonNum = int(episode.find('seasonnumber').string)
+                    print seasonNum
                 except:
                     seasonNum = 0
+                try:
+                    episodeNum = int(episode.find('episodenumber').string)
+                    print episodeNum
+                except:
                     episodeNum = 0
+                if episodeNum == 0 or seasonNum == 0:
+                    print 'bad season or episode value'
+                else:
+                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
                 segments = episode.findAll('segment')
                 if len(segments) == 0:
                     url = episodeId
                     mode = 4
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
                 else:
                     url = ''
                     for segment in segments:
                             url += segment['id']+'<segment>'
                     mode = 5 #PLAYEPISODE
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
         xbmcplugin.endOfDirectory(pluginhandle)
 
 def getAUTH(aifp,window,tokentype,vid,filename):
-        authUrl = 'http://www.tnt.tv/processors/video_cvp/token.jsp'
+        #authUrl = 'http://www.tnt.tv/processors/video_cvp/token.jsp'
+        authUrl = 'http://www.tnt.tv/processors/services/token.do'
         parameters = {'aifp' : aifp,
                       'window' : window,
                       'authTokenType' : tokentype,
@@ -161,14 +171,14 @@ def GET_RTMP(vid):
             filename = filename
             return filename
         else:
-            filename = filename[1:len(filename)-4]
+            filename = filename[1:len(filename)-4]#.replace('mp4:','')
             serverDetails = tree.find('akamai')
             server = serverDetails.find('src').string.split('://')[1]
             #get auth
             tokentype = serverDetails.find('authtokentype').string
             window = serverDetails.find('window').string
             aifp = serverDetails.find('aifp').string
-            auth=getAUTH(aifp,window,tokentype,vid,filename)      
+            auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
             swfUrl = 'http://www.tnt.tv/dramavision/tnt_video.swf'
             rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
             return rtmp

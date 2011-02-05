@@ -28,6 +28,15 @@ xmldeckeys = [
              ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
              ]
 
+subdeckeys = [
+             ['4878B22E76379B55C962B18DDBC188D82299F8F52E3E698D0FAF29A40ED64B21', 'WA7hap7AGUkevuth']
+             ]
+
+smildeckeys = [
+             ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
+             ]
+
+
 class Main:
 
     def __init__( self ):
@@ -94,7 +103,7 @@ class Main:
     def decrypt_SMIL(self, encsmil):
         encdata = binascii.unhexlify(encsmil)
 
-        for key in xmldeckeys[:]:
+        for key in smildeckeys[:]:
             smil=""
             out=[0,0,0,0]
             ecb = AES(binascii.unhexlify(key[0]))
@@ -114,6 +123,7 @@ class Main:
                 smil = smil + x
 
             if (smil.find("<smil") == 0):
+                print key
                 i = smil.rfind("</smil>")
                 smil = smil[0:i+7]
                 return smil
@@ -121,7 +131,7 @@ class Main:
     def decrypt_subs(self, encsubs):
         encdata = binascii.unhexlify(encsubs)
 
-        for key in xmldeckeys[:]:
+        for key in subdeckeys[:]:
             subs=""
             out=[0,0,0,0]
             ecb = AES(binascii.unhexlify(key[0]))
@@ -142,6 +152,7 @@ class Main:
             substart = subs.find("<P")
 
             if (substart > -1):
+                print key
                 i = subs.rfind("</P>")
                 subs = subs[substart:i+4]
                 return subs

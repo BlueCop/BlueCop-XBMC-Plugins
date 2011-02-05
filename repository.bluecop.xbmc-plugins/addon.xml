@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.bluecop.xbmc-plugins" name="bluecop Add-on Repository" version="1.0.0" provider-name="bluecop">
+	<extension point="xbmc.addon.repository" name="bluecop Add-on Repository">
+		<info compressed="false">http://bluecop-xbmc-repo.googlecode.com/svn/trunk/addons.xml</info>
+		<checksum>http://bluecop-xbmc-repo.googlecode.com/svn/trunk/addons.xml.md5</checksum>
+		<datadir zip="false">http://bluecop-xbmc-repo.googlecode.com/svn/trunk/</datadir>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<summary>Install Add-ons from bluecop Add-on Repository</summary>
+		<description>Video plug-ins for XBMC</description>
+		<disclaimer></disclaimer>
+		<platform>all</platform>
+	</extension>
+</addon>

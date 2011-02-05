@@ -24,7 +24,7 @@ class Main:
             else:
                 perpage = common.settings['perpage']
         xbmcplugin.setPluginCategory( pluginhandle, category=common.args.name )
-        xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
+        #xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
         self.addMenuItems(perpage,common.args.page)
         if common.args.updatelisting == 'true':
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
@@ -47,7 +47,9 @@ class Main:
 
       
     def addMenuItems( self, perpage, pagenumber ,url=common.args.url ):
+        # Get item count for page
         total_count = self.getTotalCount( url )
+        # Add Next/Prev Pages
         if int(perpage) < int(total_count):
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
                 popular='true'
@@ -74,6 +76,7 @@ class Main:
                 prevthumb=xbmc.translatePath(os.path.join(common.imagepath,"prev.png"))
                 common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,updatelisting='true')
 
+        # Grab xml item list
         if '?' in url:
             url += '&dp_id=huludesktop&package_id=2&limit='+perpage+'&page='+pagenumber
         else:
@@ -83,120 +86,114 @@ class Main:
             html=common.getFEED(url)
             time.sleep(2)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        # Find all items in xml
         menuitems=tree.findAll('item')
         del tree
         for item in menuitems:
-            display=item.find('display').string.encode('utf-8')
-            url='http://m.hulu.com'+item.find('items_url').string
-            mode=item.find('cmtype').string
+            
+            display=item('display')[0].string.encode('utf-8')
+            url='http://m.hulu.com'+item('items_url')[0].string
+            mode=item('app_data')[0]('cmtype')[0].string
+            
+            #Flatten All and Alphabetical
             if display == 'All' and total_count == 1:
                 print url
                 #common.args.mode = 'All'
                 self.addMenuItems(common.settings['allperpage'],common.args.page,url)
                 return
+            
             displayname = display
+            # Skip unwanted menu items
             if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
-            try:
-                if 'True' == item.find('is_plus_web_only').string:
-                    isPlus = True
-                    if (common.settings['enable_plus'] == 'false'):
-                        continue
-            except:
-                isPlus = False
-            try:
-                canonical_name = item.find('canonical_name').string
-                art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
-                fanart = art
-                isVideo = False
-            except:
-                try:
-                    canonical_name = item.find('show_canonical_name').string
-                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
-                    isVideo = True
-                except:
-                    if common.args.fanart == '' or common.args.fanart == 'http://assets.huluim.com/companies/key_art_hulu.jpg':
-                        art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-                        fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
-                    else:
-                        art = common.args.fanart
-                        fanart = common.args.fanart
-            try:
-                thumbnail_url_16x9_large = item.find('thumbnail_url_16x9_large').string
-                art = thumbnail_url_16x9_large
-                isVideo = True
-            except:
-                isVideo = False
-            try:
-                description = unicode(common.cleanNames(item.find('description').string.replace('\n', ' ').replace('\r', ' '))).encode('utf-8')
-            except:
-                description = ''
-            try:
-                genre = item.find('genre').string
-            except:
-                genre = ''
-            try:
-                season_number = int(item.find('season_number').string)
-            except:
-                season_number = 0
-            try:
-                episode_number = int(item.find('episode_number').string)
-            except:
-                episode_number = 0
-            try:
-                show_name = item.find('show_name').string.encode('utf-8')
-            except:
-                show_name = ''                 
-            try:
-                duration = float(item.find('duration').string)
-                hour = int(math.floor(duration / 60 / 60))
-                minute = int(math.floor((duration - (60*60*hour))/ 60))
-                second = int(duration - (60*minute)- (60*60*hour))
-                if hour == 0:
-                    duration = str(minute)+':'+str(second)
-                else:
-                    duration = str(hour)+':'+str(minute)+':'+str(second)
-            except:
-                duration = ''
-            try:
-                premiered = item.find('original_premiere_date').string.replace(' 00:00:00','')
-                year = int(premiered.split('-')[0])
-            except:
-                premiered = ''
-                year = 0
-            try:
-                company_name = item.find('company_name').string
-            except:
-                company_name = ''
-            try:
-                rating = float(item.find('rating').string)*2
-                votes = item.find('votes_count').string
-            except:
-                rating = 0
-                votes = ''
-            try:
-                mpaa = item.find('content_rating').string
-            except:
-                mpaa = ''
-            try:
-                ishd = item.find('has_hd').string
-                if 'True' == ishd:
-                    resolution = '720'
-                else:
-                    resolution = '480'
-            except:
-                ishd = 'False' 
-                resolution = ''   
-            try:
-                media_type = item.find('media_type').string
-            except:
-                media_type = False         
-            try:
-                videoid = item.find('video_id').string
-                isVideo = True
-            except:
-                isVideo = False
+            #try:
+            #    if 'True' == item.find('is_plus_web_only').string:
+            #        isPlus = True
+            #        if (common.settings['enable_plus'] == 'false'):
+            #            continue
+            #except:
+            #    isPlus = False
+            
+            #set Data
+            isVideo = False
+            art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+            fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
+            description = ''
+            show_name = ''
+            company_name = ''
+            duration = ''
+            genre = ''
+            season_number = 0
+            episode_number = 0
+            premiered = ''
+            year = 0
+            rating = 0.0
+            votes = ''
+            mpaa = ''
+            media_type = False
                 
+            data = item('data')
+            if data:
+                data = data[0]
+                canonical_name      = data('canonical_name')
+                show_canonical_name = data('show_canonical_name')
+                #Show Only
+                if canonical_name:
+                    canonical_name = canonical_name[0].string
+                    show_name = data('name')[0].string.encode('utf-8')
+                    genre_data = data('genre')
+                    if genre_data:
+                        genre = genre_data[0].string
+                    art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                #Video Only
+                elif show_canonical_name:
+                    isVideo = True
+                    content_id = data('content_id')[0].string
+                    videoid = data('video_id')[0].string
+                    canonical_name = show_canonical_name[0].string
+                    media_type = data('media_type')[0].string
+                    art = data('thumbnail_url_16x9_large')[0].string
+                    show_name = data('show_name')[0].string.encode('utf-8')
+                    mpaa = data('content_rating')[0].string
+                    votes = data('votes_count')[0].string
+                    premiered_data = data('original_premiere_date')
+                    if premiered_data[0].string:
+                        premiered = premiered_data[0].string.replace(' 00:00:00','')
+                        year = int(premiered.split('-')[0])
+                    season_number_data = data('season_number')
+                    if season_number_data[0].string:
+                        season_number = int(season_number_data[0].string)
+                    episode_number_data = data('episode_number')
+                    if episode_number_data[0].string:
+                        episode_number = int(episode_number_data[0].string)
+                    duration_data = data('duration')
+                    if duration_data[0].string:
+                        duration = float(duration_data[0].string)
+                        hour = int(math.floor(duration / 60 / 60))
+                        minute = int(math.floor((duration - (60*60*hour))/ 60))
+                        second = int(duration - (60*minute)- (60*60*hour))
+                        if hour == 0:
+                            duration = str(minute)+':'+str(second)
+                        else:
+                            duration = str(hour)+':'+str(minute)+':'+str(second)
+                #Both Show and Video
+                description_data = data('description')
+                if description_data:
+                    if description_data[0].string:
+                        description = unicode(common.cleanNames(description_data[0].string.replace('\n', ' ').replace('\r', ' '))).encode('utf-8')
+                rating_data = data('rating')
+                if rating_data:
+                    if rating_data[0].string:
+                        rating = float(rating_data[0].string)*2
+                company_name_data = data('company_name')
+                if company_name_data:
+                    company_name = company_name_data[0].string
+                ishd_data = data('has_hd')
+                if ishd_data:
+                    ishd = ishd_data[0].string
+                fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+
+            #Set displayname and content type    
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
                 dtotal_count = self.getTotalCount( url )
@@ -213,18 +210,20 @@ class Main:
                 displayname = displayname + ' ('+str(dtotal_count)+')'
                 if dtotal_count == 0:
                     continue
+            #Set Networks and Studios fanart
             elif common.args.name == 'Networks' or common.args.name == 'Studios':
                 fanart = "http://assets.huluim.com/companies/key_art_"+canonical_name.replace('-','_')+".jpg"
                 art = fanart
+            #Add Count to Display Name for Non-Show/Episode Lists
             elif common.args.mode == 'Menu' and isVideo == False:
                 dtotal_count = self.getTotalCount( url )
                 if dtotal_count <> 1:
                     displayname = displayname + ' ('+str(dtotal_count)+')'
                 elif dtotal_count == 0:
                     continue
+            #Set Final Video Name
             elif isVideo == True:
-                pid= item.find('content_id').string
-                url=pid
+                url=content_id
                 #URL of video
                 #url="http://www.hulu.com/watch/"+videoid
                 mode = 'TV_play'
@@ -243,8 +242,6 @@ class Main:
                         displayname = str(season_number)+'x'+str(episode_number)+' - '+display
                     if 'True' == ishd:
                         displayname += ' (HD)'
-            if art == None:
-                art = ''
       
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
@@ -262,18 +259,18 @@ class Main:
                                                      "Year":year,
                                                      "MPAA":mpaa,
                                                      "Rating":rating,
-                                                     "Votes":votes,
-                                                     "VideoResolution":resolution,
-                                                     "VideoCodec":"h264",
-                                                     "AudioCodec":"aac"
+                                                     "Votes":votes
                                                      })
             item.setProperty('fanart_image',fanart)
+
+            #Set total count
             if int(perpage) < int(total_count):
                 total_items = int(perpage)
             elif int(perpage) < len(menuitems):
                 total_items = len(menuitems)
             else:
                 total_items = int(total_count)
+
             if isVideo == False:
                 u += '&name="'+urllib.quote_plus(display.replace("'",""))+'"'
                 u += '&art="'+urllib.quote_plus(art)+'"'

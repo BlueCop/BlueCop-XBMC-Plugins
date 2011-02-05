@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.hulu"
        name="Hulu"
-       version="2.7.3"
+       version="2.7.4"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
@@ -13,15 +13,10 @@
              library="default.py">
 	<provides>video</provides>
   </extension>
-  <extension point="xbmc.addon.metadata">
-    <platform>all</platform>
-    <minversion>29000</minversion>
-    <summary>Plugin for Hulu videos</summary>
-    <description>View videos on Hulu</description>
-    <supportedcontent>
-      <content>movies</content>
-      <content>tvshows</content>
-      <content>episodes</content>
-    </supportedcontent>
-  </extension>
+    <extension point="xbmc.addon.metadata">
+       <platform>all</platform>
+       <summary>Hulu video plugin</summary>
+       <description></description>
+       <disclaimer>Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
+    </extension>
 </addon>

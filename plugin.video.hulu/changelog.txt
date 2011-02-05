@@ -1,4 +1,8 @@
-[B]Version 2.7.2[/B]
+[B]Version 2.7.4[/B]
+
+- Speed up lists
+
+[B]Version 2.7.3[/B]
 
 - Fix for subtitles
 

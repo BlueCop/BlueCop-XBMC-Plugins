@@ -116,8 +116,12 @@ class Main:
             
             #set Data
             isVideo = False
-            art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-            fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
+            if common.args.fanart:
+                art = common.args.fanart
+                fanart = common.args.fanart
+            else:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+                fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
             description = ''
             show_name = ''
             company_name = ''
@@ -139,23 +143,28 @@ class Main:
                 show_canonical_name = data('show_canonical_name')
                 #Show Only
                 if canonical_name:
-                    canonical_name = canonical_name[0].string
-                    show_name = data('name')[0].string.encode('utf-8')
-                    genre_data = data('genre')
-                    if genre_data:
-                        genre = genre_data[0].string
-                    art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                    if canonical_name[0].string:
+                        canonical_name = canonical_name[0].string
+                        show_name = data('name')[0].string.encode('utf-8')
+                        genre_data = data('genre')
+                        if genre_data:
+                            genre = genre_data[0].string
+                        art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                    else:
+                        canonical_name = None
                 #Video Only
                 elif show_canonical_name:
                     isVideo = True
+                    canonical_name = show_canonical_name[0].string
                     content_id = data('content_id')[0].string
                     videoid = data('video_id')[0].string
-                    canonical_name = show_canonical_name[0].string
                     media_type = data('media_type')[0].string
                     art = data('thumbnail_url_16x9_large')[0].string
                     show_name = data('show_name')[0].string.encode('utf-8')
                     mpaa = data('content_rating')[0].string
-                    votes = data('votes_count')[0].string
+                    votes_data = data('votes_count')
+                    if votes_data[0].string:
+                        votes = votes_data[0].string
                     premiered_data = data('original_premiere_date')
                     if premiered_data[0].string:
                         premiered = premiered_data[0].string.replace(' 00:00:00','')
@@ -191,7 +200,8 @@ class Main:
                 ishd_data = data('has_hd')
                 if ishd_data:
                     ishd = ishd_data[0].string
-                fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                if canonical_name:
+                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
 
             #Set displayname and content type    
             if mode == 'SeasonMenu':
@@ -247,6 +257,18 @@ class Main:
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
+            print description
+            print show_name
+            print company_name
+            print duration
+            print genre
+            print season_number
+            print episode_number
+            print premiered
+            print year
+            print rating
+            print votes
+            print mpaa
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,
                                                      "Genre":genre,

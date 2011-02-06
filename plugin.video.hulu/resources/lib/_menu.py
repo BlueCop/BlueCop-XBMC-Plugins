@@ -125,6 +125,7 @@ class Main:
             company_name = ''
             duration = ''
             genre = ''
+            parent_id = None
             season_number = 0
             episode_number = 0
             premiered = ''
@@ -147,6 +148,11 @@ class Main:
                         genre_data = data('genre')
                         if genre_data:
                             genre = genre_data[0].string
+                        parent_id_data = data('parent_id')
+                        print parent_id_data
+                        if parent_id_data:
+                            if parent_id_data[0].string:
+                                parent_id = parent_id_data[0].string
                         art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                     else:
                         canonical_name = None
@@ -155,7 +161,7 @@ class Main:
                     isVideo = True
                     canonical_name = show_canonical_name[0].string
                     content_id = data('content_id')[0].string
-                    videoid = data('video_id')[0].string
+                    #videoid = data('video_id')[0].string
                     media_type = data('media_type')[0].string
                     art = data('thumbnail_url_16x9_large')[0].string
                     show_name = data('show_name')[0].string.encode('utf-8')
@@ -179,8 +185,14 @@ class Main:
                         hour = int(math.floor(duration / 60 / 60))
                         minute = int(math.floor((duration - (60*60*hour))/ 60))
                         second = int(duration - (60*minute)- (60*60*hour))
+                        if len(str(second)) == 1:
+                            second = '0'+str(second)
+                        if len(str(minute)) == 1:
+                            minute = '0'+str(minute)
                         if hour == 0:
                             duration = str(minute)+':'+str(second)
+                        elif len(str(hour)) == 1:
+                            duration = '0'+str(hour)+':'+str(minute)+':'+str(second)
                         else:
                             duration = str(hour)+':'+str(minute)+':'+str(second)
                 #Both Show and Video
@@ -201,7 +213,9 @@ class Main:
                 if canonical_name:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
 
-            #Set displayname and content type    
+            #Set displayname and content type
+            if parent_id:
+                displayname = '- '+displayname
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
                 dtotal_count = self.getTotalCount( url )
@@ -248,8 +262,8 @@ class Main:
                     else:
                         #displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
                         displayname = str(season_number)+'x'+str(episode_number)+' - '+display
-                    if 'True' == ishd:
-                        displayname += ' (HD)'
+                if 'True' == ishd:
+                    displayname += ' (HD)'
       
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'

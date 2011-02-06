@@ -41,7 +41,7 @@ class Main:
             html=common.getFEED(url)
             time.sleep(2)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        total_count= int(tree.find('count').string)
+        total_count= int(tree('results')[0]('count')[0].string)
         if huluonly == '1' and total_count == 0:
             #self.addMenuItems(perpage,pagenumber,search,'0')
             return

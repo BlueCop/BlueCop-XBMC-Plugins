@@ -1,3 +1,7 @@
+[B]Version 2.7.7[/B]
+
+- Changed Hulu+ Filtering
+
 [B]Version 2.7.6[/B]
 
 - version increment to test update

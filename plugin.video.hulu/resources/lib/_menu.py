@@ -13,7 +13,12 @@ import time
 from BeautifulSoup import BeautifulStoneSoup
 
 pluginhandle = int(sys.argv[1])
-
+dp_id = 'hulu'
+if (common.settings['enable_plus'] == 'false'):
+    package_id = '1'
+elif (common.settings['enable_plus'] == 'true'):
+    package_id = '2'
+    
 class Main:
     def __init__( self ):
         try:
@@ -33,9 +38,9 @@ class Main:
 
     def getTotalCount( self, itemsurl ):
         if '?' in itemsurl:
-            itemsurl += '&dp_id=huludesktop&package_id=2&total=1'
+            itemsurl += '&dp_id='+dp_id+'&package_id='+package_id+'&total=1'
         else:
-            itemsurl += '?dp_id=huludesktop&package_id=2&total=1'
+            itemsurl += '?dp_id='+dp_id+'&package_id='+package_id+'&total=1'
         html=common.getFEED(itemsurl)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         items = menuitems=tree.findAll('items')
@@ -78,9 +83,9 @@ class Main:
 
         # Grab xml item list
         if '?' in url:
-            url += '&dp_id=huludesktop&package_id=2&limit='+perpage+'&page='+pagenumber
+            url += '&dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
         else:
-            url += '?dp_id=huludesktop&package_id=2&limit='+perpage+'&page='+pagenumber
+            url += '?dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
         html=common.getFEED(url)
         while html == False:
             html=common.getFEED(url)
@@ -106,13 +111,6 @@ class Main:
             # Skip unwanted menu items
             if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
-            #try:
-            #    if 'True' == item.find('is_plus_web_only').string:
-            #        isPlus = True
-            #        if (common.settings['enable_plus'] == 'false'):
-            #            continue
-            #except:
-            #    isPlus = False
             
             #set Data
             isVideo = False
@@ -257,18 +255,6 @@ class Main:
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
-            print description
-            print show_name
-            print company_name
-            print duration
-            print genre
-            print season_number
-            print episode_number
-            print premiered
-            print year
-            print rating
-            print votes
-            print mpaa
             item.setInfo( type="Video", infoLabels={ "Title":display,
                                                      "Plot":description,
                                                      "Genre":genre,

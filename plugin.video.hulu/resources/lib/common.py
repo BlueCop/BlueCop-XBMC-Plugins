@@ -188,8 +188,8 @@ def login_queue():
     action = "authenticate"
     app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
     nonce = NONCE()
-    username = "bluecopter@yahoo.com"
-    password = "master"
+    username = settings['login_name']
+    password = settings['login_pass']
     parameters = {'login'   : username,
                   'password': password,
                   'app'     : app,

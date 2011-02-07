@@ -43,6 +43,8 @@ def modes( ):
         elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions'):
             import resources.lib._menu as queue
             queue.Main()
+        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub'):
+            common.queueEdit()
         else:
             import xbmcgui
             xbmcgui.Dialog().ok('common.args.mode',common.args.mode)

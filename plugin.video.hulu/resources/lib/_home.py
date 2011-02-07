@@ -47,7 +47,8 @@ class Main:
             try:
                 if not os.path.isfile(common.QUEUETOKEN):
                     common.login_queue()
-                common.addDirectory('Queue',        'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,page='1',perpage='2000')
-                common.addDirectory('Subscriptions','http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,page='1',perpage='2000')
+                common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,page='1',perpage='2000')
+                common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,page='1',perpage='2000')
+                common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'Queue'         ,page='1',perpage='2000')
             except:
                 print 'Hulu Queue Failure'

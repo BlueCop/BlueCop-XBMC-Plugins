@@ -13,6 +13,8 @@ import operator
 import sha
 import re
 
+from BeautifulSoup import BeautifulStoneSoup
+
 """
     PARSE ARGV
 """
@@ -194,18 +196,22 @@ def login_queue():
                   'password': password,
                   'app'     : app,
                   'nonce'   : nonce}
-    data = postAPI(action,parameters)
+    data = postAPI(action,parameters,True)
     file = open(QUEUETOKEN, 'w')
     file.write(data)
     file.close()
     return
 
-def postAPI( action , parameters):    
-    url   = 'https://secure.hulu.com/api/1.0/'+action
+def postAPI( action , parameters, secure):
+    if secure == True:
+        url = 'https://secure.'
+    elif secure == False:
+        url = 'http://www.'
+    url += 'hulu.com/api/1.0/'+action
     sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
     paramsString = ''
     for item1, item2 in sorted_parameters:
-        paramsString += item1 + item2
+        paramsString += str(item1) + str(item2)
     secret = "mTGPli7doNEpGfaVB9fquWfuAis"
     sig = sha.new(secret + action + paramsString).hexdigest()
     parameters['sig'] = sig
@@ -225,8 +231,38 @@ def postAPI( action , parameters):
 def NONCE():
     action = 'nonce'
     values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'}
-    data = postAPI(action,values)
+    data = postAPI(action,values,True)
     return re.compile('<nonce>(.+?)</nonce>').findall(data)[0]
+
+def queueEdit():
+    tokenfile = open(QUEUETOKEN, "r")
+    tokenxml = tokenfile.read()
+    tokenfile.close()
+    tree=BeautifulStoneSoup(tokenxml)
+    usertoken = tree.find('token').string 
+    values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
+              'token':usertoken,
+              'id':args.url}
+    if args.mode == 'addqueue':
+        values['operation'] = 'add'
+        action = 'queue'
+        postAPI(action,values,True)
+    elif args.mode == 'removequeue':
+        values['operation'] = 'remove'
+        action = 'queue'
+        postAPI(action,values,True)
+    elif args.mode == 'addsub':
+        values['operation'] = 'add'
+        values['type'] = 'episodes'
+        action = 'subscription'
+        postAPI(action,values,True)
+    elif args.mode == 'removesub':
+        values['operation'] = 'remove'
+        values['type'] = 'episodes'
+        action = 'subscription'
+        postAPI(action,values,True)
+        values['type'] = 'clips'
+        postAPI(action,values,True)
    
 
     

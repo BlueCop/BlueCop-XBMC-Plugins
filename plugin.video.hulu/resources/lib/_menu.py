@@ -58,7 +58,7 @@ class Main:
             url += '&' 
         else:
             url += '?'
-        if 'Queue' in common.args.name or 'Subscriptions' in common.args.name:
+        if 'Queue' == common.args.mode or 'Subscriptions' == common.args.mode or 'History' == common.args.mode:
             tokenfile = open(common.QUEUETOKEN, "r")
             tokenxml = tokenfile.read()
             tokenfile.close()
@@ -135,6 +135,7 @@ class Main:
                 fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
             description = ''
             show_name = ''
+            show_id = ''
             company_name = ''
             duration = ''
             genre = ''
@@ -162,7 +163,6 @@ class Main:
                         if genre_data:
                             genre = genre_data[0].string
                         parent_id_data = data('parent_id')
-                        print parent_id_data
                         if parent_id_data:
                             if parent_id_data[0].string:
                                 parent_id = parent_id_data[0].string
@@ -174,7 +174,7 @@ class Main:
                     isVideo = True
                     canonical_name = show_canonical_name[0].string
                     content_id = data('content_id')[0].string
-                    #videoid = data('video_id')[0].string
+                    video_id = data('video_id')[0].string
                     media_type = data('media_type')[0].string
                     art = data('thumbnail_url_16x9_large')[0].string
                     show_name = data('show_name')[0].string.encode('utf-8')
@@ -223,6 +223,7 @@ class Main:
                 ishd_data = data('has_hd')
                 if ishd_data:
                     ishd = ishd_data[0].string
+                show_id = data('show_id')[0].string
                 if canonical_name:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
 
@@ -269,7 +270,7 @@ class Main:
                     show_name = company_name
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
                 if season_number <> 0 and episode_number <> 0:
-                    if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or 'Queue' in common.args.name or common.args.popular == 'true':
+                    if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or 'Queue' == common.args.mode or 'History' == common.args.mode or common.args.popular == 'true':
                         #displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
                         displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
                     else:
@@ -296,6 +297,7 @@ class Main:
                                                      "Rating":rating,
                                                      "Votes":votes
                                                      })
+            
             item.setProperty('fanart_image',fanart)
 
             #Set total count
@@ -305,7 +307,8 @@ class Main:
                 total_items = len(menuitems)
             else:
                 total_items = int(total_count)
-
+                
+            cm = []
             if isVideo == False:
                 u += '&name="'+urllib.quote_plus(display.replace("'",""))+'"'
                 u += '&art="'+urllib.quote_plus(art)+'"'
@@ -313,8 +316,20 @@ class Main:
                 u += '&page="1"'
                 u += '&popular="false"'
                 u += '&updatelisting="false"'
+                if 'Subscriptions' == common.args.mode:
+                    cm.append( ('Remove Subscription', "XBMC.RunPlugin(%s?mode='removesub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                elif show_id <> '':
+                    cm.append( ('Add Subscription', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                item.addContextMenuItems( cm )
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
+                if 'Queue' == common.args.mode:
+                    cm.append( ('Remove from Queue', "XBMC.RunPlugin(%s?mode='removequeue'&url=%s)" % ( sys.argv[0], video_id ) ) )
+                else:
+                    cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
+                    if show_id <> '':
+                        cm.append( ('Add Subscription', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                item.addContextMenuItems( cm )
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
 

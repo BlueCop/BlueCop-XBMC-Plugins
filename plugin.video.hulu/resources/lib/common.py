@@ -1,5 +1,4 @@
 import xbmcplugin
-
 import xbmc
 import xbmcgui
 #import xbmcaddon
@@ -10,6 +9,9 @@ import urllib2
 import sys
 import os
 import cookielib
+import operator
+import sha
+import re
 
 """
     PARSE ARGV
@@ -30,8 +32,9 @@ BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu?show_id=0&dp_id=huludesktop
 #define etc.
 login_url   = "https://secure.hulu.com/account/authenticate"
 #define file locations
-COOKIEFILE = 'special://temp/hulu-cookies.lwp'
-imagepath   = os.path.join(os.getcwd().replace(';', ''),'resources','images')
+COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','hulu-cookies.lwp')
+QUEUETOKEN = os.path.join(os.getcwd().replace(';', ''),'resources','cache','token.xml')
+imagepath  = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 #addon = xbmcaddon.Addon(id='plugin.video.hulu')
 
 
@@ -65,6 +68,7 @@ settings['login_name'] = addoncompat.get_setting("login_name")
 settings['login_pass'] = addoncompat.get_setting("login_pass")
 settings['enable_login'] = addoncompat.get_setting("enable_login")
 settings['enable_plus'] = addoncompat.get_setting("enable_plus")
+
 
 """
     Clean Non-Ascii characters from names for XBMC
@@ -131,7 +135,7 @@ def getFEED( url ):
         cj = cookielib.LWPCookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
         opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                             ('x-flash-version', '10,0,32,18'),
+                             ('x-flash-version', '10,1,51,66'),
                              ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
         usock=opener.open(url)
         response=usock.read()
@@ -143,10 +147,10 @@ def getFEED( url ):
 
 
 """
-    ATTEMPT LOGIN
+    Hulu+ Cookie Login
 """
 
-def login():
+def login_cookie():
     #don't do anything if they don't have a password or username entered
     if settings['login_name']=='' or settings['login_pass']=='':
         print "Hulu --> WARNING: Could not login.  Please enter a username and password in settings"
@@ -177,7 +181,53 @@ def login():
     else:
         loggedIn = False
     
-    
+"""
+    Queue Token Login
+"""
+def login_queue(): 
+    action = "authenticate"
+    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+    nonce = NONCE()
+    username = "bluecopter@yahoo.com"
+    password = "master"
+    parameters = {'login'   : username,
+                  'password': password,
+                  'app'     : app,
+                  'nonce'   : nonce}
+    data = postAPI(action,parameters)
+    file = open(QUEUETOKEN, 'w')
+    file.write(data)
+    file.close()
+    return
+
+def postAPI( action , parameters):    
+    url   = 'https://secure.hulu.com/api/1.0/'+action
+    sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
+    paramsString = ''
+    for item1, item2 in sorted_parameters:
+        paramsString += item1 + item2
+    secret = "mTGPli7doNEpGfaVB9fquWfuAis"
+    sig = sha.new(secret + action + paramsString).hexdigest()
+    parameters['sig'] = sig
+    print parameters
+    data = urllib.urlencode(parameters)
+    headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
+               'Host': 'secure.hulu.com',
+               'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0',
+               'x-flash-version':'10,1,51,66'
+               }
+    req = urllib2.Request(url,data,headers)
+    response = urllib2.urlopen(req)
+    link=response.read()
+    response.close()
+    return link
+
+def NONCE():
+    action = 'nonce'
+    values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'}
+    data = postAPI(action,values)
+    return re.compile('<nonce>(.+?)</nonce>').findall(data)[0]
+   
 
     
 

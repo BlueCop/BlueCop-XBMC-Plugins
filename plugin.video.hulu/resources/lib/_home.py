@@ -16,7 +16,8 @@ class Main:
     def addMainHomeItems( self ):
         if common.settings['enable_login']=='true':
             try:
-                common.login()
+                if not os.path.isfile(common.COOKIEFILE):
+                    common.login_cookie()
             except:
                 print 'Hulu Login Failure'
         html=common.getFEED(common.BASE_MENU_URL)
@@ -42,3 +43,11 @@ class Main:
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
                 plot = ''
             common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,plot=plot,page='1',perpage='25')
+        if common.settings['enable_login']=='true':
+            try:
+                if not os.path.isfile(common.QUEUETOKEN):
+                    common.login_queue()
+                common.addDirectory('Queue',        'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,page='1',perpage='2000')
+                common.addDirectory('Subscriptions','http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,page='1',perpage='2000')
+            except:
+                print 'Hulu Queue Failure'

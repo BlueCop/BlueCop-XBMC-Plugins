@@ -52,8 +52,29 @@ class Main:
 
       
     def addMenuItems( self, perpage, pagenumber ,url=common.args.url ):
-        # Get item count for page
-        total_count = self.getTotalCount( url )
+        # Grab xml item list
+        orginalUrl = url
+        if '?' in url:
+            url += '&' 
+        else:
+            url += '?'
+        if 'Queue' in common.args.name or 'Subscriptions' in common.args.name:
+            tokenfile = open(common.QUEUETOKEN, "r")
+            tokenxml = tokenfile.read()
+            tokenfile.close()
+            tree=BeautifulStoneSoup(tokenxml)
+            usertoken = tree.find('token').string
+            #usertoken = 'hczvulBPd_pM-1KWgX348w'
+            url += 'dp_id='+dp_id+'&cb=201102070846'+'&limit='+perpage+'&package_id='+package_id+'&user_id='+usertoken
+            total_count = 0
+        else:
+            url += 'dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
+            total_count = self.getTotalCount( orginalUrl )
+        html=common.getFEED(url)
+        while html == False:
+            html=common.getFEED(url)
+            time.sleep(2)
+
         # Add Next/Prev Pages
         if int(perpage) < int(total_count):
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
@@ -81,15 +102,7 @@ class Main:
                 prevthumb=xbmc.translatePath(os.path.join(common.imagepath,"prev.png"))
                 common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,updatelisting='true')
 
-        # Grab xml item list
-        if '?' in url:
-            url += '&dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
-        else:
-            url += '?dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
-        html=common.getFEED(url)
-        while html == False:
-            html=common.getFEED(url)
-            time.sleep(2)
+
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         # Find all items in xml
         menuitems=tree.findAll('item')
@@ -256,7 +269,7 @@ class Main:
                     show_name = company_name
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
                 if season_number <> 0 and episode_number <> 0:
-                    if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or common.args.popular == 'true':
+                    if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or 'Queue' in common.args.name or common.args.popular == 'true':
                         #displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
                         displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
                     else:

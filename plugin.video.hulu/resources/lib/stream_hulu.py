@@ -220,8 +220,8 @@ class Main:
         for i, subtitle in enumerate(subtitle_array):
             line = str(i+1)+"\n"+str(subtitle['start'])+" --> "+str(subtitle['end'])+"\n"+str(subtitle['text'])+"\n\n"
             srt_output += line
-
-        file = open('special://temp/'+output+'.srt', 'w')
+        
+        file = open(os.path.join(os.getcwd().replace(';', ''),'resources','cache',output+'.srt'), 'w')
         file.write(srt_output)
         file.close()
         print "HULU: --> Successfully converted subtitles to SRT"
@@ -364,7 +364,7 @@ class Main:
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
             #Enable Subtitles
-            subtitles = 'special://temp/'+pid+'.srt'
+            subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',pid+'.srt')
             if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
                 print "HULU --> Setting subtitles"
                 import time

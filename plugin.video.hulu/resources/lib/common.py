@@ -70,7 +70,12 @@ settings['login_name'] = addoncompat.get_setting("login_name")
 settings['login_pass'] = addoncompat.get_setting("login_pass")
 settings['enable_login'] = addoncompat.get_setting("enable_login")
 settings['enable_plus'] = addoncompat.get_setting("enable_plus")
-
+if os.path.isfile(QUEUETOKEN):
+    tokenfile = open(QUEUETOKEN, "r")
+    tokenxml = tokenfile.read()
+    tokenfile.close()
+    tree=BeautifulStoneSoup(tokenxml)
+    settings['usertoken'] = tree.find('token').string 
 
 """
     Clean Non-Ascii characters from names for XBMC
@@ -220,8 +225,10 @@ def login_queue():
 def postAPI( action , parameters, secure):
     if secure == True:
         url = 'https://secure.'
+        host = 'secure.hulu.com'
     elif secure == False:
         url = 'http://www.'
+        host = 'www.hulu.com'
     url += 'hulu.com/api/1.0/'+action
     sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
     paramsString = ''
@@ -232,7 +239,7 @@ def postAPI( action , parameters, secure):
     parameters['sig'] = sig
     data = urllib.urlencode(parameters)
     headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)',
-               'Host': 'secure.hulu.com',
+               'Host': host,
                'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0',
                'x-flash-version':'10,1,51,66'
                }
@@ -249,37 +256,32 @@ def NONCE():
     return re.compile('<nonce>(.+?)</nonce>').findall(data)[0]
 
 def queueEdit():
-    tokenfile = open(QUEUETOKEN, "r")
-    tokenxml = tokenfile.read()
-    tokenfile.close()
-    tree=BeautifulStoneSoup(tokenxml)
-    usertoken = tree.find('token').string 
     values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
-              'token':usertoken,
+              'token':settings['usertoken'],
               'id':args.url}
     try:
         if args.mode == 'addqueue':
             values['operation'] = 'add'
             action = 'queue'
-            data=postAPI(action,values,True)
+            data=postAPI(action,values,False)
         elif args.mode == 'removequeue':
             values['operation'] = 'remove'
             action = 'queue'
-            data=postAPI(action,values,True)
+            data=postAPI(action,values,False)
         elif args.mode == 'addsub':
             values['operation'] = 'add'
             values['type'] = 'episodes'
             action = 'subscription'
-            data=postAPI(action,values,True)
+            data=postAPI(action,values,False)
         elif args.mode == 'removesub':
             values['operation'] = 'remove'
             values['type'] = 'episodes'
             action = 'subscription'
-            data=postAPI(action,values,True)
+            data=postAPI(action,values,False)
         elif args.mode == 'removehistory':
             values['operation'] = 'remove'
             action = 'history'
-            data=postAPI(action,values,True)
+            data=postAPI(action,values,False)
         if 'ok' in data:
             heading = 'Success'
             message = 'Operation Succeeded'

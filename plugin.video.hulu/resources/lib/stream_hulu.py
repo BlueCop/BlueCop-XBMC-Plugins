@@ -79,6 +79,11 @@ class Main:
             if (re.match("[0-9A-Za-z_-]{32}", v2)):
                 return v2
 
+    def pid_auth(self, pid):
+        m=md5.new()
+        m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
+        return m.hexdigest()
+
     def content_sig(self, pid):
         hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'
         parameters = {'video_id' : pid,
@@ -94,11 +99,6 @@ class Main:
             data += item1 + item2
         sig = hmac.new(hmac_key, data)
         return sig.hexdigest()
-
-    def pid_auth(self, pid):
-        m=md5.new()
-        m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
-        return m.hexdigest()
 
     def decrypt_SMIL(self, encsmil):
         encdata = binascii.unhexlify(encsmil)
@@ -181,7 +181,10 @@ class Main:
         srt_output = ''
 
         print "HULU: --> Converting subtitles to SRT"
-
+        heading = 'Subtitles'
+        message = 'Converting subtitles'
+        duration = 4000
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
         lines = subtitle_data.findAll('sync') #split the file into lines
         for line in lines:
             if(line['encrypted'] == 'true'):
@@ -225,6 +228,10 @@ class Main:
         file.write(srt_output)
         file.close()
         print "HULU: --> Successfully converted subtitles to SRT"
+        heading = 'Subtitles'
+        message = 'Conversion Complete'
+        duration = 4000
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
         return True
 
     def checkCaptions(self, pid):
@@ -232,17 +239,27 @@ class Main:
         html = common.getHTML(url)
         capSoup = BeautifulStoneSoup(html)
         hasSubs = capSoup.find('en')
+        heading = 'Subtitles'
         if(hasSubs):
             print "HULU --> Grabbing subtitles..."
+            message = 'Grabbing subtitles...'
+            duration = 4000
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             html=common.getHTML(hasSubs.string)
             ok = self.convert_subtitles(html,pid)
             if ok:
                 print "HULU --> Subtitles enabled."
             else:
                 print "HULU --> There was an error grabbing the subtitles."
+                message = 'Error grabbing subtitles.'
+                duration = 4000
+                xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
         else:
             print "HULU --> No subtitles available."
-
+            message = 'No subtitles available.'
+            duration = 4000
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+            
     def play( self ):
         print common.args.url
         if 'http://' in common.args.url:
@@ -282,7 +299,11 @@ class Main:
             smilSoup=BeautifulStoneSoup(tmp, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
             print smilSoup.prettify()
         except:
-            xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retrieving or decrypting the SMIL file.')
+            heading = 'SMIL ERROR'
+            message = 'Error retrieving SMIL file'
+            duration = 8000
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+            #xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retrieving or decrypting the SMIL file.')
             return
         
         #getRTMP
@@ -296,10 +317,9 @@ class Main:
         if qt < 0 or qt > 9: qt = 0
         while qt < 9:
             qtext = qtypes[qt]
-            
             for vid in video:
-                if qt == 0:
-                    streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
+                #if qt == 0:
+                streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
                 if qt > 6 and 'H264' in vid['profile']: continue
                 if qtext in vid['profile']:
                     if vid['cdn'] == common.settings['defaultcdn']:
@@ -310,16 +330,18 @@ class Main:
 
             if qt == 0 or selectedStream != None: break
             qt += 1
-
+        
         if qt == 0 or selectedStream == None:
-            #ask user for quality level
-            quality=xbmcgui.Dialog().select('Please select a quality level:', [stream[0]+' ('+stream[1]+')' for stream in streams])
-            print quality
-            if quality!=-1:
-                selectedStream = [streams[quality][2], streams[quality][3], streams[quality][4]]
-                cdn = streams[quality][1]
-                print "stream url"
-                print selectedStream
+            if selectedStream == None:
+                #ask user for quality level
+                quality=xbmcgui.Dialog().select('Please select a quality level:', [stream[0]+' ('+stream[1]+')' for stream in streams])
+                print quality
+                if quality!=-1:
+                    selectedStream = [streams[quality][2], streams[quality][3], streams[quality][4]]
+                    cdn = streams[quality][1]
+                    print "stream url"
+                    print selectedStream
+            
         if selectedStream != None:
             #form proper streaming url
             server = selectedStream[0]
@@ -370,4 +392,14 @@ class Main:
                 import time
                 time.sleep(4)
                 xbmc.Player().setSubtitles(subtitles)
+            if common.settings['enable_login']=='true' and common.settings['usertoken']:     
+                action = "event"
+                app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+                parameters = {'event_type':'view',
+                              'token':common.settings['usertoken'],
+                              'target_type':'video',
+                              'id':common.args.videoid,
+                              'app':app}
+                common.postAPI(action,parameters,False)
+                print "Posted view to Hulu"
 

@@ -59,11 +59,7 @@ class Main:
         else:
             url += '?'
         if 'Queue' == common.args.mode or 'Subscriptions' == common.args.mode or 'History' == common.args.mode:
-            tokenfile = open(common.QUEUETOKEN, "r")
-            tokenxml = tokenfile.read()
-            tokenfile.close()
-            tree=BeautifulStoneSoup(tokenxml)
-            usertoken = tree.find('token').string
+            usertoken = common.settings['usertoken']
             url += 'dp_id='+dp_id+'&cb=201102070846'+'&limit='+perpage+'&package_id='+package_id+'&user_id='+usertoken
             total_count = 0
         else:
@@ -222,7 +218,9 @@ class Main:
                 ishd_data = data('has_hd')
                 if ishd_data:
                     ishd = ishd_data[0].string
-                show_id = data('show_id')[0].string
+                show_id_data = data('show_id')
+                if show_id_data:
+                    show_id = show_id_data[0].string
                 if canonical_name:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
 
@@ -318,10 +316,11 @@ class Main:
                 if 'Subscriptions' == common.args.mode:
                     cm.append( ('Remove Subscription', "XBMC.RunPlugin(%s?mode='removesub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                 elif show_id <> '':
-                    cm.append( ('Add Subscription', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                    cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                 item.addContextMenuItems( cm )
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
+                u += '&videoid="'+urllib.quote_plus(video_id)+'"'
                 if 'Queue' == common.args.mode:
                     cm.append( ('Remove from Queue', "XBMC.RunPlugin(%s?mode='removequeue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 elif 'History' == common.args.mode:
@@ -329,7 +328,7 @@ class Main:
                 else:
                     cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                     if show_id <> '':
-                        cm.append( ('Add Subscription', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                        cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                 item.addContextMenuItems( cm )
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)

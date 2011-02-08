@@ -1,4 +1,8 @@
-[B]Version 2.8.2[/B]
+[B]Version 2.8.4[/B]
+
+- Bug fixes
+
+[B]Version 2.8.3[/B]
 
 - Added Remove from History
 

@@ -64,7 +64,6 @@ class Main:
             tokenfile.close()
             tree=BeautifulStoneSoup(tokenxml)
             usertoken = tree.find('token').string
-            #usertoken = 'hczvulBPd_pM-1KWgX348w'
             url += 'dp_id='+dp_id+'&cb=201102070846'+'&limit='+perpage+'&package_id='+package_id+'&user_id='+usertoken
             total_count = 0
         else:
@@ -325,6 +324,8 @@ class Main:
             elif isVideo == True:
                 if 'Queue' == common.args.mode:
                     cm.append( ('Remove from Queue', "XBMC.RunPlugin(%s?mode='removequeue'&url=%s)" % ( sys.argv[0], video_id ) ) )
+                elif 'History' == common.args.mode:
+                    cm.append( ('Remove from History', "XBMC.RunPlugin(%s?mode='removehistory'&url=%s)" % ( sys.argv[0], video_id ) ) )   
                 else:
                     cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                     if show_id <> '':

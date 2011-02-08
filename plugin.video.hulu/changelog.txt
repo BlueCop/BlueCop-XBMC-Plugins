@@ -1,5 +1,9 @@
 [B]Version 2.8.2[/B]
 
+- Added Remove from History
+
+[B]Version 2.8.2[/B]
+
 - Manage Queue & Subscription support
 
 [B]Version 2.8.0[/B]

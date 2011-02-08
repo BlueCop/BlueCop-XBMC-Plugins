@@ -171,7 +171,6 @@ def login_cookie():
     usock = opener.open(login_url, data)
     response = usock.read()
     usock.close()
-    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     
     print 'HULU -- > These are the cookies we have received:'
     for index, cookie in enumerate(cj):
@@ -179,14 +178,26 @@ def login_cookie():
         
     print "HULU --> login_url response (we want 'ok=1'): " + response
     if response == 'ok=1':
+        cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
         loggedIn = True
+        heading = 'Success'
+        message = 'Hulu Login Successful'
+        duration = 1500
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
     else:
         loggedIn = False
+        heading = 'Failure'
+        message = 'Hulu Login Failed'
+        duration = 1500
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
     
 """
     Queue Token Login
 """
-def login_queue(): 
+def login_queue():
+    if settings['login_name']=='' or settings['login_pass']=='':
+        print "Hulu --> WARNING: Could not login.  Please enter a username and password in settings"
+        return False
     action = "authenticate"
     app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
     nonce = NONCE()
@@ -200,7 +211,11 @@ def login_queue():
     file = open(QUEUETOKEN, 'w')
     file.write(data)
     file.close()
-    return
+    heading = 'Success'
+    message = 'User Queue Login Successful'
+    duration = 1500
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+
 
 def postAPI( action , parameters, secure):
     if secure == True:
@@ -216,7 +231,7 @@ def postAPI( action , parameters, secure):
     sig = sha.new(secret + action + paramsString).hexdigest()
     parameters['sig'] = sig
     data = urllib.urlencode(parameters)
-    headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
+    headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)',
                'Host': 'secure.hulu.com',
                'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0',
                'x-flash-version':'10,1,51,66'
@@ -242,26 +257,46 @@ def queueEdit():
     values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
               'token':usertoken,
               'id':args.url}
-    if args.mode == 'addqueue':
-        values['operation'] = 'add'
-        action = 'queue'
-        postAPI(action,values,True)
-    elif args.mode == 'removequeue':
-        values['operation'] = 'remove'
-        action = 'queue'
-        postAPI(action,values,True)
-    elif args.mode == 'addsub':
-        values['operation'] = 'add'
-        values['type'] = 'episodes'
-        action = 'subscription'
-        postAPI(action,values,True)
-    elif args.mode == 'removesub':
-        values['operation'] = 'remove'
-        values['type'] = 'episodes'
-        action = 'subscription'
-        postAPI(action,values,True)
-        values['type'] = 'clips'
-        postAPI(action,values,True)
+    try:
+        if args.mode == 'addqueue':
+            values['operation'] = 'add'
+            action = 'queue'
+            data=postAPI(action,values,True)
+        elif args.mode == 'removequeue':
+            values['operation'] = 'remove'
+            action = 'queue'
+            data=postAPI(action,values,True)
+        elif args.mode == 'addsub':
+            values['operation'] = 'add'
+            values['type'] = 'episodes'
+            action = 'subscription'
+            data=postAPI(action,values,True)
+        elif args.mode == 'removesub':
+            values['operation'] = 'remove'
+            values['type'] = 'episodes'
+            action = 'subscription'
+            data=postAPI(action,values,True)
+        elif args.mode == 'removehistory':
+            values['operation'] = 'remove'
+            action = 'history'
+            data=postAPI(action,values,True)
+        if 'ok' in data:
+            heading = 'Success'
+            message = 'Operation Succeeded'
+            duration = 1500
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        else:
+            heading = 'Failure'
+            message = 'Operation Failed'
+            duration = 4000
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+    except:
+        heading = 'Failure'
+        message = 'Operation Failed'
+        duration = 4000
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+
+
    
 
     

@@ -40,10 +40,10 @@ def modes( ):
         elif common.args.mode.endswith('Search'):
             import resources.lib._search as search
             search.Main()
-        elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions'):
+        elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions') or common.args.mode.endswith('History'):
             import resources.lib._menu as queue
             queue.Main()
-        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub'):
+        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history'):
             common.queueEdit()
         else:
             import xbmcgui

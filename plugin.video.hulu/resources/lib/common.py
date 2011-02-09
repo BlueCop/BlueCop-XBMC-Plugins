@@ -75,8 +75,9 @@ if os.path.isfile(QUEUETOKEN):
     tokenxml = tokenfile.read()
     tokenfile.close()
     tree=BeautifulStoneSoup(tokenxml)
-    settings['usertoken'] = tree.find('token').string 
+    settings['usertoken'] = tree.find('token').string
 
+    
 """
     Clean Non-Ascii characters from names for XBMC
 """
@@ -255,6 +256,14 @@ def NONCE():
     data = postAPI(action,values,True)
     return re.compile('<nonce>(.+?)</nonce>').findall(data)[0]
 
+def userSettings():
+    action = 'user'
+    values = {'app'         : 'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
+              'token'       : settings['usertoken'],
+              'operation'   : 'config'}
+    return postAPI(action , values, False)
+
+
 def queueEdit():
     values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
               'token':settings['usertoken'],
@@ -264,44 +273,52 @@ def queueEdit():
             values['operation'] = 'add'
             action = 'queue'
             data=postAPI(action,values,False)
+            message = 'Added to Queue'
         elif args.mode == 'removequeue':
             values['operation'] = 'remove'
             action = 'queue'
             data=postAPI(action,values,False)
+            message = 'Removed from Queue'
         elif args.mode == 'addsub':
             values['operation'] = 'add'
             values['type'] = 'episodes'
             action = 'subscription'
             data=postAPI(action,values,False)
+            message = 'Added Subscription'
         elif args.mode == 'removesub':
             values['operation'] = 'remove'
             values['type'] = 'episodes'
             action = 'subscription'
+            message = 'Removed Subscription'
             data=postAPI(action,values,False)
         elif args.mode == 'removehistory':
             values['operation'] = 'remove'
             action = 'history'
             data=postAPI(action,values,False)
+            message = 'Removed from History'
+        elif args.mode == 'vote':
+            star = unicode(u'\u2605')
+            rating = xbmcgui.Dialog().select('Vote for Video', [star, star+star, star+star+star, star+star+star+star, star+star+star+star+star])
+            if rating!=-1:
+                rating += 1
+                values['target_type'] = 'video'
+                values['rating'] = rating
+                action = 'vote'
+                data=postAPI(action,values,False)
+                message = 'Vote Succeeded'
+            else:
+                return
         if 'ok' in data:
             heading = 'Success'
-            message = 'Operation Succeeded'
-            duration = 1500
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+            duration = 3000
         else:
             heading = 'Failure'
             message = 'Operation Failed'
             duration = 4000
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
     except:
         heading = 'Failure'
         message = 'Operation Failed'
         duration = 4000
         xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-
-
-   
-
-    
-
-
 

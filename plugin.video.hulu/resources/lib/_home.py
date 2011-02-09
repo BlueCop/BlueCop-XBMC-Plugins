@@ -20,14 +20,15 @@ class Main:
                     common.login_cookie()
             except:
                 print 'Hulu Login Failure'
+
         html=common.getFEED(common.BASE_MENU_URL)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         menuitems=tree.findAll('item')
+        fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
         for item in menuitems:
             display=item.find('display').string
             items_url='http://m.hulu.com'+item.find('items_url').string
             cmtype=item.find('cmtype').string
-            fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
             if cmtype == 'None' or display == 'Help' or display == 'Profiles' or display == 'Now Playing':
                 continue
             elif display == 'TV':
@@ -47,8 +48,9 @@ class Main:
             try:
                 if not os.path.isfile(common.QUEUETOKEN):
                     common.login_queue()
-                common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,page='1',perpage='2000')
-                common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,page='1',perpage='2000')
-                common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'         ,page='1',perpage='2000')
+                thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+                common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
+                common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
+                common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
             except:
                 print 'Hulu Queue Failure'

@@ -43,7 +43,7 @@ def modes( ):
         elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions') or common.args.mode.endswith('History'):
             import resources.lib._menu as queue
             queue.Main()
-        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history'):
+        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history') or common.args.mode.endswith('vote'):
             common.queueEdit()
         else:
             import xbmcgui

@@ -23,7 +23,7 @@ class Main:
                 shows = menu.findAll('ul')[marker].findAll('a')
                 for show in shows:
                     name = show.string.encode('utf-8')
-                    series = show['onclick'].replace("set_show(this,'",'').replace("');",'').encode('utf-8')
+                    series = show['onclick'].replace("set_show(this,",'').replace(");",'').encode('utf-8')
                     common.addDirectory(name,'showlist','Videos',series)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ))

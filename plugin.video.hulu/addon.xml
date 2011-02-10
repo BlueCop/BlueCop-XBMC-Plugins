@@ -13,9 +13,9 @@
 	<provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-	<platform>all</platform>
-	<summary>Hulu video plugin</summary>
-	<description>Videos from Hulu.com</description>
-	<disclaimer>Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
+    <platform>all</platform>
+    <summary>Hulu video plugin</summary>
+    <description>Videos from Hulu.com</description>
+    <disclaimer>Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
   </extension>
 </addon>

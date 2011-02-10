@@ -377,7 +377,7 @@ class Main:
             print "playPath -- > " + stream
 
             #define item
-            SWFPlayer = 'http://www.hulu.com/site-player/72770/playback.swf'
+            SWFPlayer = 'http://www.hulu.com/site-player/86070/player.swf'
             newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer
             if (common.settings['swfverify'] == 'true'):
                 newUrl += " swfvfy=true"

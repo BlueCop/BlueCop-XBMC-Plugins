@@ -123,11 +123,20 @@ class Main:
             #set Data
             isVideo = False
             if common.args.fanart:
-                art = common.args.fanart
                 fanart = common.args.fanart
             else:
+                fanart = common.hulu_fanart
+                #'http://assets.huluim.com/companies/key_art_hulu.jpg'
+            if 'Popular' in common.args.name or 'Popular' in display:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
+            elif 'Recently' in common.args.name or 'Recently' in display:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg")) 
+            elif 'TV' == common.args.name:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
+            elif 'Movies' == common.args.name:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
+            else:
                 art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-                fanart = 'http://assets.huluim.com/companies/key_art_hulu.jpg'
             description = ''
             show_name = ''
             show_id = ''
@@ -143,7 +152,7 @@ class Main:
             votes = ''
             mpaa = ''
             media_type = False
-                
+    
             data = item('data')
             if data:
                 data = data[0]

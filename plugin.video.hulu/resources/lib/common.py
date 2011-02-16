@@ -37,6 +37,7 @@ login_url   = "https://secure.hulu.com/account/authenticate"
 COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','hulu-cookies.lwp')
 QUEUETOKEN = os.path.join(os.getcwd().replace(';', ''),'resources','cache','token.xml')
 imagepath  = os.path.join(os.getcwd().replace(';', ''),'resources','images')
+hulu_fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
 #addon = xbmcaddon.Addon(id='plugin.video.hulu')
 
 
@@ -100,7 +101,7 @@ try:
 except:
     args.fanart=''
 
-def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='http://assets.huluim.com/companies/key_art_hulu.jpg', plot='', genre='', showid='', season='', page = '1',perpage='',popular='false',updatelisting='false'):
+def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plot='', genre='', showid='', season='', page = '1',perpage='',popular='false',updatelisting='false'):
     ok=True
     u = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'

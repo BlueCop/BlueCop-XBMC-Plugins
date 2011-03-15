@@ -36,9 +36,9 @@ else:
 def CATEGORIES():
     mode = 1
     addDir('Live', 'http://espn.go.com/espn3/feeds/live', mode, defaultimage)
-    addDir('Replay - Previous 10 Days', 'http://espn3.passportproject.org/10_days.xml', mode,
-           defaultimage)
     addDir('Replay - By Sport', 'http://espn3.passportproject.org/', 2,
+           defaultimage)
+    addDir('Replay - Previous 10 Days', 'http://espn3.passportproject.org/10_days.xml', mode,
            defaultimage)
     addDir('Upcoming', 'http://sports-ak.espn.go.com/espn3/feeds/upcoming', mode,
            defaultimage)

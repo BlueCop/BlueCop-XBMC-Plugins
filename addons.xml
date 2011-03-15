@@ -56,6 +56,25 @@
   </extension>
 </addon>
 
+<addon id="plugin.video.espn3"
+       name="ESPN3"
+       version="0.7"
+       provider-name="Ksosez">
+    <requires>
+        <import addon="xbmc.python" version="1.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource"
+               library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <license>GPL 2.0</license>
+        <summary lang="en">ESPN3</summary>
+        <description lang="en">Watch full live streaming sporting events online on ESPN3, including football, baseball, cricket, soccer, and basketball events.</description>
+    </extension>
+</addon>
+
 <addon id="plugin.video.hulu"
        name="Hulu"
        version="2.8.7"
@@ -91,6 +110,24 @@
   <extension point="xbmc.addon.metadata">
     <summary>Music Videos from MTV Networks (MTV, VH1, CMT and Logo)</summary>
     <description>Music Videos</description>
+    <platform>all</platform>
+  </extension>
+</addon>
+
+<addon id="plugin.video.nbc.universal"
+       name="NBC Universal"
+       version="1.2"
+       provider-name="BlueCop">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource"
+            library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary></summary>
+    <description></description>
     <platform>all</platform>
   </extension>
 </addon>

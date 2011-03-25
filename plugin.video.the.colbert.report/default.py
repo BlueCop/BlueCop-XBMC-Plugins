@@ -229,7 +229,8 @@ def PLAYVIDEO(name,url):
         
 def PLAYFULLEPISODE(name,url):
         data = getURL(url)
-        uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
+        uri=re.compile('flashvars.contentID = "(.+?)"').findall(data)[0]
+		#uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
         url = 'http://shadow.comedycentral.com/feeds/video_player/mrss/?uri='+uri
         #url = 'http://media.mtvnservices.com/player/config.jhtml?uri='+uri+'&group=entertainment&type=network&site=colbertnation.com'
         data = getURL(url)

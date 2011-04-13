@@ -19,7 +19,7 @@ print "\n\n entering NBC TV \n\n"
 class Main:
 
     def __init__( self ):
-         
+
         if common.args.mode.startswith('TV') and common.settings['flat_tv_cats']:
             xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
             self.addShowsList()
@@ -45,7 +45,7 @@ class Main:
         print "\n\n adding shows \n\n"
 
         content=common.getHTML(common.args.url)
-        
+
         # establish show library context
         showListSegment=re.search('<h3>Show Library</h3>.+?</ul>', content, re.DOTALL).group(0)
 
@@ -60,10 +60,10 @@ class Main:
     def addSeasonList( self ):
 
         print "\n\n adding seasons \n\n"
-        
+
         # get the seasons list from the show page
         content=common.getHTML(common.args.url)
-        
+
         # establish seasons context; do we have any?
         try:
             seasonsSegment=re.search('<h3>Full Episodes</h3>.+?</ul>', content, re.DOTALL).group(0)
@@ -87,21 +87,21 @@ class Main:
             else:
                 for seasonURL, name in seasons:
                     #common.addDirectory(name, common.NBC_BASE_URL + seasonURL, 'TV_Episodes_nbc', fanart=common.NBC_BASE_URL + fanart)
-                    common.addDirectory(name, common.NBC_BASE_URL + seasonURL, 'TV_Episodes_nbc', null)
-        
+                    common.addDirectory(name, common.NBC_BASE_URL + seasonURL, 'TV_Episodes_nbc', 'null')
+
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ))
 
         return
-        
+
         ########## ########## for future work with clips and webisodes
-        
+
         slider=re.compile('VideoSlider\(.+, ({.+})').findall(content)[0]
         del content
 
         # get seasons and episodes per season; also determine how many episodes in total
         seasons=re.compile('.+?s(\d+): (\d+)').findall(re.search('episode: {.+?}', slider).group(0))
         episodeCount=re.compile('.+?all: (\d+)').findall(re.search('episode: {.+?}', slider).group(0))[0]
-                
+
         # URL for the slider call and the showID to plug into it
         sliderURL=re.search('url: \"(.+?)\"', slider).group(1)
         show_id=re.search('show_id: (\d+)', slider).group(1)
@@ -130,14 +130,14 @@ class Main:
                     common.addDirectory(xbmc.getLocalizedString(30095), common.args.url, 'TV_Clips')
                 else:
                     self.addClipsList()
-        
+
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ))
 
 
     def addEpisodeList( self ):
 
         print " \n\n adding episodes \n\n"
-        
+
         content=common.getHTML(common.args.url)
 
         # get list of pages of additional episodes, if we have any
@@ -150,11 +150,11 @@ class Main:
 
         # get episode list per page
         episodeListSegment=re.search('<div class="scet-gallery-content">.+?</div><!-- item list -->', content, re.DOTALL).group(0)
-        
+
         # title, thumbnail, watchURL, episode, plot
         episodeInfo=re.compile('<li class="list_full_detail_horiz" >.+?href="(.+?)".+?title="(.+?)"><img src="(.+?)".+?<strong>.+?Ep\. (\d+):.+?</div>.+?</li>', re.DOTALL).findall(episodeListSegment, re.DOTALL)
         print episodeInfo
-        
+
         # season number
         season=re.compile('<h2>Full Episodes.+?(\d+)</span>').findall(episodeListSegment)[0]
         print season
@@ -169,22 +169,23 @@ class Main:
             common.addDirectory(common.cleanNames(seasonEpisodeHeader + title), watchURL, 'TV_play_nbc', thumbnail, thumbnail, common.args.fanart, plot, 'genre')
 
         # now loop through rest of episode pages, if any; skip the first page
-        
+
         # TODO: see if we can consolidate the code from episodeListSegment down,
         # as it duplicates the first page stuff above
-        
+
         if pages:
             for page in pages[1:]:
                 content=common.getHTML(common.NBC_BASE_URL + page)
-                
+
                 # get episode list per page
-                episodeListSegment=re.search('<div id="browse_container">.+?</div><!-- #browse_container -->', content, re.DOTALL).group(0)
-                
+                episodeListSegment=re.search('<div class="scet-gallery-content">.+?</div><!-- item list -->', content, re.DOTALL).group(0)
+
                 # title, thumbnail, watchURL, episode, plot
-                episodeInfo=re.compile('<li class="list_full_detail">.+?title="(.+?)"><img src="(.+?)".+?<a href="(.+?)".+?<strong>Ep\. (\d+):.+?<p class="list_full_des"><em>(.+?)</em>', re.DOTALL).findall(episodeListSegment, re.DOTALL)
-                
+                episodeInfo=re.compile('<li class="list_full_detail_horiz" >.+?href="(.+?)".+?title="(.+?)"><img src="(.+?)".+?<strong>.+?Ep\. (\d+):.+?</div>.+?</li>', re.DOTALL).findall(episodeListSegment, re.DOTALL)
+
                 # add each add'l page worth of episodes
-                for title, thumbnail, watchURL, episode, plot in episodeInfo:
+                for watchURL, title, thumbnail, episode in episodeInfo:
+                    plot = ''
                     # build s0xe0y season/episode header if wanted; includes trailing space!
                     seasonEpisodeHeader=('', "s%02de%03d " % (int(season), int(episode)))[common.settings['show_epi_labels']]
                     # see if we want plots
@@ -193,11 +194,11 @@ class Main:
 
 
     def addClipsList( self ):
-        
+
         print " \n\n adding clips \n\n"
 
         content=common.getHTML(common.args.url)
-        
+
         # watchURL, thumbnail, title
         clipInfo=re.compile('<li>.+?<a href="(.+?)".+?<img src="(.+?)".+?alt="(.+?)".+?</li>').findall(content)
 
@@ -223,30 +224,43 @@ def playRTMP():
     print rtmpurl
     swfUrl = getswfUrl()
     link = str(common.getHTML(smilurl))
-    print link   
+    print link
     match=re.compile('<video src="(.+?)"').findall(link)
     if (common.settings['quality'] == '0'):
             dia = xbmcgui.Dialog()
-            ret = dia.select(xbmc.getLocalizedString(30004), [xbmc.getLocalizedString(30016),xbmc.getLocalizedString(30017),xbmc.getLocalizedString(30018)])
+            ret = dia.select("Quality", ["High","Normal","Exit"])
             if (ret == 2):
                     return
-    else:        
+    else:
             ret = None
     for playpath in match:
         playpath = playpath.replace('.flv','')
-        if '_0700' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '1' or '_0700' in playpath and (ret == 0)):
+        if "mp4" in playpath:
             item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
             item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
-            rtmpurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-        elif '_0500' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '2') or '_0500' in playpath and (ret == 1):
-            item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
-            item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
-            rtmpurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            if '_1696' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '1' or '_1696' in playpath and (ret == 0)):
+                item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
+                item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
+                rtmpurl += ' playpath=mp4:'+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            elif '_0696' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '2') or '_0696' in playpath and (ret == 1):
+                item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
+                item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
+                rtmpurl += ' playpath=mp4:'+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+
+        else:
+            if '_0700' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '1' or '_0700' in playpath and (ret == 0)):
+                item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
+                item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
+                rtmpurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            elif '_0500' in playpath and (xbmcplugin.getSetting(pluginhandle,"quality") == '2') or '_0500' in playpath and (ret == 1):
+                item=xbmcgui.ListItem(common.args.name, iconImage='', thumbnailImage='')
+                item.setInfo( type="Video",infoLabels={ "Title": common.args.name})
+                rtmpurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
     xbmc.Player(xbmc.PLAYER_CORE_DVDPLAYER).play(rtmpurl, item)
 
 
 #Sends over AMF the VID with parameters to get smil from AMF gateway
-#figure out last 2 parameters. most likely decompile player. 
+#figure out last 2 parameters. most likely decompile player.
 def getsmil(vid):
     gw = RemotingService(url='http://video.nbcuni.com/amfphp/gateway.php',
             referer='http://www.nbc.com/assets/video/3-0/swf/NBCVideoApp.swf',
@@ -275,7 +289,7 @@ def getrtmp():
     print response
     for item in response:
         print item
-    rtmphost= response['akamaiHostName'] 
+    rtmphost= response['akamaiHostName']
     app = response['akamaiAppName']
     identurl = 'http://'+rtmphost+'/fcs/ident'
     ident = common.getHTML(identurl)

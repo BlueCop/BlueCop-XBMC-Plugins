@@ -1,4 +1,4 @@
-import urllib,urllib2,re,xbmcplugin,xbmcgui
+import urllib,urllib2,re,xbmcplugin,xbmcgui, string
 import os
 
 pluginhandle = int(sys.argv[1])

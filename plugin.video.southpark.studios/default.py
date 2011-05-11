@@ -29,7 +29,7 @@ def getURL( url ):
 def seasons():
     xbmcplugin.setContent(pluginhandle, 'seasons')
     #addRandom('Random Episode','http://www.southparkstudios.com/episodes/random.php',3)
-    for sn in range(1,15):
+    for sn in range(1,16):
         sn = str(sn)
         name = 'Season '+sn
         url = sn

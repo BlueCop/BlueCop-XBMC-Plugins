@@ -23,6 +23,7 @@ exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", "
     DEFINE URLS
 """
 BASE_URL = "http://www.cbs.com/video/"
+BASE = "http://www.cbs.com"
 
 imagepath = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 
@@ -43,27 +44,26 @@ settings['proxy'] = xbmcplugin.getSetting(pluginhandle,'us_proxy_enable')
     ADD DIRECTORY
 """
 
-def addDirectory(name, url='', mode='', series='', page='undefined', updatelist='false'):
+def addDirectory(name, url='', mode='', series='', page='1', updatelist='false', thumb=''):
     ok=True
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&name="'+urllib.quote_plus(name.replace("'",''))+'"'
-    u += '&series="'+urllib.quote_plus(series)+'"'
     u += '&page="'+urllib.quote_plus(page)+'"'
     u += '&updatelist="'+urllib.quote_plus(updatelist)+'"'
-    liz=xbmcgui.ListItem(name)
+    liz=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     liz.setInfo( type="Video", infoLabels={ "Title":name })
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
     return ok
 
-def getVIDEOS( s , series_title, b):
+def getVIDEOS( values):
     try:
-        url = 'http://www.cbs.com/video/_process.php'     
+        url = 'http://www.cbs.com/sitecommon/includes/video/2009_carousel_data_multiple.php'     
         print 'CBS --> common :: postHTTP :: url = '+url
-        values = {'_b':b,
-                  '_s':s,
-                  '_series_title':series_title}
+        #values = {'_b':b,
+        #          '_s':s,
+        #          '_series_title':series_title}
         data = urllib.urlencode(values)
         req = urllib2.Request(url,data)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')

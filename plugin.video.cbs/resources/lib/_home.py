@@ -19,13 +19,16 @@ class Main:
     def addMainHomeItems( self ):
         tvicon = xbmc.translatePath(os.path.join(common.imagepath,"tv_icon.png"))
         #Video lists
-        common.addDirectory('Most Popular','popular','Videos')
-        common.addDirectory('Latest Videos','latest','Videos')
-        common.addDirectory('Full Episodes','fullep','Videos')
+        #common.addDirectory('Most Popular','popular','Videos')
+        #common.addDirectory('Latest Videos','latest','Videos')
+        #common.addDirectory('Full Episodes','fullep','Videos')
+        
         #Show types
         data = common.getHTML(common.BASE_URL)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        categories=tree.findAll(attrs={'class' : 'head'})
+        menu=tree.find(attrs={'id' : 'daypart_nav'})
+        categories=menu.findAll('a')
         for item in categories:
-            name = item.string
-            common.addDirectory(name,mode="Shows")
+            catid = item['onclick'].replace("showDaypart('",'').replace("');",'')
+            name = catid.title()
+            common.addDirectory(name,catid,mode="Shows")

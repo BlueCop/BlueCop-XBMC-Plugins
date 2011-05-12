@@ -44,7 +44,7 @@ settings['proxy'] = xbmcplugin.getSetting(pluginhandle,'us_proxy_enable')
     ADD DIRECTORY
 """
 
-def addDirectory(name, url='', mode='', series='', page='1', updatelist='false', thumb=''):
+def addDirectory(name, url='', mode='', page='optionlist', updatelist='false', thumb=''):
     ok=True
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
@@ -61,9 +61,6 @@ def getVIDEOS( values):
     try:
         url = 'http://www.cbs.com/sitecommon/includes/video/2009_carousel_data_multiple.php'     
         print 'CBS --> common :: postHTTP :: url = '+url
-        #values = {'_b':b,
-        #          '_s':s,
-        #          '_series_title':series_title}
         data = urllib.urlencode(values)
         req = urllib2.Request(url,data)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')

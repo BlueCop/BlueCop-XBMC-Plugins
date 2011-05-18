@@ -40,7 +40,18 @@ class Main:
                 except:
                     print 'CBS: vid_module failed'
         elif page == '1':
-            self.PAGES(tree)
+            print 'CBS: trying vid_module'
+            try:
+                options = tree.findAll(attrs={'class' : 'vid_module'})
+                if len(options) == 1:
+                    self.PAGES(tree)
+                else:
+                    for option in options:
+                        moduleid = option['id']
+                        name = option.find(attrs={'class' : 'hdr'}).string
+                        common.addDirectory(name,common.args.url,'Videos',moduleid)                                        
+            except:
+                self.PAGES(tree)
         elif 'vid_module' in page:
             vid_module = tree.find(attrs={'id' : page})
             self.PAGES(vid_module)

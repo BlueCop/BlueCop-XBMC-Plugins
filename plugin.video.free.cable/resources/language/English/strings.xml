@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+	<string id="30001">Default Quality</string>
+	<string id="30002">384x216@332kbps</string>
+	<string id="30003">640x360@464kbps</string>
+	<string id="30004">640x360@764kbps</string>
+	<string id="30005">640x360@1264kbps</string>
+	<string id="30006">1280x720@2064kbps</string>
+
+	<string id="30041">U.S. Proxy port</string>
+	<string id="30040">U.S. Proxy IP</string>
+	<string id="30039">Enable Proxy</string>
+
+</strings>

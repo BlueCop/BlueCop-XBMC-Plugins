@@ -27,7 +27,11 @@ exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", "
 site_dict = {'ABC': 'abc',
              'CBS': 'cbs',
              'NBC': 'nbc',
-             'FOX': 'fox'
+             'FOX': 'fox',
+             'The CW':'thecw',
+             'FX': 'fx',
+             'TNT': 'tnt',
+             'TBS': 'tbs'
              }
 
 
@@ -36,6 +40,11 @@ site_dict = {'ABC': 'abc',
 """
 
 settings={}
+#settings general
+quality = ['', '', '', '', '']
+selectquality = int(xbmcplugin.getSetting(pluginhandle,'quality'))
+settings['quality'] = quality[selectquality]
+settings['proxy'] = xbmcplugin.getSetting(pluginhandle,'us_proxy_enable')
 
 
 """
@@ -55,14 +64,14 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=''):
     return ok
 
 
-def getURL( url , values = None):
+def getURL( url , values = None ,enableproxy = False):
     try:
-        #if enableproxy == True:
-        #    us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
-        #    print 'Using proxy: ' + us_proxy
-        #    proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-        #    opener = urllib2.build_opener(proxy_handler)
-        #    urllib2.install_opener(opener)
+        if enableproxy == True:
+            us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
+            print 'Using proxy: ' + us_proxy
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            urllib2.install_opener(opener)
 
         print 'FREE CABLE --> common :: getHTML :: url = '+url
         if values == None:

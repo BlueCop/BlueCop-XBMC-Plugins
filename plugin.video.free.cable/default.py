@@ -37,7 +37,7 @@ def modes( ):
     elif common.args.mode in common.site_dict.values():
         exec 'import resources.lib.%s as sitemodule' % common.args.mode
         exec 'sitemodule.%s()' % common.args.sitemode
-        if common.args.sitemode <> 'play':
+        if not common.args.sitemode.startswith('play'):
             xbmcplugin.endOfDirectory( pluginhandle )
 
 modes ( )

@@ -104,7 +104,11 @@ def play():
     url = 'http://metaframe.digitalsmiths.tv/v2/CWtv/assets/%s/partner/132?format=json' % common.args.url
     data = common.getURL(url)
     items = demjson.decode(data)
-    rtmpdata = items['videos']['ds700']['uri'].split('mp4:')
+    sbitrate = int(common.settings['quality'])
+    if sbitrate > 700:
+        rtmpdata = items['videos']['ds700']['uri'].split('mp4:')
+    if sbitrate < 700:
+        rtmpdata = items['videos']['ds500']['uri'].split('mp4:')
     rtmp = rtmpdata[0]
     playpath = 'mp4:'+rtmpdata[1]
     rtmpurl = rtmp+' playpath='+playpath+" swfurl=" + swfurl + " swfvfy=true"

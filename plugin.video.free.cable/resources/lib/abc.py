@@ -74,13 +74,13 @@ def play(url=common.args.url):
             rtmp = 'rtmp://%s/%s' % (host['url'], host['app'])
     filenames = tree.findAll('video')
     hbitrate = -1
+    sbitrate = int(common.settings['quality'])
     for filename in filenames:
         if filename['src'] <> '':
             bitrate = int(filename['bitrate'])
-            if bitrate > hbitrate:
+            if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 playpath = filename['src']
-                
     swfUrl = 'http://livepassdl.conviva.com/ver/2.27.0.42841/LivePassModuleMain.swf'
     rtmpurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
     item = xbmcgui.ListItem(path=rtmpurl)

@@ -5,6 +5,7 @@ import urllib
 import urllib2
 import sys
 import os
+import addoncompat
 
 pluginhandle = int (sys.argv[1])
 """
@@ -25,13 +26,18 @@ exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", "
     DEFINE
 """
 site_dict = {'ABC': 'abc',
+             'ABC Family':'abcfamily',
              'CBS': 'cbs',
              'NBC': 'nbc',
+             'USA': 'usa',
+             'SyFy': 'syfy',
              'FOX': 'fox',
              'The CW':'thecw',
              'FX': 'fx',
              'TNT': 'tnt',
-             'TBS': 'tbs'
+             'TBS': 'tbs',
+             'Spike':'spike',
+             'TV Land':'tvland'
              }
 
 
@@ -41,10 +47,10 @@ site_dict = {'ABC': 'abc',
 
 settings={}
 #settings general
-quality = ['', '', '', '', '']
-selectquality = int(xbmcplugin.getSetting(pluginhandle,'quality'))
+quality = ['200', '400', '600', '800', '1000', '1200', '1400', '1600', '2000', '2500', '3000', '100000']
+selectquality = int(addoncompat.get_setting('quality'))
 settings['quality'] = quality[selectquality]
-settings['proxy'] = xbmcplugin.getSetting(pluginhandle,'us_proxy_enable')
+settings['enableproxy'] = addoncompat.get_setting('us_proxy_enable')
 
 
 """
@@ -64,10 +70,10 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=''):
     return ok
 
 
-def getURL( url , values = None ,enableproxy = False):
+def getURL( url , values = None ,proxy = False):
     try:
-        if enableproxy == True:
-            us_proxy = 'http://' + xbmcplugin.getSetting(pluginhandle,'us_proxy') + ':' + xbmcplugin.getSetting(pluginhandle,'us_proxy_port')
+        if proxy == True:
+            us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
             print 'Using proxy: ' + us_proxy
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
             opener = urllib2.build_opener(proxy_handler)

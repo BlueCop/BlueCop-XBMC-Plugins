@@ -68,9 +68,10 @@ def play():
     publisherID = 51296410001
     rtmpdata = get_clip_info(const, playerID, videoPlayer, publisherID)['renditions']
     hbitrate = -1
+    sbitrate = int(common.settings['quality']) * 1024
     for item in rtmpdata:
         bitrate = int(item['encodingRate'])
-        if bitrate > hbitrate:
+        if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             urldata = item['defaultURL']
             auth = urldata.split('?')[1]

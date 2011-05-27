@@ -197,17 +197,18 @@ def play():
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     items=tree.findAll('video')
     hbitrate = -1
+    sbitrate = int(common.settings['quality']) * 1024
     for item in items:
         bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate:
+        if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             playpath = item['src']
             if '.mp4' in playpath:
                 playpath = 'mp4:'+playpath
             else:
                 playpath = playpath.replace('.flv','')
-            rtmpurl += ' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-    item = xbmcgui.ListItem(path=rtmpurl)
+            finalurl = rtmpurl+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def getsmil(vid):

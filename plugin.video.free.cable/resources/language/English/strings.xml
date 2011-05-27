@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-	<string id="30001">Default Quality</string>
-	<string id="30002">384x216@332kbps</string>
-	<string id="30003">640x360@464kbps</string>
-	<string id="30004">640x360@764kbps</string>
-	<string id="30005">640x360@1264kbps</string>
-	<string id="30006">1280x720@2064kbps</string>
+	<string id="30001">Bitrate Limit</string>
+	<string id="30002">200kbps</string>
+	<string id="30003">400kbps</string>
+	<string id="30004">600kbps</string>
+	<string id="30005">800kbps</string>
+	<string id="30006">1000kbps</string>
+	<string id="30007">1200kbps</string>
+	<string id="30008">1400kbps</string>
+	<string id="30009">1600kbps</string>
+	<string id="30010">2000kbps</string>
+	<string id="30011">2500kbps</string>
+	<string id="30012">3000kbps</string>
+	<string id="30013">Max</string>
 
 	<string id="30041">U.S. Proxy port</string>
 	<string id="30040">U.S. Proxy IP</string>

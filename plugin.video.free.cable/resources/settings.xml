@@ -1,5 +1,5 @@
 <settings>
-   <setting id="quality" type="enum" lvalues="30006|30005|30004|30003|30002" label="30001" default="0"/>
+   <setting id="quality" type="enum" lvalues="30002|30003|30004|30005|30006|30007|30008|30009|30010|30011|30012|30013" label="30001" default="11"/>
    <setting id="us_proxy_enable" type="bool" label="30039" default="false"/>
    <setting id="us_proxy" type="text" label="30040" default="208.100.40.34"/>
    <setting id="us_proxy_port" type="text" label="30041" default="80"/>

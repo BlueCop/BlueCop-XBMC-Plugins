@@ -31,7 +31,11 @@ def masterlist():
 def play():
     pid = common.args.url
     url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
-    data=common.getURL(url)
+    if (common.settings['enableproxy'] == 'true'):
+        proxy = True
+    else:
+        proxy = False
+    data=common.getURL(url,proxy=proxy)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('video',attrs={'profile': True})
     rtmps=[]
@@ -43,10 +47,10 @@ def play():
         elif 'http' in url:
             https.append(item)
     hbitrate = -1
+    sbitrate = int(common.settings['quality']) * 1024
     for item in rtmps:
-        print item['profile']
         bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate:
+        if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             url = item['src'].split('<break>')
             rtmp = url[0]

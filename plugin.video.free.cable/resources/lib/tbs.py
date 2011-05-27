@@ -132,8 +132,12 @@ def GET_RTMP(vid):
         url = 'http://www.tbs.com/video/cvp/videoData.jsp?oid='+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        files = tree.findAll('file',attrs={'type' : 'high'})
-        #stream details
+        print tree.prettify()
+        sbitrate = int(common.settings['quality'])
+        if sbitrate <= 400:
+                files = tree.findAll('file',attrs={'type' : 'standard'})
+        else:
+                files = tree.findAll('file',attrs={'type' : 'high'})
         filename = files[0].string
         if 'http://' in filename:
             filename = filename

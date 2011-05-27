@@ -29,7 +29,7 @@ def rootlist():
         try:
             url = item.find(attrs={'class':'action watch-episodes'})['href']
             url = url.replace('/fod/play.php?sh=','/fod/').replace('/watch/','/fod/')   
-            thumb = item.find('img')['src']
+            thumb = BASE+'/'+item.find('img')['src']
             showname = item.find(attrs={'class':'content'})('h2')[0].string
             common.addDirectory(showname, 'fx', 'show', url, thumb)
             print url
@@ -78,9 +78,10 @@ def play():
     publisherID = 67398584001
     rtmpdata = get_clip_info(const, playerID, videoPlayer, publisherID)['renditions']
     hbitrate = -1
+    sbitrate = int(common.settings['quality']) * 1024
     for item in rtmpdata:
         bitrate = int(item['encodingRate'])
-        if bitrate > hbitrate:
+        if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             urldata = item['defaultURL']
             auth = urldata.split('?')[1]

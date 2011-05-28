@@ -18,7 +18,7 @@ BASE = 'http://www.nbc.com'
 
 def masterlist():
     common.args.name = 'Show Library'
-    shows(BASE_URL)
+    return shows(BASE_URL, db=True)
 
 def checkurl(url):
     #Add base url checks
@@ -47,6 +47,7 @@ def showroot(url = common.args.url):
         common.addDirectory(name, 'nbc', 'showsub', url)
 
 def showsub(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     if common.args.name == 'Full Episodes' or common.args.name == 'Webisodes':
         sitemode='fullepisodes'
     else:
@@ -64,7 +65,8 @@ def showsub(url = common.args.url):
         url = BASE + item['href']
         common.addDirectory(name, 'nbc', sitemode, url)
         
-def shows(url = common.args.url):
+def shows(url = common.args.url, db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
@@ -73,13 +75,19 @@ def shows(url = common.args.url):
         if common.args.name == category.string:
             marker = categories.index(category)
     items = menu.findAll('ul')[marker].findAll('a')
+    db_shows = []
     if len(items) == 1:
         url = BASE + items[0]['href']
         shows2(url)
     for item in items:
         name = item.string
         url = item['href']
-        common.addDirectory(name, 'nbc', 'showroot', url)
+        if db==True:
+            db_shows.append((name,'nbc','showroot',url,None,None,None))
+        else:
+            common.addDirectory(name, 'nbc', 'showroot', url)
+    if db==True:
+        return db_shows
 
 def shows2(url):
     if common.args.name == 'Full Episodes':
@@ -102,6 +110,7 @@ def shows2(url):
         common.addDirectory(name, 'nbc', sitemode, itemurl, thumb)
 
 def listvideos (url = common.args.url,trypages=True):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     if trypages == True:
@@ -133,6 +142,7 @@ def listvideos (url = common.args.url,trypages=True):
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
         
 def fullepisodes (url = common.args.url,trypages=True):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     if trypages == True:

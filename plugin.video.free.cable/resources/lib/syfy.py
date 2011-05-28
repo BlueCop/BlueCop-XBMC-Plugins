@@ -18,21 +18,29 @@ BASE_URL = 'http://www.syfy.com/rewind/'
 BASE = 'http://www.syfy.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     data = re.compile('<!-- show listing -->(.*?)<!-- end show listing -->',re.DOTALL).findall(data)[0]
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     categories=tree.find(attrs={'id' : 'show_boxes'}).findAll('div',recursive=False)
+    db_shows = []
     for item in categories:
         name = item.string
         url = BASE_URL + item.find('a')['href']
         name = item.find('a').find('img')['alt']
         thumb = BASE_URL + item.find('a').find('img')['src']
-        common.addDirectory(name, 'syfy', 'shows', url, thumb)
+        if db==True:
+            db_shows.append((name,'syfy','episodes',url,None,thumb,None))
+        else:
+            common.addDirectory(name, 'syfy', 'episodes', url, thumb)
+    if db==True:
+        return db_shows
 
-def shows(url = common.args.url):
+def episodes(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     data = re.compile('<div id="show_video_container">(.*?)<div class="dropshadow_bottom">',re.DOTALL).findall(data)[0]
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)

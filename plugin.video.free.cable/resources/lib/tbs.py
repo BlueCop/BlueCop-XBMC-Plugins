@@ -17,7 +17,7 @@ def masterlist():
                 name = collection.find('name').string
                 if name == 'shows':
                         cid = collection['id']
-                        shows(cid)
+                        return shows(cid,db=True)
                         
 def rootlist(): # No mode - Root Listing
         url = getCollections + '?oid=185669'
@@ -31,7 +31,7 @@ def rootlist(): # No mode - Root Listing
                         continue
                 common.addDirectory(name.title(), 'tbs', 'shows', cid)
 
-def shows(cid = common.args.url):
+def shows(cid = common.args.url,db=False):
         name = common.args.name
         xbmcplugin.setContent(pluginhandle, 'shows')
         if name == 'Full Episodes':
@@ -41,11 +41,16 @@ def shows(cid = common.args.url):
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
+        db_shows = []
         for collection in collections:
                 cid = collection['id']
                 name = collection.find('name').string
-                common.addDirectory(name, 'tbs', 'show', cid)
- 
+                if db==True:
+                        db_shows.append((name,'tbs','show',cid,None,None,None))
+                else:
+                        common.addDirectory(name, 'tbs', 'show', cid)
+        if db==True:
+                return db_shows 
 
 def show(cid = common.args.url): 
         xbmcplugin.setContent(pluginhandle, 'shows')

@@ -19,22 +19,28 @@ BASE_URL = 'http://www.fxnetworks.com/episodes.php'
 BASE = 'http://www.fxnetworks.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find('ul', attrs={'class':'shows'}).findAll('li',recursive=False)
+    db_shows = []
     for item in menu:
         try:
             url = item.find(attrs={'class':'action watch-episodes'})['href']
             url = url.replace('/fod/play.php?sh=','/fod/').replace('/watch/','/fod/')   
             thumb = BASE+'/'+item.find('img')['src']
             showname = item.find(attrs={'class':'content'})('h2')[0].string
-            common.addDirectory(showname, 'fx', 'show', url, thumb)
-            print url
+            if db==True:
+                db_shows.append((showname,'fx','show',url,None,thumb,None))
+            else:
+                common.addDirectory(showname, 'fx', 'show', url, thumb)
         except:
             print 'no watch episode action'
+    if db==True:
+        return db_shows
 
 def show(url=common.args.url):
     common.addDirectory('Full Episodes', 'fx', 'episodes', url+'/rss.xml')
@@ -42,6 +48,7 @@ def show(url=common.args.url):
 
 
 def episodes(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     showname = tree.find('channel').find('title').string

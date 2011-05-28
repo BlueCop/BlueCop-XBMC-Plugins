@@ -28,12 +28,12 @@ def modes( ):
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )
     elif common.args.mode is 'Masterlist':
-        for name , network in common.site_dict.iteritems():
-            exec 'import resources.lib.%s as %s' % (network,network)
-            exec '%s.masterlist()' % network
+        xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        shows = common.load_db()
+        for name, mode, sitemode, url, description, poster, fanart in shows:
+            common.addDirectory(name.encode('utf8'), mode, sitemode, url)
         xbmcplugin.endOfDirectory(pluginhandle)
-        pass
     elif common.args.mode in common.site_dict.values():
         exec 'import resources.lib.%s as sitemodule' % common.args.mode
         exec 'sitemodule.%s()' % common.args.sitemode

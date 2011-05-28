@@ -16,16 +16,23 @@ BASE_URL = 'http://abcfamily.go.com/watch'
 BASE = 'http://abcfamily.go.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     menu=tree.findAll('ul',attrs={'class':'show_listing_item'})
+    db_shows = []
     for item in menu:
         name = item.find(attrs={'class':'show_listing_title'}).string
         url = item.find(attrs={'class':'show_listing_url'}).string
-        common.addDirectory(name, 'abcfamily', 'showcats', url)
+        if db==True:
+            db_shows.append((name,'abcfamily','showcats',url,None,None,None))
+        else:
+            common.addDirectory(name, 'abcfamily', 'showcats', url)
+    if db==True:
+        return db_shows
 
 def showcats(url=common.args.url):
     data = common.getURL(url)
@@ -36,6 +43,7 @@ def showcats(url=common.args.url):
         common.addDirectory(name, 'abcfamily', 'videos', url) 
 
 def videos(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     cats=tree.findAll(attrs={'class' : re.compile('(.+?)videoCollectionModule moduleWide ')})

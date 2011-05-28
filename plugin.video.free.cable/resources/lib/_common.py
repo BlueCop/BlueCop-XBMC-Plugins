@@ -7,6 +7,11 @@ import sys
 import os
 import addoncompat
 
+try:
+    from pysqlite2 import dbapi2 as sqlite
+except:
+    from sqlite3 import dbapi2 as sqlite
+
 pluginhandle = int (sys.argv[1])
 """
     PARSE ARGV
@@ -52,6 +57,38 @@ selectquality = int(addoncompat.get_setting('quality'))
 settings['quality'] = quality[selectquality]
 settings['enableproxy'] = addoncompat.get_setting('us_proxy_enable')
 
+
+def load_db():
+    db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')
+    #if os.path.exists(db_file):
+    #    os.remove(db_file)
+    if not os.path.exists(db_file):
+        create_db(db_file)
+    conn = sqlite.connect(db_file)
+    c = conn.cursor()
+    return c.execute('select * from shows order by name')
+
+def create_db(db_file):
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('Caching')
+    total_stations = len(site_dict)
+    current = 0
+    increment = 100.0 / total_stations
+    conn = sqlite.connect(db_file)
+    conn.text_factory = str
+    c = conn.cursor()
+    c.execute('''create table shows
+                (name text, mode text, sitemode text, url text, description text, poster text, fanart text)''')
+    for name , network in site_dict.iteritems():
+        percent = increment*current
+        dialog.update(percent,'Caching shows...','Scanning %s' % name)
+        exec 'import %s' % network
+        exec 'showdata = %s.masterlist()' % network
+        for show in showdata:
+            c.execute('insert into shows values (?,?,?,?,?,?,?)', show)
+        current += 1
+    conn.commit()
+    c.close()
 
 """
     ADD DIRECTORY

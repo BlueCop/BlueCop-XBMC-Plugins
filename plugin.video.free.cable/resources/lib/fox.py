@@ -18,18 +18,26 @@ BASE_URL = 'http://www.fox.com/full-episodes/'
 BASE = 'http://www.fox.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'fullEpisodesListing'}).findAll(attrs={'class' : 'showInfo'})
+    db_shows = []
     for item in menu:
-        showname = item.find('h3').string
+        name = item.find('h3').string
         url = BASE + item.findAll('a')[1]['href']
-        common.addDirectory(showname, 'fox', 'episodes', url)
+        if db==True:
+            db_shows.append((name,'fox','episodes',url,None,None,None))
+        else:
+            common.addDirectory(name, 'fox', 'episodes', url)
+    if db==True:
+        return db_shows
 
 def episodes(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'fullEpisodesList'}).findAll(attrs={'data-video-id':True})

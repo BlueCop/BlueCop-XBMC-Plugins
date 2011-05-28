@@ -15,19 +15,27 @@ pluginhandle = int(sys.argv[1])
 showlist= 'http://cdn.abc.go.com/vp2/ws-supt/s/syndication/2000/rss/001/001/-1/-1/-1/-1/-1/-1'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(showlist)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     menu=tree.findAll('item')
+    db_shows = []
     for item in menu:
         name = item('title')[0].string.encode('utf-8')
         url = item('link')[0].string
         thumb = item('image')[0].string
-        common.addDirectory(name, 'abc', 'showcats', url , thumb)
+        if db==True:
+            db_shows.append((name,'abc','episodes',url,None,thumb,None))
+        else:
+            common.addDirectory(name, 'abc', 'episodes', url , thumb)
+    if db==True:
+        return db_shows
 
-def showcats(url=common.args.url):
+def episodes(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     video_rss = menu=tree.find(attrs={'type' : 'application/rss+xml'})['href']

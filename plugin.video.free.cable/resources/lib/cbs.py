@@ -20,57 +20,15 @@ def masterlist():
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id' : 'videoContent'})
     categories=menu.findAll('div', attrs={'id' : True}, recursive=False)
+    db_shows = []
     for item in categories:
         shows = item.findAll(attrs={'id' : 'show_block_interior'})
         for show in shows:
             name = show.find('img')['alt'].encode('utf-8')
-            thumbnail = BASE_URL + show.find('img')['src']
+            thumb = BASE_URL + show.find('img')['src']
             url = BASE + show.find('a')['href']
-            common.addDirectory(name, 'cbs', 'showcats', url, thumb=thumbnail)
-    
-def play():
-    pid = common.args.url
-    url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
-    if (common.settings['enableproxy'] == 'true'):
-        proxy = True
-    else:
-        proxy = False
-    data=common.getURL(url,proxy=proxy)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    videos = tree.findAll('video',attrs={'profile': True})
-    rtmps=[]
-    https=[]
-    for item in videos:
-        url = item['src']
-        if 'rtmp' in url:
-            rtmps.append(item)
-        elif 'http' in url:
-            https.append(item)
-    hbitrate = -1
-    sbitrate = int(common.settings['quality']) * 1024
-    for item in rtmps:
-        bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            url = item['src'].split('<break>')
-            rtmp = url[0]
-            playpath = url[1]
-            if ".mp4" in playpath:
-                    playpath = 'mp4:' + playpath
-            else:
-                    playpath = playpath.replace('.flv','')
-            swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
-            finalurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-    '''
-    for item in https:
-        print item['profile']
-        bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate:
-            hbitrate = bitrate
-            finalurl = item['src']
-    '''
-    item = xbmcgui.ListItem(path=finalurl)
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            db_shows.append((name,'cbs','showcats',url,None,thumb,None))
+    return db_shows
 
 def rootlist():
     data = common.getURL(BASE_URL)
@@ -231,4 +189,46 @@ def VIDEOLINKS( data ):
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
 
-
+def play():
+    pid = common.args.url
+    url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
+    if (common.settings['enableproxy'] == 'true'):
+        proxy = True
+    else:
+        proxy = False
+    data=common.getURL(url,proxy=proxy)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos = tree.findAll('video',attrs={'profile': True})
+    rtmps=[]
+    https=[]
+    for item in videos:
+        url = item['src']
+        if 'rtmp' in url:
+            rtmps.append(item)
+        elif 'http' in url:
+            https.append(item)
+    hbitrate = -1
+    sbitrate = int(common.settings['quality']) * 1024
+    for item in rtmps:
+        bitrate = int(item['system-bitrate'])
+        if bitrate > hbitrate and bitrate <= sbitrate:
+            hbitrate = bitrate
+            url = item['src'].split('<break>')
+            rtmp = url[0]
+            playpath = url[1]
+            if ".mp4" in playpath:
+                    playpath = 'mp4:' + playpath
+            else:
+                    playpath = playpath.replace('.flv','')
+            swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
+            finalurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    '''
+    for item in https:
+        print item['profile']
+        bitrate = int(item['system-bitrate'])
+        if bitrate > hbitrate:
+            hbitrate = bitrate
+            finalurl = item['src']
+    '''
+    item = xbmcgui.ListItem(path=finalurl)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)

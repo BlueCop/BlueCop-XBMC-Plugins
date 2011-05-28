@@ -18,19 +18,26 @@ BASE_URL = 'http://www.cwtv.com/cw-video/'
 BASE = 'http://www.cwtv.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'videoshowslist'}).findAll('li',recursive=False)
+    db_shows = []
     for item in menu:
         url = BASE + item.find(attrs={'class':'videothumb'}).find('a')['href']
         thumb = item.find('img')['src']
         showname = item.find(attrs={'class':'videoinfo'}).contents[0].strip()
         if showname == 'More Video':
             continue
-        common.addDirectory(showname, 'thecw', 'show', url, thumb)
+        if db==True:
+            db_shows.append((showname,'thecw','show',url,None,thumb,None))
+        else:
+            common.addDirectory(showname, 'thecw', 'show', url, thumb)
+    if db==True:
+        return db_shows
 
 def show(url=common.args.url):
     data = common.getURL(url)
@@ -43,6 +50,7 @@ def show(url=common.args.url):
 
 
 def episodes(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     urldata = url.split('<videotab>')
     tabid = int(urldata[1])
     url = urldata[0]

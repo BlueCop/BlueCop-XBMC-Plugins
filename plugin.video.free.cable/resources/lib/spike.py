@@ -8,14 +8,16 @@ BASE = 'http://www.spike.com'
 pluginhandle = int(sys.argv[1])
 
 def masterlist():
-        rootlist()
+    return rootlist(db=True)
         
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     url = BASE + '/shows/'
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     categories=tree.findAll(attrs={'class' : 'module  primetime_and_originals'})
+    db_shows = []
     for category in categories:
         shows = category.findAll('li')
         for show in shows:
@@ -24,9 +26,14 @@ def rootlist():
             name = link.string
             if name == 'The Ultimate Fighter':
                 continue
-            common.addDirectory(name, 'spike', 'shows', url)
-        
-def shows(url=common.args.url):
+            if db==True:
+                db_shows.append((name,'spike','episodes',url,None,None,None))
+            else:
+                common.addDirectory(name, 'spike', 'episodes', url)
+    if db==True:
+        return db_shows
+
+def episodes(url=common.args.url):
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)

@@ -8,19 +8,27 @@ BASE = 'http://www.tvland.com/full-episodes'
 pluginhandle = int(sys.argv[1])
 
 def masterlist():
-        rootlist()
+    return rootlist(db=True)
         
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASE)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     categories=tree.find('div',attrs={'class' : 'showsList'}).findAll('a')
+    db_shows = []
     for show in categories:
         url = show['href']
         name = show.contents[0]
-        common.addDirectory(name, 'tvland', 'episodes', url)
-        
+        if db==True:
+            db_shows.append((name,'tvland','episodes',url,None,None,None))
+        else:
+            common.addDirectory(name, 'tvland', 'episodes', url)
+    if db==True:
+        return db_shows
+
 def episodes(url=common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.findAll(attrs={'class' : 'episodeContainer'})

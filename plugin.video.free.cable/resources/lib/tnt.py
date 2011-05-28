@@ -15,7 +15,7 @@ def masterlist():
                 name = collection.find('name').string
                 if name == 'Shows':
                         cid = collection['id']
-                        shows(cid)
+                        return shows(cid,db=True)
 def rootlist():
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
@@ -29,7 +29,7 @@ def rootlist():
                         continue
                 common.addDirectory(name, 'tnt', 'shows', cid)
 
-def shows(cid = common.args.url):
+def shows(cid = common.args.url,db=False):
         name = common.args.name
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
@@ -41,14 +41,19 @@ def shows(cid = common.args.url):
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
+        db_shows = []
         for collection in collections:
                 if collection['id'] == cid:
                         subcollections = collection.findAll('subcollection')
                         for subcollection in subcollections:
                                 scid = subcollection['id']
                                 name = subcollection.find('name').string.replace('- Full Episodes','')
-                                common.addDirectory(name, 'tnt', mode, scid)
- 
+                                if db==True:
+                                        db_shows.append((name,'tnt',mode,scid,None,None,None))
+                                else:
+                                        common.addDirectory(name, 'tnt', mode, scid)
+        if db==True:
+                return db_shows  
 
 def show():
         scid = common.args.url

@@ -18,18 +18,26 @@ BASE_URL = 'http://video.usanetwork.com/'
 BASE = 'http://video.usanetwork.com'
 
 def masterlist():
-    rootlist()
+    return rootlist(db=True)
 
-def rootlist():
+def rootlist(db=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     categories=tree.find(attrs={'id' : 'find_it_branch_Full_Episodes'}).find(attrs={'class' : 'find_it_shows'}).findAll('a')
+    db_shows = []
     for item in categories:
         name = item.string
         url = item['href']
-        common.addDirectory(name, 'usa', 'shows', url)
+        if db==True:
+            db_shows.append((name,'usa','episodes',url,None,None,None))
+        else:
+            common.addDirectory(name, 'usa', 'episodes', url)
+    if db==True:
+        return db_shows
 
-def shows(url = common.args.url):
+def episodes(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     rssurl = re.compile('var _rssURL = "(.+?)";').findall(data)[0].replace('%26','&')
     data = common.getURL(rssurl)

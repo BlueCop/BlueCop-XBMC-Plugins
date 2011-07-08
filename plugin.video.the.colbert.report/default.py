@@ -87,12 +87,16 @@ def FULLEPISODES():
         data = getURL(full)
         weeks = re.compile('<a id="(.+?)" class="seaso.+?" href="#">(.+?)</a>').findall(data)
         for url, week in weeks:
-            data = getURL(url)
-            episodes=re.compile('<span class="date"><a href="(.+?)">(.+?)</a></span>').findall(data)
-            thumbnails=re.compile('<img width=".+?" height=".+?" src="(.+?)\?width=.+?".+?/>').findall(data)
-            descriptions=re.compile('<span class="description">(.+?)</span>').findall(data)
-            airdates=re.compile('<span class="date">Aired: (.+?)</span>').findall(data)
-            epNumbers=re.compile('<span class="id">Episode (.+?)</span>').findall(data)
+            if "http:" in url:
+                data = getURL(url)
+            else:
+	            url = "http://www.colbertnation.com" + url
+	            data = getURL(url)
+            episodes=re.compile('<div class="title"><a href="(.+?)">(.+?)</a></div>').findall(data)
+            thumbnails=re.compile('<img src="(.+?)" width="156" height="86"').findall(data)
+            descriptions=re.compile('<div class="description">(.+?)</div>').findall(data)
+            airdates=re.compile('<div class="date">Aired: (.+?)</div>').findall(data)
+            epNumbers=re.compile('<div class="number">Episode: (.+?)</div>').findall(data)
             listings = []
             for link, name in episodes:
                 listing = []

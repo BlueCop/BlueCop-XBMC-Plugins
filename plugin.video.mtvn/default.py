@@ -25,7 +25,7 @@ def listCategories():
         addDir('Browse Videos by Genre', 'videos', 2)
         addDir('Search Artist', 'searchArtist', 5)
         addDir('Search Video', 'searchVideo', 5)
-        addDir('MTV.com', 'mtvlist', 101)
+        #addDir('MTV.com', 'mtvlist', 101)
         #addDir('Favorite Videos', 'favArtist', 1)
         #addDir('Favorite Artists', 'favVideo', 1)
         return

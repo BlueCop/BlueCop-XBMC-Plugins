@@ -332,5 +332,7 @@ def queueEdit():
         message = 'Operation Failed'
         duration = 4000
         xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-
-check_expiration(settings['expiration'])
+try:
+    check_expiration(settings['expiration'])
+except:
+    print 'no expiration'

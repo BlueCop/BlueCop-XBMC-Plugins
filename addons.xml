@@ -214,4 +214,18 @@
     <platform>all</platform>
   </extension>
 </addon>
+
+<addon id="script.module.cryptopy"
+       name="CryptoPy"
+       version="1.2.6"
+       provider-name="cryptopy.sourceforge.net">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+  </requires>
+  <extension point="xbmc.python.module"
+             library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
+</addon>
 </addons>

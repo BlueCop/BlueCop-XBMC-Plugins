@@ -27,7 +27,7 @@ def masterlist():
             name = show.find('img')['alt'].encode('utf-8')
             thumb = BASE_URL + show.find('img')['src']
             url = BASE + show.find('a')['href']
-            db_shows.append((name,'cbs','showcats',url,None,thumb,None))
+            db_shows.append((name,'cbs','showcats',url))
     return db_shows
 
 def rootlist():
@@ -107,6 +107,7 @@ def videos(url = common.args.url):
         
 
 def PAGES( tree ):
+        print 'starting PAGES'
         try:
             search_elements = tree.find(attrs={'name' : 'searchEl'})['value']
             return_elements = tree.find(attrs={'name' : 'returnEl'})['value']

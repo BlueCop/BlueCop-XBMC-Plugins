@@ -12,6 +12,7 @@ import cookielib
 import operator
 import sha
 import re
+import time
 
 from BeautifulSoup import BeautifulStoneSoup
 
@@ -72,11 +73,12 @@ settings['login_pass'] = addoncompat.get_setting("login_pass")
 settings['enable_login'] = addoncompat.get_setting("enable_login")
 settings['enable_plus'] = addoncompat.get_setting("enable_plus")
 if os.path.isfile(QUEUETOKEN):
-    # need to add queue expiration check and refresh if expired.
     tokenfile = open(QUEUETOKEN, "r")
     tokenxml = tokenfile.read()
     tokenfile.close()
     tree=BeautifulStoneSoup(tokenxml)
+    # "2011-08-13T19:44:02Z", "%Y-%m-%dT%H:%M:%SZ"
+    settings['expiration'] = tree.find('token-expires-at').string
     settings['usertoken'] = tree.find('token').string
 
     
@@ -224,6 +226,13 @@ def login_queue():
     duration = 1500
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
 
+def check_expiration(expiration):
+    expires = time.strptime(expiration, "%Y-%m-%dT%H:%M:%SZ")
+    now = time.localtime()
+    if now > expires:
+        print 'Expired Token'
+        login_queue()
+
 
 def postAPI( action , parameters, secure):
     if secure == True:
@@ -324,3 +333,4 @@ def queueEdit():
         duration = 4000
         xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
 
+check_expiration(settings['expiration'])

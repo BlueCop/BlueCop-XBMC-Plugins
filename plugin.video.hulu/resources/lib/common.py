@@ -72,6 +72,7 @@ settings['login_pass'] = addoncompat.get_setting("login_pass")
 settings['enable_login'] = addoncompat.get_setting("enable_login")
 settings['enable_plus'] = addoncompat.get_setting("enable_plus")
 if os.path.isfile(QUEUETOKEN):
+    # need to add queue expiration check and refresh if expired.
     tokenfile = open(QUEUETOKEN, "r")
     tokenxml = tokenfile.read()
     tokenfile.close()
@@ -125,8 +126,8 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
 def getHTML( url ):
     print 'HULU --> common :: getHTML :: url = '+url
     cj = cookielib.LWPCookieJar()
-    if os.path.isfile(COOKIEFILE):
-        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    #if os.path.isfile(COOKIEFILE):
+    #    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     opener.addheaders = [('Referer', 'http://hulu.com'),
                          ('Content-Type', 'application/x-www-form-urlencoded'),
@@ -134,8 +135,8 @@ def getHTML( url ):
     usock=opener.open(url)
     response=usock.read()
     usock.close()
-    if os.path.isfile(COOKIEFILE):
-        cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    #if os.path.isfile(COOKIEFILE):
+    #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     return response
 
 def getFEED( url ):

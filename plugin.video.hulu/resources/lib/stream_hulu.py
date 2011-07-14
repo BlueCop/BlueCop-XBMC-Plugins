@@ -84,15 +84,8 @@ class Main:
         m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
         return m.hexdigest()
 
-    def content_sig(self, pid):
+    def content_sig(self, parameters):
         hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'
-        parameters = {'video_id' : pid,
-                      'v' : '850037518',
-                      'ts' : '1294866343',
-                      'np' : '1',
-                      'vp' : '1',
-                      'pp' : 'hulu',
-                      'dp_id' : 'hulu'}
         sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
         data = ''
         for item1, item2 in sorted_parameters:
@@ -292,7 +285,34 @@ class Main:
         #getSMIL
         try:
             #smilURL = "http://s.hulu.com/select.ashx?pid=" + pid + "&auth=" + self.pid_auth(pid) + "&v=713434170&np=1&pp=hulu&dp_id=hulu&cb=499"
-            smilURL = 'http://s.hulu.com/select?video_id=' + pid + '&v=850037518&ts=1294866343&np=1&vp=1&pp=hulu&dp_id=hulu&bcs=' + self.content_sig(pid)
+            import time
+            epoch = int(time.mktime(time.gmtime()))
+            parameters = {'video_id': pid,
+                          'v'       : '850037518',
+                          'ts'      : str(epoch),
+                          'np'      : '1',
+                          'vp'      : '1',
+                          'pp'      : 'Desktop',
+                          'dp_id'   : 'Hulu',
+                          'region'  : 'US',
+                          'language': 'en'
+                          }
+            smilURL =  'http://s.hulu.com/select'
+            smilURL += '?video_id='+parameters['video_id']
+            smilURL += '&v='+parameters['v']
+            smilURL += '&ts='+parameters['ts']
+            smilURL += '&np='+parameters['np']
+            smilURL += '&vp='+parameters['vp']
+            smilURL += '&pp='+parameters['pp']
+            smilURL += '&dp_id='+parameters['dp_id']
+            if common.settings['enable_login']=='true' and common.settings['enable_plus'] and common.settings['usertoken']:
+                parameters['ep'] = '1'
+                parameters['token'] = common.settings['usertoken']
+                smilURL += '&token='+parameters['token']
+                smilURL += '&ep='+parameters['ep']
+            smilURL += '&region='+parameters['region']
+            smilURL += '&language='+parameters['language']
+            smilURL += '&bcs='+self.content_sig(parameters)
             print 'HULU --> SMILURL: ' + smilURL
             smilXML=common.getHTML(smilURL)
             tmp=self.decrypt_SMIL(smilXML)
@@ -354,20 +374,19 @@ class Main:
             appName = protocolSplit[1].split(hostname + "/")[1]
 
             if "level3" in cdn:
-                appName += "?" + token
+                appName += "?sessionid=sessionId&" + token
                 stream = stream[0:len(stream)-4]
                 newUrl = server + " app=" + appName
 
             elif "limelight" in cdn:
-                appName += '?' + token
+                appName += '?sessionid=sessionId&' + token
                 stream = stream[0:len(stream)-4]
                 newUrl = server + '?' + token + " app=" + appName
 
             elif "akamai" in cdn:
-                appName += '?' + token
-                newUrl = server + '?' + token
-                #newUrl = server + "?_fcs_vhost=" + hostname + "&" + token
-
+                appName += '?sessionid=sessionId&' + token
+                newUrl = server + '?' + token + " app=" + appName
+                
             else:
                 xbmcgui.Dialog().ok('Unsupported Content Delivery Network',cdn+' is unsupported at this time')
                 return
@@ -377,8 +396,8 @@ class Main:
             print "playPath -- > " + stream
 
             #define item
-            SWFPlayer = 'http://www.hulu.com/site-player/86070/player.swf'
-            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer
+            SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
+            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
             if (common.settings['swfverify'] == 'true'):
                 newUrl += " swfvfy=true"
             
@@ -392,14 +411,15 @@ class Main:
                 import time
                 time.sleep(4)
                 xbmc.Player().setSubtitles(subtitles)
-            if common.settings['enable_login']=='true' and common.settings['usertoken']:     
-                action = "event"
-                app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-                parameters = {'event_type':'view',
-                              'token':common.settings['usertoken'],
-                              'target_type':'video',
-                              'id':common.args.videoid,
-                              'app':app}
-                common.postAPI(action,parameters,False)
-                print "Posted view to Hulu"
+            # DISABLED HISTORY    
+            #if common.settings['enable_login']=='true' and common.settings['usertoken']:     
+            #    action = "event"
+            #    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+            #    parameters = {'event_type':'view',
+            #                  'token':common.settings['usertoken'],
+            #                  'target_type':'video',
+            #                  'id':pid,
+            #                  'app':app}
+            #    common.postAPI(action,parameters,False)
+            #    print "Posted view to Hulu"
 

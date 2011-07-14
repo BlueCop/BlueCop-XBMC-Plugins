@@ -14,9 +14,10 @@ class Main:
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )
     
     def addMainHomeItems( self ):
-        if common.settings['enable_login']=='true':
-            if not os.path.isfile(common.COOKIEFILE):
-                common.login_cookie()
+        #DISABLED WEBSITE LOGIN
+        #if common.settings['enable_login']=='true':
+        #    if not os.path.isfile(common.COOKIEFILE):
+        #        common.login_cookie()
 
 
         html=common.getFEED(common.BASE_MENU_URL)

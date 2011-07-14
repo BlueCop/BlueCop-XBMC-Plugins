@@ -16,7 +16,7 @@
 	<!-- Hulu+ Login -->
 	<category label="30102">
 		<setting type="sep" />
-		<setting id='enable_plus' type ="bool" label="30006" default="true"/>
+		<setting id='enable_plus' type ="bool" label="30006" default="false"/>
 		<setting id='enable_login' type ="bool" label="30003" default="false"/>
 		<setting type="sep" />
 		<setting id="login_name" type="text" label="30001" default=""/>

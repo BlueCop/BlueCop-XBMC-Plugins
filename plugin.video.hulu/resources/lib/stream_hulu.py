@@ -40,6 +40,14 @@ smildeckeys = [
 class Main:
 
     def __init__( self ):
+        #Initialize playback progress dialog
+        self.pDialog = xbmcgui.DialogProgress()
+        self.Heading = 'Hulu'
+        self.text1 = 'Preparing for Playback'
+        self.text2 = ''
+        self.text3 = ''
+        self.pDialog.create(self.Heading)
+        self.pDialog.update(0 , self.text1, self.text2, self.text3)
         #select from avaliable streams, then play the file
         self.play()
         
@@ -174,10 +182,7 @@ class Main:
         srt_output = ''
 
         print "HULU: --> Converting subtitles to SRT"
-        heading = 'Subtitles'
-        message = 'Converting subtitles'
-        duration = 4000
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        self.update_dialog('Converting Subtitles to SRT')
         lines = subtitle_data.findAll('sync') #split the file into lines
         for line in lines:
             if(line['encrypted'] == 'true'):
@@ -221,73 +226,36 @@ class Main:
         file.write(srt_output)
         file.close()
         print "HULU: --> Successfully converted subtitles to SRT"
-        heading = 'Subtitles'
-        message = 'Conversion Complete'
-        duration = 4000
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        self.update_dialog('Conversion Complete')
         return True
 
-    def checkCaptions(self, pid):
-        url = 'http://www.hulu.com/captions?content_id='+pid
+    def checkCaptions(self, video_id):
+        url = 'http://www.hulu.com/captions?content_id='+video_id
         html = common.getHTML(url)
         capSoup = BeautifulStoneSoup(html)
         hasSubs = capSoup.find('en')
-        heading = 'Subtitles'
         if(hasSubs):
             print "HULU --> Grabbing subtitles..."
-            message = 'Grabbing subtitles...'
-            duration = 4000
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+            self.update_dialog('Downloading Subtitles')
             html=common.getHTML(hasSubs.string)
-            ok = self.convert_subtitles(html,pid)
+            ok = self.convert_subtitles(html,video_id)
             if ok:
                 print "HULU --> Subtitles enabled."
+                self.update_dialog('Subtitles Completed Successfully')
             else:
                 print "HULU --> There was an error grabbing the subtitles."
-                message = 'Error grabbing subtitles.'
-                duration = 4000
-                xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+                self.update_dialog('Error Downloading Subtitles')
+
         else:
             print "HULU --> No subtitles available."
-            message = 'No subtitles available.'
-            duration = 4000
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-            
-    def play( self ):
-        print common.args.url
-        if 'http://' in common.args.url:
-            #getCID
-            html=common.getHTML(common.args.url)
-            p=re.compile('so.addVariable\("content_id", "(.+?)"\);')
-            ecid=p.findall(html)[0]
-            cid=self.decrypt_cid(ecid)
+            self.update_dialog('No Subtitles Available')
 
-            #getEID
-            eid=self.cid2eid(cid)
-            #grab eid from failsafe url
-            #p=re.compile('<embed src="http://www.hulu.com/embed/(.+?)" type="application/x-shockwave-flash" allowFullScreen="true"')
-            #eid=p.findall(html)[0]
-            eidurl="http://r.hulu.com/videos?eid="+eid
 
-            #getPID
-            html=common.getHTML(eidurl)
-            cidSoup=BeautifulStoneSoup(html)
-            pid=cidSoup.findAll('pid')[0].contents[0]
-            pid=self.decrypt_pid(pid)
-        else:
-            pid=common.args.url
-
-        #get closed captions/subtitles
-        print common.settings['enable_captions']
-        if (common.settings['enable_captions'] == 'true'):
-            self.checkCaptions(pid)
-
-        #getSMIL
+    def getSMIL(self, video_id):
         try:
-            #smilURL = "http://s.hulu.com/select.ashx?pid=" + pid + "&auth=" + self.pid_auth(pid) + "&v=713434170&np=1&pp=hulu&dp_id=hulu&cb=499"
             import time
             epoch = int(time.mktime(time.gmtime()))
-            parameters = {'video_id': pid,
+            parameters = {'video_id': video_id,
                           'v'       : '850037518',
                           'ts'      : str(epoch),
                           'np'      : '1',
@@ -305,7 +273,7 @@ class Main:
             smilURL += '&vp='+parameters['vp']
             smilURL += '&pp='+parameters['pp']
             smilURL += '&dp_id='+parameters['dp_id']
-            if common.settings['enable_login']=='true' and common.settings['enable_plus'] and common.settings['usertoken']:
+            if common.settings['enable_login']=='true' and common.settings['enable_plus']=='true' and common.settings['usertoken']:
                 parameters['ep'] = '1'
                 parameters['token'] = common.settings['usertoken']
                 smilURL += '&token='+parameters['token']
@@ -314,17 +282,50 @@ class Main:
             smilURL += '&language='+parameters['language']
             smilURL += '&bcs='+self.content_sig(parameters)
             print 'HULU --> SMILURL: ' + smilURL
-            smilXML=common.getHTML(smilURL)
+            self.update_dialog('Grabbing SMIL File')
+            smilXML=common.getFEED(smilURL)
+            self.update_dialog('Decrypting SMIL File')
             tmp=self.decrypt_SMIL(smilXML)
             smilSoup=BeautifulStoneSoup(tmp, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            print smilSoup.prettify()
+            return smilSoup
         except:
             heading = 'SMIL ERROR'
             message = 'Error retrieving SMIL file'
             duration = 8000
             xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             #xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retrieving or decrypting the SMIL file.')
-            return
+            return False
+
+    def update_dialog( self, newline ):
+        if self.text2 == '':
+            self.text2 = newline
+            self.pDialog.update(0 , self.text1, self.text2, self.text3)
+        elif self.text3 == '':
+            self.text3 = newline
+            self.pDialog.update(0 , self.text1, self.text2, self.text3)
+        else:
+            self.text1 = self.text2
+            self.text2 = self.text3
+            self.text3 = newline
+            self.pDialog.update(0 , self.text1, self.text2, self.text3)
+    
+    def play( self ):
+        video_id=common.args.url
+        print 'Video ID: '+video_id
+        self.update_dialog('Playing Video ID: '+video_id)
+
+        #get closed captions/subtitles
+        if (common.settings['enable_captions'] == 'true'):
+            self.update_dialog('Subtitles Enabled')
+            self.checkCaptions(video_id)
+        else:
+            self.update_dialog('Subtitles Disabled')
+
+        #getSMIL
+        smilSoup = self.getSMIL(video_id)
+        print smilSoup.prettify()
+
+        self.update_dialog('Selecting Video Stream')
         
         #getRTMP
         video=smilSoup.findAll('video')
@@ -376,16 +377,16 @@ class Main:
             if "level3" in cdn:
                 appName += "?sessionid=sessionId&" + token
                 stream = stream[0:len(stream)-4]
-                newUrl = server + " app=" + appName
+                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
 
             elif "limelight" in cdn:
                 appName += '?sessionid=sessionId&' + token
                 stream = stream[0:len(stream)-4]
-                newUrl = server + '?' + token + " app=" + appName
+                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
 
             elif "akamai" in cdn:
                 appName += '?sessionid=sessionId&' + token
-                newUrl = server + '?' + token + " app=" + appName
+                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
                 
             else:
                 xbmcgui.Dialog().ok('Unsupported Content Delivery Network',cdn+' is unsupported at this time')
@@ -405,7 +406,7 @@ class Main:
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
             #Enable Subtitles
-            subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',pid+'.srt')
+            subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',video_id+'.srt')
             if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
                 print "HULU --> Setting subtitles"
                 import time

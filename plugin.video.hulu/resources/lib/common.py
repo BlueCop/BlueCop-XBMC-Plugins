@@ -3,7 +3,6 @@ import xbmc
 import xbmcgui
 #import xbmcaddon
 import addoncompat
-
 import urllib
 import urllib2
 import sys
@@ -13,7 +12,8 @@ import operator
 import sha
 import re
 import time
-
+import md5
+import tempfile
 from BeautifulSoup import BeautifulStoneSoup
 
 """
@@ -37,6 +37,7 @@ login_url   = "https://secure.hulu.com/account/authenticate"
 #define file locations
 COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','hulu-cookies.lwp')
 QUEUETOKEN = os.path.join(os.getcwd().replace(';', ''),'resources','cache','token.xml')
+cachepath = os.path.join(os.getcwd().replace(';', ''),'resources','cache')
 imagepath  = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 hulu_fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
 #addon = xbmcaddon.Addon(id='plugin.video.hulu')
@@ -132,7 +133,6 @@ def getHTML( url ):
     #    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     opener.addheaders = [('Referer', 'http://hulu.com'),
-                         ('Content-Type', 'application/x-www-form-urlencoded'),
                          ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')]
     usock=opener.open(url)
     response=usock.read()
@@ -141,7 +141,7 @@ def getHTML( url ):
     #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     return response
 
-def getFEED( url ):
+def getFEEDold( url ):
     try:
         print 'HULU --> common :: getFEED :: url = '+url
         cj = cookielib.LWPCookieJar()
@@ -155,11 +155,41 @@ def getFEED( url ):
         return response
     except:
         return False
+
+
+def getFEED( url, max_age=0,cache_dir=cachepath):
+    print 'HULU --> common :: getFEED :: url = '+url
+    filename = md5.new(url).hexdigest()
+    filepath = os.path.join(cache_dir, filename)
+    if os.path.exists(filepath):
+        if int(time.time()) - os.path.getmtime(filepath) < max_age:
+            print int(time.time()) - os.path.getmtime(filepath)
+            print max_age
+            print 'Returned from Cache'
+            return open(filepath).read()
+        else:
+            os.remove(filepath)
+    
+    opener = urllib2.build_opener(urllib2.HTTPHandler())
+    opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
+                         ('x-flash-version', '10,1,51,66'),
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
+    usock=opener.open(url)
+    data=usock.read()
+    usock.close()
         
+    fd, temppath = tempfile.mkstemp()
+    fp = os.fdopen(fd, 'w')
+    fp.write(data)
+    fp.close()
+    os.rename(temppath, filepath)
+    print 'Returned from web'
+    return data       
 
 
 """
     Hulu+ Cookie Login
+    NO LONGER USED
 """
 
 def login_cookie():

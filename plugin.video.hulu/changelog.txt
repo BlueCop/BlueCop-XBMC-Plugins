@@ -1,3 +1,8 @@
+[B]Version 2.9.0[/B]
+
+- added dialog to show starting playback progress.(mainly for atv2)
+- add very simple web cache method
+
 [B]Version 2.8.9[/B]
 
 - added token expiration check

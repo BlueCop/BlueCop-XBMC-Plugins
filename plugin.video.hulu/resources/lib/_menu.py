@@ -41,7 +41,7 @@ class Main:
             itemsurl += '&dp_id='+dp_id+'&package_id='+package_id+'&total=1'
         else:
             itemsurl += '?dp_id='+dp_id+'&package_id='+package_id+'&total=1'
-        html=common.getFEED(itemsurl)
+        html=common.getFEED(itemsurl,7*24*60*60)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         items = menuitems=tree.findAll('items')
         for counts in items:
@@ -65,9 +65,9 @@ class Main:
         else:
             url += 'dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
             total_count = self.getTotalCount( orginalUrl )
-        html=common.getFEED(url)
+        html=common.getFEED(url,15*60)
         while html == False:
-            html=common.getFEED(url)
+            html=common.getFEED(url,15*60)
             time.sleep(2)
 
         # Add Next/Prev Pages

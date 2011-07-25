@@ -1,3 +1,7 @@
+[B]Version 2.9.1[/B]
+
+- rolled back web cache code due to bugs on linux and xbox.
+
 [B]Version 2.9.0[/B]
 
 - added dialog to show starting playback progress.(mainly for atv2)

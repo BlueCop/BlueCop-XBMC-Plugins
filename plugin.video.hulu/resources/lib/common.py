@@ -141,7 +141,7 @@ def getHTML( url ):
     #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     return response
 
-def getFEEDold( url ):
+def getFEED( url, max_age=0 ):
     try:
         print 'HULU --> common :: getFEED :: url = '+url
         cj = cookielib.LWPCookieJar()
@@ -157,14 +157,12 @@ def getFEEDold( url ):
         return False
 
 
-def getFEED( url, max_age=0,cache_dir=cachepath):
-    print 'HULU --> common :: getFEED :: url = '+url
+def cacheFEED( url, max_age=0,cache_dir=cachepath):
+    print 'HULU --> common :: cacheFEED :: url = '+url
     filename = md5.new(url).hexdigest()
     filepath = os.path.join(cache_dir, filename)
     if os.path.exists(filepath):
         if int(time.time()) - os.path.getmtime(filepath) < max_age:
-            print int(time.time()) - os.path.getmtime(filepath)
-            print max_age
             print 'Returned from Cache'
             return open(filepath).read()
         else:

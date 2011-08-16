@@ -33,7 +33,7 @@ def rootlist(db=False):
         name = item.find('a').find('img')['alt']
         thumb = BASE_URL + item.find('a').find('img')['src']
         if db==True:
-            db_shows.append((name,'syfy','episodes',url,None,thumb,None))
+            db_shows.append((name,'syfy','episodes',url))
         else:
             common.addDirectory(name, 'syfy', 'episodes', url, thumb)
     if db==True:

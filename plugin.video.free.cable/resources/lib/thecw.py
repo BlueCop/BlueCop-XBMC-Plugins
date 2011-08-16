@@ -33,7 +33,7 @@ def rootlist(db=False):
         if showname == 'More Video':
             continue
         if db==True:
-            db_shows.append((showname,'thecw','show',url,None,thumb,None))
+            db_shows.append((showname,'thecw','show',url))
         else:
             common.addDirectory(showname, 'thecw', 'show', url, thumb)
     if db==True:

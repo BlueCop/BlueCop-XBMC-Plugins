@@ -30,7 +30,7 @@ def rootlist(db=False):
         name = item.string
         url = item['href']
         if db==True:
-            db_shows.append((name,'usa','episodes',url,None,None,None))
+            db_shows.append((name,'usa','episodes',url))
         else:
             common.addDirectory(name, 'usa', 'episodes', url)
     if db==True:

@@ -83,7 +83,7 @@ def shows(url = common.args.url, db=False):
         name = item.string
         url = item['href']
         if db==True:
-            db_shows.append((name,'nbc','showroot',url,None,None,None))
+            db_shows.append((name,'nbc','showroot',url))
         else:
             common.addDirectory(name, 'nbc', 'showroot', url)
     if db==True:

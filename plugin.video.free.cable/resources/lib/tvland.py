@@ -19,11 +19,15 @@ def rootlist(db=False):
     db_shows = []
     for show in categories:
         url = show['href']
-        name = show.contents[0]
-        if db==True:
-            db_shows.append((name,'tvland','episodes',url,None,None,None))
+        name = show.contents[0].strip()
+        if name == 'Hot in Cleveland':
+            mode = 'hic_episodes'
         else:
-            common.addDirectory(name, 'tvland', 'episodes', url)
+            mode = 'episodes'
+        if db==True:
+            db_shows.append((name,'tvland',mode,url))
+        else:
+            common.addDirectory(name, 'tvland', mode, url)
     if db==True:
         return db_shows
 
@@ -74,6 +78,13 @@ def episodes(url=common.args.url):
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
+def hic_episodes():
+    epoch = str(int(time.mktime(time.gmtime())*1000))
+    s1url = 'http://www.tvland.com/fragments/search_results/related_episodes_seasons?_='+epoch+'&showId=25573&seasonId=41909&episodeId=43520'
+    s2url = 'http://www.tvland.com/fragments/search_results/related_episodes_seasons?_='+epoch+'&showId=25573&seasonId=27283&episodeId=43520'
+    episodes(s1url)
+    episodes(s2url)
+    
 def playuri(uri = common.args.url):
     configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:cms:episode:tvland.com:/config.xml'
     configurl += '?uri=%s&type=network&ref=www.tvland.com&geo=US&group=entertainment&site=tvland.com' % uri

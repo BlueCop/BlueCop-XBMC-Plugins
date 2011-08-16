@@ -34,7 +34,7 @@ def rootlist(db=False):
             thumb = BASE+'/'+item.find('img')['src']
             showname = item.find(attrs={'class':'content'})('h2')[0].string
             if db==True:
-                db_shows.append((showname,'fx','show',url,None,thumb,None))
+                db_shows.append((showname,'fx','show',url))
             else:
                 common.addDirectory(showname, 'fx', 'show', url, thumb)
         except:

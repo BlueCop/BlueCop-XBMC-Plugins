@@ -27,7 +27,7 @@ def rootlist(db=False):
             if name == 'The Ultimate Fighter':
                 continue
             if db==True:
-                db_shows.append((name,'spike','episodes',url,None,None,None))
+                db_shows.append((name,'spike','episodes',url))
             else:
                 common.addDirectory(name, 'spike', 'episodes', url)
     if db==True:

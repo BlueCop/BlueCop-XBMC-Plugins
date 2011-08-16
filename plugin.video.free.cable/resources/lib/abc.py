@@ -28,7 +28,7 @@ def rootlist(db=False):
         url = item('link')[0].string
         thumb = item('image')[0].string
         if db==True:
-            db_shows.append((name,'abc','episodes',url,None,thumb,None))
+            db_shows.append((name,'abc','episodes',url))
         else:
             common.addDirectory(name, 'abc', 'episodes', url , thumb)
     if db==True:

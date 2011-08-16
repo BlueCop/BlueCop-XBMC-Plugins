@@ -49,7 +49,7 @@ def shows(cid = common.args.url,db=False):
                                 scid = subcollection['id']
                                 name = subcollection.find('name').string.replace('- Full Episodes','')
                                 if db==True:
-                                        db_shows.append((name,'tnt',mode,scid,None,None,None))
+                                        db_shows.append((name,'tnt',mode,scid))
                                 else:
                                         common.addDirectory(name, 'tnt', mode, scid)
         if db==True:
@@ -78,7 +78,8 @@ def episode():
         showname = common.args.name
         xbmcplugin.setContent(pluginhandle, 'episodes')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
+        #url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
+        url = 'http://www.tnt.tv/content/services/getCollectionByContentId.do?site=true&offset=0&sort=&limit=200&id='+cid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         episodes = tree.findAll('episode')
@@ -152,9 +153,16 @@ def GET_RTMP(vid):
         url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        print tree.prettify()
+        sbitrate = int(common.settings['quality'])
+        hbitrate = -1
         files = tree.findAll('file')
-        #stream details
-        filename = files[0].string
+        for filenames in files:
+                try: bitrate = int(filenames['bitrate'])
+                except: bitrate = 1
+                if bitrate > hbitrate and bitrate <= sbitrate:
+                        hbitrate = bitrate
+                        filename = filenames.string
         if 'http://' in filename:
             filename = filename
             return filename

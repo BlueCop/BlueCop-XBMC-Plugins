@@ -7,6 +7,7 @@ import xbmc
 import xbmcgui
 import sys
 import resources.lib._common as common
+import urllib
 
 pluginhandle = int (sys.argv[1])
 
@@ -28,11 +29,11 @@ def modes( ):
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )
     elif common.args.mode is 'Masterlist':
-        xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+        xbmcplugin.setContent(int(sys.argv[1]), 'TVShows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         shows = common.load_db()
-        for name, mode, sitemode, url, description, poster, fanart in shows:
-            common.addDirectory(name.encode('utf8'), mode, sitemode, url)
+        for tvdb_id, name, mode, sitemode, url, description, poster, fanart, aired, genre, rating in shows:
+            common.addDirectory(name.encode('utf8'), mode, sitemode, url, poster, fanart, description, aired, genre)
         xbmcplugin.endOfDirectory(pluginhandle)
     elif common.args.mode in common.site_dict.values():
         exec 'import resources.lib.%s as sitemodule' % common.args.mode

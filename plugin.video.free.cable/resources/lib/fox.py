@@ -28,9 +28,9 @@ def rootlist(db=False):
     db_shows = []
     for item in menu:
         name = item.find('h3').string
-        url = BASE + item.findAll('a')[1]['href']
+        url = BASE + item.findAll('a')[1]['href']+'/full-episodes/'
         if db==True:
-            db_shows.append((name,'fox','episodes',url,None,None,None))
+            db_shows.append((name,'fox','episodes',url))
         else:
             common.addDirectory(name, 'fox', 'episodes', url)
     if db==True:
@@ -74,7 +74,9 @@ def play():
     const = '17e0633e86a5bc4dd47877ce3e556304d0a3e7ca'
     playerID = 644436256001
     publisherID = 51296410001
-    rtmpdata = get_clip_info(const, playerID, videoPlayer, publisherID)['renditions']
+    rtmpdata = get_clip_info(const, playerID, videoPlayer, publisherID)
+    print rtmpdata
+    rtmpdata = rtmpdata['renditions']
     hbitrate = -1
     sbitrate = int(common.settings['quality']) * 1024
     for item in rtmpdata:

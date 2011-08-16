@@ -28,7 +28,7 @@ def rootlist(db=False):
         name = item.find(attrs={'class':'show_listing_title'}).string
         url = item.find(attrs={'class':'show_listing_url'}).string
         if db==True:
-            db_shows.append((name,'abcfamily','showcats',url,None,None,None))
+            db_shows.append((name,'abcfamily','showcats',url))
         else:
             common.addDirectory(name, 'abcfamily', 'showcats', url)
     if db==True:

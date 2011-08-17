@@ -15,7 +15,7 @@ pluginhandle = int (sys.argv[1])
 __plugin__ = "FREE CABLE"
 __authors__ = "BlueCop"
 __credits__ = ""
-__version__ = "0.0.1"
+__version__ = "0.0.6"
 
 
 print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"

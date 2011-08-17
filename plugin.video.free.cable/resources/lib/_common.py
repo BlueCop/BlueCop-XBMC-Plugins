@@ -53,7 +53,8 @@ site_dict = {'ABC': 'abc',
              'MTV Shows':'mtv',
              'VH1 Shows':'vh1',
              'Adult Swim':'adultswim',
-             'Cartoon Network':'cartoon'
+             'Cartoon Network':'cartoon',
+             'History Channel':'history'
              }
 
 db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')

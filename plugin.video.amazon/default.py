@@ -23,7 +23,7 @@ BASE_URL = 'http://www.amazon.com'
 MOVIE_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_mov0/182-5606325-6863626?ie=UTF8&node=16386761&field-is_prime_benefit=1'
 TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1'
 
-def getURL( url , host='www.amazon.com'):    
+def getURL( url , host='www.amazon.com'):
     print 'getHTTP :: url = '+url
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13'),
@@ -62,6 +62,18 @@ def login():
     postURL(action_url,values)
     cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
 
+
+def GETSTREAMS(getstream):
+    try:
+        data = getURL(getstream,'atv-ps.amazon.com')
+        rtmpdata = demjson.decode(data)
+        print rtmpdata
+        rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
+        print rtmpurls
+        return rtmpurls
+    except:
+        return False
+
 def PLAYVIDEO(pageurl):
     if os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
@@ -98,12 +110,11 @@ def PLAYVIDEO(pageurl):
     getstream += '&format=json'
     getstream += '&version=1'
 
-    data = getURL(getstream,'atv-ps.amazon.com')
-    rtmpdata = demjson.decode(data)
-    #rtmpurl = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo'][3]['url']
-    print rtmpdata
-    rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
-    print rtmpurls
+    rtmpurls = GETSTREAMS(getstream)
+    if rtmpurls == False:
+        rtmpurls = GETSTREAMS(getstream)
+    if rtmpurls == False:
+        rtmpurls = GETSTREAMS(getstream)
 
     quality = [0,2500,1328,996,664,348]
     lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
@@ -129,14 +140,17 @@ def PLAYVIDEO(pageurl):
     hostname    = pathSplit[0]
     appName     = protocolSplit[1].split(hostname + "/")[1].split('/')[0]    
     streamAuth  = rtmpurl.split(appName+'/')[1].split('?')
-    stream      = streamAuth[0]
+    stream      = streamAuth[0].replace('.mp4','')
     auth        = streamAuth[1]
     identurl = 'http://'+hostname+'/fcs/ident'
     ident = getURL(identurl)
     ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
     # protocolSplit[0]+'
-    basertmp = 'rtmp://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
-    finalUrl = basertmp + " playpath=" + stream + " pageurl=" + pageurl + " swfurl=" + swfUrl + " swfvfy=true"
+    basertmp = 'rtmpe://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
+    finalUrl = basertmp
+    finalUrl += " playpath=" + stream 
+    finalUrl += " pageurl=" + pageurl
+    finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
     item = xbmcgui.ListItem(path=finalUrl)
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 

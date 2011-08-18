@@ -26,7 +26,7 @@ TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF
 def getURL( url , host='www.amazon.com'):
     print 'getHTTP :: url = '+url
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13'),
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17'),
                          ('Host', host)]
     usock = opener.open(url)
     response = usock.read()
@@ -36,7 +36,7 @@ def getURL( url , host='www.amazon.com'):
 def postURL( url, values, host='www.amazon.com'):    
     print 'postHTTP :: url = '+url
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13'),
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17'),
                          ('Host', host)]
     data = urllib.urlencode(values)
     usock = opener.open(url, data)
@@ -68,11 +68,12 @@ def GETSTREAMS(getstream):
         data = getURL(getstream,'atv-ps.amazon.com')
         rtmpdata = demjson.decode(data)
         print rtmpdata
+        sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
+        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
         rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
-        print rtmpurls
-        return rtmpurls
+        return rtmpurls, sessionId, cdn
     except:
-        return False
+        return False, False, False
 
 def PLAYVIDEO(pageurl):
     if os.path.isfile(COOKIEFILE):
@@ -98,11 +99,20 @@ def PLAYVIDEO(pageurl):
             values['customerID']    = item[1]
         elif item[0]    == 'ASIN':
             values['asin']          = item[1]
+        elif item[0]    == 'pageType':
+            values['pageType']      = item[1]        
+        elif item[0]    == 'UBID':
+            values['UBID']          = item[1]
+        elif item[0]    == 'sessionID':
+            values['sessionID']     = item[1]
+        elif item[0]    == 'userAgent':
+            values['userAgent']     = item[1]
+            
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
     getstream += '?asin='+values['asin']
     getstream += '&deviceTypeID='+values['deviceTypeID']
-    getstream += '&firmware=WIN%2010,3,183,5%20PlugIn'
+    getstream += '&firmware=LNX%2010,3,181,14%20PlugIn'
     getstream += '&customerID='+values['customerID']
     getstream += '&deviceID='+values['deviceID']
     getstream += '&token='+values['token']
@@ -110,8 +120,9 @@ def PLAYVIDEO(pageurl):
     getstream += '&format=json'
     getstream += '&version=1'
 
-    rtmpurls = GETSTREAMS(getstream)
+    rtmpurls, streamSessionID, cdn = GETSTREAMS(getstream)
 
+    #if cdn = 'limelight' 
     if rtmpurls <> False:
         quality = [0,2500,1328,996,664,348]
         lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
@@ -142,14 +153,77 @@ def PLAYVIDEO(pageurl):
         identurl = 'http://'+hostname+'/fcs/ident'
         ident = getURL(identurl)
         ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
-        # protocolSplit[0]+'
         basertmp = 'rtmpe://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
         finalUrl = basertmp
         finalUrl += " playpath=" + stream 
         finalUrl += " pageurl=" + pageurl
         finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
         item = xbmcgui.ListItem(path=finalUrl)
-        return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+
+        epoch = str(int(time.mktime(time.gmtime()))*1000)
+        USurl =  'https://atv-ps.amazon.com/cdp/usage/UpdateStream'
+        USurl += '?device_type_id='+values['deviceTypeID']
+        USurl += '&deviceTypeID='+values['deviceTypeID']
+        USurl += '&streaming_session_id='+streamSessionID
+        USurl += '&operating_system=Linux%202.6.35-28-generic'
+        USurl += '&timecode=45.003'
+        USurl += '&flash_version=LNX%2010,3,181,14%20PlugIn'
+        USurl += '&asin='+values['asin']
+        USurl += '&token='+values['token']
+        USurl += '&browser='+urllib.quote_plus(values['userAgent'])
+        USurl += '&server_id='+ip
+        USurl += '&client_version='+swfUrl.split('/')[-1]
+        USurl += '&unique_browser_id='+values['UBID']
+        USurl += '&device_id='+values['deviceID']
+        USurl += '&format=json'
+        USurl += '&version=1'
+        USurl += '&page_type='+values['pageType']
+        USurl += '&start_state=Video'
+        USurl += '&amazon_session_id='+values['sessionID']
+        USurl += '&event=STOP'
+        USurl += '&firmware=LNX%2010,3,181,14%20PlugIn'
+        USurl += '&customerID='+values['customerID']
+        USurl += '&deviceID='+values['deviceID']
+        USurl += '&source_system=http://www.amazon.com'
+        USurl += '&http_referer=ecx.images-amazon.com'
+        USurl += '&event_timestamp='+epoch
+        USurl += '&encrypted_customer_id='+values['customerID']
+        print getURL(USurl,'atv-ps.amazon.com')
+
+        epoch = str(int(time.mktime(time.gmtime()))*1000)
+        surl =  'https://atv-ps.amazon.com/cdp/usage/ReportStopStreamEvent'
+        surl += '?deviceID='+values['deviceID']
+        surl += '&source_system=http://www.amazon.com'
+        surl += '&format=json'
+        surl += '&event_timestamp='+epoch
+        surl += '&encrypted_customer_id='+values['customerID']
+        surl += '&http_referer=ecx.images-amazon.com'
+        surl += '&device_type_id='+values['deviceTypeID']
+        surl += '&download_bandwidth=9926.295518207282'
+        surl += '&device_id='+values['deviceTypeID']
+        surl += '&from_mode=purchased'
+        surl += '&operating_system=Linux%202.6.35-28-generic'
+        surl += '&version=1'
+        surl += '&flash_version=LNX%2010,3,181,14%20PlugIn'
+        surl += '&url='+urllib.quote_plus(basertmp)
+        surl += '&streaming_session_id='+streamSessionID
+        surl += '&browser='+urllib.quote_plus(values['userAgent'])
+        surl += '&server_id='+ip
+        surl += '&client_version='+swfUrl.split('/')[-1]
+        surl += '&unique_browser_id='+values['UBID']
+        surl += '&amazon_session_id='+values['sessionID']
+        surl += '&page_type='+values['pageType']
+        surl += '&start_state=Video'
+        surl += '&token='+values['token']
+        surl += '&to_timecode=3883'
+        surl += '&streaming_bit_rate=348'
+        surl += '&new_streaming_bit_rate=2500'
+        surl += '&asin='+values['asin']
+        surl += '&deviceTypeID='+values['deviceTypeID']
+        surl += '&firmware=LNX%2010,3,181,14%20PlugIn'
+        surl += '&customerID='+values['customerID']
+        print getURL(surl,'atv-ps.amazon.com')
 
 def addDir(name,url,mode,iconimage='',plot=''):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)

@@ -111,48 +111,45 @@ def PLAYVIDEO(pageurl):
     getstream += '&version=1'
 
     rtmpurls = GETSTREAMS(getstream)
-    if rtmpurls == False:
-        rtmpurls = GETSTREAMS(getstream)
-    if rtmpurls == False:
-        rtmpurls = GETSTREAMS(getstream)
 
-    quality = [0,2500,1328,996,664,348]
-    lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
-    mbitrate = 0
-    streams = []
-    for data in rtmpurls:
-        url = data['url']
-        bitrate = int(data['bitrate'])
-        if lbitrate == 0:
-            streams.append([bitrate,url])
-        elif bitrate >= mbitrate and bitrate <= lbitrate:
-            mbitrate = bitrate
-            rtmpurl = url
-    if lbitrate == 0:        
-        quality=xbmcgui.Dialog().select('Please select a quality level:', [str(stream[0])+'kbps' for stream in streams])
-        print quality
-        if quality!=-1:
-            rtmpurl = streams[quality][1]
-        else:
-            return False
-    protocolSplit = rtmpurl.split("://")
-    pathSplit   = protocolSplit[1].split("/")
-    hostname    = pathSplit[0]
-    appName     = protocolSplit[1].split(hostname + "/")[1].split('/')[0]    
-    streamAuth  = rtmpurl.split(appName+'/')[1].split('?')
-    stream      = streamAuth[0].replace('.mp4','')
-    auth        = streamAuth[1]
-    identurl = 'http://'+hostname+'/fcs/ident'
-    ident = getURL(identurl)
-    ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
-    # protocolSplit[0]+'
-    basertmp = 'rtmpe://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
-    finalUrl = basertmp
-    finalUrl += " playpath=" + stream 
-    finalUrl += " pageurl=" + pageurl
-    finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
-    item = xbmcgui.ListItem(path=finalUrl)
-    return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    if rtmpurls <> False:
+        quality = [0,2500,1328,996,664,348]
+        lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
+        mbitrate = 0
+        streams = []
+        for data in rtmpurls:
+            url = data['url']
+            bitrate = int(data['bitrate'])
+            if lbitrate == 0:
+                streams.append([bitrate,url])
+            elif bitrate >= mbitrate and bitrate <= lbitrate:
+                mbitrate = bitrate
+                rtmpurl = url
+        if lbitrate == 0:        
+            quality=xbmcgui.Dialog().select('Please select a quality level:', [str(stream[0])+'kbps' for stream in streams])
+            print quality
+            if quality!=-1:
+                rtmpurl = streams[quality][1]
+            else:
+                return False
+        protocolSplit = rtmpurl.split("://")
+        pathSplit   = protocolSplit[1].split("/")
+        hostname    = pathSplit[0]
+        appName     = protocolSplit[1].split(hostname + "/")[1].split('/')[0]    
+        streamAuth  = rtmpurl.split(appName+'/')[1].split('?')
+        stream      = streamAuth[0].replace('.mp4','')
+        auth        = streamAuth[1]
+        identurl = 'http://'+hostname+'/fcs/ident'
+        ident = getURL(identurl)
+        ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
+        # protocolSplit[0]+'
+        basertmp = 'rtmpe://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
+        finalUrl = basertmp
+        finalUrl += " playpath=" + stream 
+        finalUrl += " pageurl=" + pageurl
+        finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
+        item = xbmcgui.ListItem(path=finalUrl)
+        return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def addDir(name,url,mode,iconimage='',plot=''):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)

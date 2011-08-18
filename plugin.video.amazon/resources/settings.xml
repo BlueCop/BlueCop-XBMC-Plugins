@@ -1,0 +1,6 @@
+<settings>
+   <setting id="login_name" type="text" label="30000" default=""/>
+   <setting id="login_pass" type="text" label="30001" enable="!eq(-1,)" option="hidden" default=""/>
+   <setting type="sep" />
+   <setting id="bitrate" type="enum" lvalues="30005|30006|30007|30008|30009|30010" label="30004" default="1"/>
+</settings>

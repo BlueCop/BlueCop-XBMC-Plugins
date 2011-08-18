@@ -141,8 +141,6 @@ def PLAYVIDEO(pageurl):
             print quality
             if quality!=-1:
                 rtmpurl = streams[quality][1]
-            else:
-                return False
         protocolSplit = rtmpurl.split("://")
         pathSplit   = protocolSplit[1].split("/")
         hostname    = pathSplit[0]
@@ -160,7 +158,7 @@ def PLAYVIDEO(pageurl):
         finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
         item = xbmcgui.ListItem(path=finalUrl)
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-
+    if streamSessionID <> False:
         epoch = str(int(time.mktime(time.gmtime()))*1000)
         USurl =  'https://atv-ps.amazon.com/cdp/usage/UpdateStream'
         USurl += '?device_type_id='+values['deviceTypeID']
@@ -224,6 +222,7 @@ def PLAYVIDEO(pageurl):
         surl += '&firmware=LNX%2010,3,181,14%20PlugIn'
         surl += '&customerID='+values['customerID']
         print getURL(surl,'atv-ps.amazon.com')
+
 
 def addDir(name,url,mode,iconimage='',plot=''):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)

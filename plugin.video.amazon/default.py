@@ -88,14 +88,16 @@ def PLAYVIDEO(pageurl):
             values['asin']          = item[1]
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
-    getstream += '?token='+values['token']
-    getstream += '&customerID='+values['customerID']
+    getstream += '?asin='+values['asin']
     getstream += '&deviceTypeID='+values['deviceTypeID']
+    getstream += '&firmware=WIN%2010,3,183,5%20PlugIn'
+    getstream += '&customerID='+values['customerID']
     getstream += '&deviceID='+values['deviceID']
+    getstream += '&token='+values['token']
+    getstream += '&xws-fa-ov=true'
     getstream += '&format=json'
-    getstream += '&asin='+values['asin']
     getstream += '&version=1'
-    getstream += '&firmware=1'
+
     data = getURL(getstream,'atv-ps.amazon.com')
     rtmpdata = demjson.decode(data)
     #rtmpurl = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo'][3]['url']

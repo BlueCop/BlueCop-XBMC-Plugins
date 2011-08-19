@@ -66,6 +66,7 @@ def login():
 def GETSTREAMS(getstream):
     try:
         data = getURL(getstream,'atv-ps.amazon.com')
+        print data
         rtmpdata = demjson.decode(data)
         print rtmpdata
         sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
@@ -124,6 +125,7 @@ def PLAYVIDEO(pageurl):
 
     #if cdn = 'limelight' 
     if rtmpurls <> False:
+        print rtmpurls
         quality = [0,2500,1328,996,664,348]
         lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
         mbitrate = 0
@@ -225,7 +227,11 @@ def PLAYVIDEO(pageurl):
 
 
 def addDir(name,url,mode,iconimage='',plot=''):
-    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+    u=sys.argv[0]
+    u+="?url="+urllib.quote_plus(url)
+    u+="&mode="+str(mode)
+    u+="&name="+urllib.quote_plus(name)
+    u+="&thumb="+urllib.quote_plus(iconimage)
     ok=True
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
@@ -331,7 +337,7 @@ def addTVdb(url=TV_URL):
 
 ################################ Root listing
 def ROOT():
-    login()
+    #login()
     addDir('Movies'     ,MOVIE_URL ,1)
     addDir('TV Shows'   ,TV_URL    ,2)
     addDir('HDTV Shows' ,TV_URL    ,4)
@@ -362,42 +368,70 @@ def LIST_TVSHOWS(HDonly=False):
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_EPISODES(episode_url):
+def LIST_EPISODES(argname, episode_url,thumbnail):
+    xbmcplugin.setContent(int(sys.argv[1]), 'Episodes')   
     data = getURL(episode_url)
-    names = re.compile('<div style="width: 185px;">(.*?)</div>',re.DOTALL).findall(data)
-    episodes = re.compile('<a href="(.*?)" style="text-decoration: none">').findall(data)
-    mode = 10
-    for name in names:
-        marker = names.index(name)
-        name = name.strip()
-        if marker == 0:
-            url = episode_url
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'})
+    episodes = episodebox.findAll('tr',attrs={'asin':True})
+    del tree
+    del episodebox
+    #Season and Episode info
+    try:
+        if ' Season ' in argname:
+            argsplit = argname.split(' Season ')
+            showname = argsplit[0]
+            season = int(argsplit[1].replace('[HD]','').strip())
+        elif ' Volume ' in argname:
+            argsplit = argname.split(' Volume ')
+            showname = argsplit[0]
+            season = int(argsplit[1].replace('[HD]','').strip())
         else:
-            url = BASE_URL + episodes[marker - 1]
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name)
-        liz.setInfo( type="Video", infoLabels={ "Title": name})
+            showname = argname.replace('[HD]','').strip()
+            season = 0
+    except:
+        showname = argname.replace('[HD]','').strip()
+        season = 0
+    episodeNum = 0
+    for episode in episodes:
+        asin = episode['asin']
+        name = episode.find(attrs={'title':True})['title'].encode('utf-8')
+        airDate = episode.find(attrs={'style':'width: 150px; overflow: hidden'}).string.strip()
+        plot =  episode.findAll('div')[1].string.strip()
+        episodeNum += 1
+        if season == 0:
+            displayname =  str(episodeNum)+'. '+name
+        else:
+            displayname =  str(season)+'x'+str(episodeNum)+' - '+name
+        url = BASE_URL+'/gp/product/'+asin
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(10)+"&name="+urllib.quote_plus(name)
+        liz=xbmcgui.ListItem(displayname, thumbnailImage=thumbnail)
+        liz.setInfo( type="Video", infoLabels={'Title': name.replace('[HD]',''),
+                                               'Plot':plot,
+                                               'premiered':airDate,
+                                               'Season':season,
+                                               'Episode':episodeNum,
+                                               'TVShowTitle':showname})
         liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)      
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    
+
 
 def get_params():
     param=[]
     paramstring=sys.argv[2]
     if len(paramstring)>=2:
-                    params=sys.argv[2]
-                    cleanedparams=params.replace('?','')
-                    if (params[len(params)-1]=='/'):
-                                    params=params[0:len(params)-2]
-                    pairsofparams=cleanedparams.split('&')
-                    param={}
-                    for i in range(len(pairsofparams)):
-                                    splitparams={}
-                                    splitparams=pairsofparams[i].split('=')
-                                    if (len(splitparams))==2:
-                                                    param[splitparams[0]]=splitparams[1]
-                                                    
+        params=sys.argv[2]
+        cleanedparams=params.replace('?','')
+        if (params[len(params)-1]=='/'):
+            params=params[0:len(params)-2]
+        pairsofparams=cleanedparams.split('&')
+        param={}
+        for i in range(len(pairsofparams)):
+            splitparams={}
+            splitparams=pairsofparams[i].split('=')
+            if (len(splitparams))==2:
+                param[splitparams[0]]=splitparams[1]                                               
     return param
 
               
@@ -406,33 +440,25 @@ url=None
 name=None
 mode=None
 
-try:
-    url=urllib.unquote_plus(params["url"])
-except:
-    pass
-try:
-    name=urllib.unquote_plus(params["name"])
-except:
-    pass
+
 try:
     mode=int(params["mode"])
 except:
     pass
 
 print "Mode: "+str(mode)
-print "URL: "+str(url)
-print "Name: "+str(name)
+print "Parameters:"+str(params)
 
 
-if mode==None or url==None or len(url)<1:
+if mode==None:
     ROOT()
 elif mode==1:
     LIST_MOVIES()
 elif mode==2:
     LIST_TVSHOWS()
 elif mode==3:
-    LIST_EPISODES(url)
+    LIST_EPISODES(urllib.unquote_plus(params["name"]), urllib.unquote_plus(params["url"]),urllib.unquote_plus(params["thumb"]))
 elif mode==4:
     LIST_TVSHOWS(HDonly=True)
 elif mode==10:
-    PLAYVIDEO(url)
+    PLAYVIDEO(params["url"])

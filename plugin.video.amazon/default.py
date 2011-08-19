@@ -461,4 +461,4 @@ elif mode==3:
 elif mode==4:
     LIST_TVSHOWS(HDonly=True)
 elif mode==10:
-    PLAYVIDEO(params["url"])
+    PLAYVIDEO(urllib.unquote_plus(params["url"]))

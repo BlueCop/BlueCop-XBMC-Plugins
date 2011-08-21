@@ -9,16 +9,28 @@ pluginhandle = int(sys.argv[1])
 BASE_URL = 'http://www.vevo.com'
 
 def listCategories():
-        addDir('Artists (A-Z)', 'http://www.vevo.com/artists/index/a-z?alpha=', 1)
-        addDir('Artists by Genre', 'artist', 7)
-        addDir('Artists On Tour', 'http://www.vevo.com/artists/on-tour', 2)
-        addDir('Most Recent Artists', 'http://www.vevo.com/artists?order=MostRecent', 2)
-        addDir('Most Viewed Artists', 'artist', 5)
-        addDir('Most Liked Artists', 'artist', 6)
-        addDir('Videos by Genre', 'video', 7)
-        addDir('Most Recent Videos', 'http://www.vevo.com/videos?order=MostRecent', 4)
-        addDir('Most Viewed Videos', 'video', 5)
-        addDir('Most Liked Videos', 'video', 6)
+    addDir('Music Videos',  'http://www.vevo.com/videos',       'rootVideos')
+    addDir('Playlists',     'http://www.vevo.com/playlists',    'rootPlaylists')
+    addDir('Artists',       'http://www.vevo.com/artists',      'rootArtists')
+    addDir('Shows',         'http://www.vevo.com/shows',        'rootShows')
+    addDir('Channels',      'http://www.vevo.com/channels',     'rootChannels')
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+def rootVideos():
+    addDir('Test', 'http://www.vevo.com/videos', 1)
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+    
+def rootPlaylists():
+    pass
+    
+def rootArtists():
+    pass
+
+def rootShows():
+    pass
+    
+def rootChannels():
+    pass
 
 def mostViewed(mode,genre = 'none'):
         if mode == 'artist':
@@ -206,119 +218,100 @@ def getURL( url, data=None):
         addDir()
 """
 def addLink(name, url, mode, plot='', iconimage='DefaultFolder.png'):
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
-        ok=True
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
         liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
         liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
         liz.setProperty('IsPlayable', 'true')
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+        ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
         return ok
 
 def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png'):
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)
-        ok=True
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
         liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
         liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-        ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+        ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
         return ok
 
 
 
-"""
-        getParams()
-        grab parameters passed by the available functions in this script
-"""
-def getParams():
-        param=[]
-        paramstring=sys.argv[2]
-        if len(paramstring)>=2:
-                params=sys.argv[2]
-                cleanedparams=params.replace('?','')
-                if (params[len(params)-1]=='/'):
-                        params=params[0:len(params)-2]
-                pairsofparams=cleanedparams.split('&')
-                param={}
-                for i in range(len(pairsofparams)):
-                        splitparams={}
-                        splitparams=pairsofparams[i].split('=')
-                        if (len(splitparams))==2:
-                                param[splitparams[0]]=splitparams[1]
-        return param
-
-def qs2dict(qs):
-    try:
-        params = dict([part.split('=') for part in qs.split('&')])
-    except:
-        params = {}
-    return params
+def get_params():
+    param=[]
+    paramstring=sys.argv[2]
+    if len(paramstring)>=2:
+        params=sys.argv[2]
+        cleanedparams=params.replace('?','')
+        if (params[len(params)-1]=='/'):
+            params=params[0:len(params)-2]
+        pairsofparams=cleanedparams.split('&')
+        param={}
+        for i in range(len(pairsofparams)):
+            splitparams={}
+            splitparams=pairsofparams[i].split('=')
+            if (len(splitparams))==2:
+                param[splitparams[0]]=urllib.unquote_plus(splitparams[1])                                        
+    return param
 
 
-#grab params and assign them if found
-params=getParams()
-url=None
-name=None
+params=get_params()
 mode=None
 try:
-    url=urllib.unquote_plus(params["url"])
+    mode=params["mode"]
 except:
     pass
-try:
-    name=urllib.unquote_plus(params["name"])
-except:
-    pass
-try:
-    mode=int(params["mode"])
-except:
-    pass
-
-#print params to the debug log
 print "Mode: "+str(mode)
-print "URL: "+str(url)
-print "Name: "+str(name)
+print "Parameters:"+str(params)
 
-if mode==None or url==None:
-        print "CATEGORY INDEX : "
-        listCategories()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==1:
-        listAZ(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==2:
-        listArtist(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==3:
-        listArtistVideos(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==4:
-        listVideos(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==5:
-        mostViewed(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==6:
-        mostLiked(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==7:
-        listGenres(url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==8:
-        choiceGenres(url, mode)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==9:
-        choiceGenres(url, mode)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==11:
-        mostLiked('artist',url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==12:
-        mostViewed('artist',url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==13:
-        mostLiked('video',url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-elif mode==14:
-        mostViewed('video',url)
-        xbmcplugin.endOfDirectory(int(sys.argv[1])) 
-elif mode==10:
-        getVideo(url)
+
+if mode==None:
+    listCategories()
+else:
+    exec '%s()' % mode
+
+#===============================================================================
+# if mode==None or url==None:
+#        print "CATEGORY INDEX : "
+#        listCategories()
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==1:
+#        listAZ(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==2:
+#        listArtist(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==3:
+#        listArtistVideos(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==4:
+#        listVideos(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==5:
+#        mostViewed(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==6:
+#        mostLiked(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==7:
+#        listGenres(url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==8:
+#        choiceGenres(url, mode)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==9:
+#        choiceGenres(url, mode)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==11:
+#        mostLiked('artist',url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==12:
+#        mostViewed('artist',url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==13:
+#        mostLiked('video',url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+# elif mode==14:
+#        mostViewed('video',url)
+#        xbmcplugin.endOfDirectory(int(sys.argv[1])) 
+# elif mode==10:
+#        getVideo(url)
+#===============================================================================
 

@@ -11,10 +11,16 @@ import tempfile
 import addoncompat
 from BeautifulSoup import BeautifulStoneSoup
 
+
+
 try:
-    from pysqlite2 import dbapi2 as sqlite
+    try:
+        from pysqlite2 import dbapi2 as sqlite
+    except:
+        from sqlite3 import dbapi2 as sqlite
+    sqliteAvailable = True
 except:
-    from sqlite3 import dbapi2 as sqlite
+    sqliteAvailable = False 
 
 pluginhandle = int (sys.argv[1])
 """

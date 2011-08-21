@@ -23,7 +23,8 @@ print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"
 def modes( ):
     if sys.argv[2]=='':
         #Plug-in Root List
-        common.addDirectory(' All Shows','Masterlist')
+        if common.sqliteAvailable == True:
+            common.addDirectory(' All Shows','Masterlist')
         for name , network in common.site_dict.iteritems():
             common.addDirectory(name, network, 'rootlist')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)

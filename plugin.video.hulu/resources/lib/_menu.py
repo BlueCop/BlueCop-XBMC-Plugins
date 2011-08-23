@@ -231,8 +231,10 @@ class Main:
                 if show_id_data:
                     show_id = show_id_data[0].string
                 if canonical_name:
-                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
-
+                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"            
+                if art == None:
+                    art = ''
+            
             #Set displayname and content type
             if parent_id:
                 displayname = '- '+displayname

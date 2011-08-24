@@ -1,7 +1,7 @@
 import urllib, urllib2, re
 import string, os, time, datetime
 
-import xbmc, xbmcgui, xbmcplugin
+import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 import addoncompat
 
 from BeautifulSoup import BeautifulSoup
@@ -12,6 +12,7 @@ pluginhandle = int(sys.argv[1])
 
 BASE = 'http://www.vevo.com'
 
+# Root listing
 def listCategories():
     xbmcplugin.setContent(pluginhandle, 'MusicVideos')
     addDir('Music Videos',  'http://www.vevo.com/videos',       'rootVideos')
@@ -21,6 +22,7 @@ def listCategories():
     addDir('Channels',      'http://www.vevo.com/channels',     'rootChannels')
     xbmcplugin.endOfDirectory(pluginhandle)
 
+# Video listings
 def rootVideos():
     videos_url = params['url']
     addGenres(videos_url, 'sortByVideo')
@@ -34,17 +36,21 @@ def sortByVideo():
         parameters = '?'+urlsplit[1]+'&'
     else:
         parameters = '?'
-    addDir('Most Liked',    url+'/videosbrowse'+parameters+'order=MostViewed',      'sortWhenVideo')
-    addDir('Most Viewed',   url+'/videosbrowse'+parameters+'order=MostFavorited',   'sortWhenVideo')
-    addDir('Most Recent',   url+'/videosbrowse'+parameters+'order=MostViewed',      'listVideos')
+    addDir('Most Liked',    url+'/videosbrowse'+parameters+'order=MostFavorited',   'sortWhenVideo')
+    addDir('Most Viewed',   url+'/videosbrowse'+parameters+'order=MostViewed',      'sortWhenVideo')
+    addDir('Most Recent',   url+'/videosbrowse'+parameters+'order=MostRecent',      'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def sortWhenVideo():
     url = params['url']
-    addDir('Today',         url+'Today',      'listVideos')
-    addDir('This Week' ,    url+'ThisWeek',   'listVideos')
-    addDir('This Month',    url+'ThisMonth',  'listVideos')
-    addDir('All-Time',      url+'AllTime',    'listVideos')
+    if 'MostFavorited' in url:
+        name = 'Most Liked'
+    elif 'MostViewed' in url:
+        name = 'Most Viewed'
+    addDir(name+' Today',         url+'Today',      'listVideos')
+    addDir(name+' This Week' ,    url+'ThisWeek',   'listVideos')
+    addDir(name+' This Month',    url+'ThisMonth',  'listVideos')
+    addDir(name+' All-Time',      url+'AllTime',    'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listVideos():
@@ -73,6 +79,7 @@ def listVideos():
         addLink(artist+' - '+title, url, 'getVideo', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle)
 
+# common genre listing for artists and videos
 def addGenres(url,mode):
     data = getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -85,11 +92,14 @@ def addGenres(url,mode):
                 url = BASE + subgenre['href']
                 name = subgenre.string
                 if 'Video Premieres' in name:
+                    url = 'http://www.vevo.com/videos/videosbrowse/is-premiere?order=MostRecent'
+                    addDir(name, url, 'listVideos')
                     continue
                 if 'subgenre' in url:
                     name = ' - '+name
                 addDir(name, url, mode)
 
+# Artist listings
 def rootArtists():
     artist_url = params['url']
     addGenres(artist_url, 'sortByArtists')
@@ -103,18 +113,22 @@ def sortByArtists():
         parameters = '?'+urlsplit[1]+'&'
     else:
         parameters = '?'
-    addDir('Alphabetical',  url+'/artistsbrowse'+parameters+'order=Alphabetic',     'listAZ')
-    addDir('Most Liked',    url+'/artistsbrowse'+parameters+'order=MostViewed',      'sortWhenArtists')
-    addDir('Most Viewed',   url+'/artistsbrowse'+parameters+'order=MostFavorited',   'sortWhenArtists')
-    addDir('Most Recent',   url+'/artistsbrowse'+parameters+'order=MostViewed',      'listArtists')
+    addDir('Alphabetical',  url+'/artistsbrowse'+parameters+'order=Alphabetic',      'listAZ')
+    addDir('Most Liked',    url+'/artistsbrowse'+parameters+'order=MostFavorited',   'sortWhenArtists')
+    addDir('Most Viewed',   url+'/artistsbrowse'+parameters+'order=MostViewed',      'sortWhenArtists')
+    addDir('Most Recent',   url+'/artistsbrowse'+parameters+'order=MostRecent',      'listArtists')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def sortWhenArtists():
     url = params['url']
-    addDir('Today',         url+'Today',      'listArtists')
-    addDir('This Week' ,    url+'ThisWeek',   'listArtists')
-    addDir('This Month',    url+'ThisMonth',  'listArtists')
-    addDir('All-Time',      url+'AllTime',    'listArtists')
+    if 'MostFavorited' in url:
+        name = 'Most Liked'
+    elif 'MostViewed' in url:
+        name = 'Most Viewed'
+    addDir(name+' Today',         url+'Today',      'listArtists')
+    addDir(name+' This Week' ,    url+'ThisWeek',   'listArtists')
+    addDir(name+' This Month',    url+'ThisMonth',  'listArtists')
+    addDir(name+' All-Time',      url+'AllTime',    'listArtists')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listAZ():
@@ -123,7 +137,7 @@ def listAZ():
     alphabet=set(string.ascii_uppercase)
     for letter in alphabet:
         addDir(letter, url+'&alpha='+str(letter), 'listArtists')
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listArtists():
@@ -144,9 +158,11 @@ def listArtists():
         addDir(title, url, 'listVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle)
 
+# Playlist listings
 def rootPlaylists():
     pass
 
+# Show listings
 def rootShows():
     url = params['url']
     data = getURL(url)
@@ -158,7 +174,8 @@ def rootShows():
         title = show.find('img')['title']
         addDir(title, url, 'listVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle)
-    
+
+# Channel listings    
 def rootChannels():
     url = params['url']
     data = getURL(url)
@@ -171,6 +188,7 @@ def rootChannels():
         addDir(title, url, 'listVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle)        
 
+# Play Video
 def getVideo():
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
     select = int(addoncompat.get_setting('bitrate'))
@@ -193,8 +211,9 @@ def getVideo():
         filenames += filename+','          
     finalUrl = videobase+path+','+filenames+'.mp4.csmil/bitrate='+str(select)
     item = xbmcgui.ListItem(path=finalUrl)
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item)        
-                
+    return xbmcplugin.setResolvedUrl(pluginhandle, True, item)   
+
+# Common                
 def getURL( url, data=None):
     print url
     headers =  {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14'}
@@ -211,14 +230,14 @@ def addLink(name, url, mode, plot='', iconimage='DefaultFolder.png'):
     liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
     liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
     liz.setProperty('IsPlayable', 'true')
-    ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz)
+    ok = xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
     return ok
 
 def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png'):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
     liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
     liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-    ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
+    ok = xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
     return ok
 
 def get_params():

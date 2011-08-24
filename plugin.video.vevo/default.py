@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import urllib, urllib2, re
 import string, os, time, datetime
 
@@ -9,12 +11,12 @@ from BeautifulSoup import BeautifulStoneSoup
 import demjson
 
 pluginhandle = int(sys.argv[1])
+xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
 BASE = 'http://www.vevo.com'
 
 # Root listing
 def listCategories():
-    xbmcplugin.setContent(pluginhandle, 'MusicVideos')
     addDir('Music Videos',  'http://www.vevo.com/videos',       'rootVideos')
     addDir('Artists',       'http://www.vevo.com/artists',      'rootArtists')
     #addDir('Playlists',     'http://www.vevo.com/playlists',    'rootPlaylists')
@@ -70,13 +72,22 @@ def listVideos():
         thumbnail = thumb.img['src'].split('?')[0]
         tags = re.compile(r'<.*?>')
         spaces = re.compile(r'\s+')
-        title = video.find('h4', attrs={'class' : 'ui-ellipsis'}).a.string.replace('&amp;','&')
-        title = tags.sub('', title)
-        title = spaces.sub(' ', title)
-        artist = str(video.find('h5')).decode('utf-8')
+        title = video.find('h4', attrs={'class' : 'ui-ellipsis'}).a.string.encode('utf-8')
+        title = unicode(BeautifulSoup(title,convertEntities=BeautifulSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
+        artist = str(video.find('h5')).decode('utf-8').encode('utf-8')
         artist = tags.sub('', artist)
         artist = spaces.sub(' ', artist)
-        addLink(artist+' - '+title, url, 'getVideo', iconimage=thumbnail)
+        artist = unicode(BeautifulSoup(artist,convertEntities=BeautifulSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
+        u = sys.argv[0]
+        u += '?url='+urllib.quote_plus(url)
+        u += '&mode='+urllib.quote_plus('getVideo')
+        displayname = artist+' - '+title
+        item=xbmcgui.ListItem(displayname, iconImage=thumbnail, thumbnailImage=thumbnail)
+        item.setInfo( type="Music", infoLabels={ "Title":title,
+                                                 "Artist":artist
+                                                 })
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 # common genre listing for artists and videos
@@ -204,12 +215,19 @@ def getVideo():
     number = len(videos) - 1
     if number < select:
         select = number
-    for video in videos:
-        filepath = video['src']
-        path = filepath.split('_')[0]
-        filename = filepath.replace(path,'').replace('.mp4','')
-        filenames += filename+','          
-    finalUrl = videobase+path+','+filenames+'.mp4.csmil/bitrate='+str(select)
+    if '_' in videos[number]:
+        for video in videos:
+            filepath = video['src']
+            path = filepath.split('_')[0]
+            filename = filepath.replace(path,'').replace('.mp4','')
+            filenames += filename+','
+    else:
+        for video in videos:
+            filepath = video['src']
+            filename = filepath.split('/')[-1]
+            path = filepath.replace(filename,'')
+            filenames += filename.replace('.mp4','')+','              
+    finalUrl = videobase+path+','+filenames+'.mp4.csmil/bitrate='+str(select)+'?seek=0'
     item = xbmcgui.ListItem(path=finalUrl)
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)   
 
@@ -225,20 +243,10 @@ def getURL( url, data=None):
     response.close()
     return data
 
-def addLink(name, url, mode, plot='', iconimage='DefaultFolder.png'):
-    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
-    liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-    liz.setProperty('IsPlayable', 'true')
-    ok = xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
-    return ok
-
 def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png'):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
-    liz=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot": plot } )
-    ok = xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
-    return ok
+    item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
+    return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=True)
 
 def get_params():
     param=[]

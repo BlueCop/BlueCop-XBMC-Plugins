@@ -190,7 +190,6 @@ def listPlaylists(url):
         thumbnail = playlist.find('img')['src'].split('?')[0]
         title = playlist.find('img')['alt']
         addDir(title, url, 'playPlaylists', iconimage=thumbnail,isplayable=True)
- 
 
 def playPlaylists():
     url = params['url']
@@ -203,7 +202,7 @@ def playPlaylists():
         stacked_url += url.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)
-    return xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
 
 # Show listings
 def rootShows():
@@ -253,7 +252,10 @@ def Search(mode):
 # Play Video
 def playVideo():
     item = xbmcgui.ListItem(path=getVideo(params['url']))
-    return xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+    import time
+    time.sleep(4)
+    xbmc.Player().pause()
 
 def getVideo(pageurl):
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]

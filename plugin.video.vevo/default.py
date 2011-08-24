@@ -163,9 +163,11 @@ def listArtists():
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     artists = tree.findAll(attrs={'class' : 'playOverlay'})
     for artist in artists:
+        print artist
         url = BASE+artist['href']
         thumbnail = artist.find('img')['src'].split('?')[0]
-        title = artist.find('img')['title']
+        try:title = artist.find('img')['title'].encode('utf-8')
+        except:title = artist.find('img')['alt'].encode('utf-8')
         addDir(title, url, 'listVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle)
 

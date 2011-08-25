@@ -24,13 +24,13 @@ def listCategories():
     addDir('Playlists',     '',                                 'rootPlaylists')
     addDir('Shows',         'http://www.vevo.com/shows',        'rootShows')
     addDir('Channels',      'http://www.vevo.com/channels',     'rootChannels')
-    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    xbmcplugin.endOfDirectory(pluginhandle)
 
 # Video listings
 def rootVideos():
     videos_url = params['url']
     addGenres(videos_url, 'sortByVideo')
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def sortByVideo():
     url = params['url']
@@ -91,7 +91,7 @@ def listVideos(url = False):
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # common genre listing for artists and videos
 def addGenres(url,mode):
@@ -117,7 +117,7 @@ def addGenres(url,mode):
 def rootArtists():
     artist_url = params['url']
     addGenres(artist_url, 'sortByArtists')
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def sortByArtists():
     url = params['url']
@@ -173,13 +173,13 @@ def listArtists(url = False):
         try:title = artist.find('img')['title'].encode('utf-8')
         except:title = artist.find('img')['alt'].encode('utf-8')
         addDir(title, url, 'listVideos', iconimage=thumbnail)
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Playlist listings
 def rootPlaylists():
     listPlaylists('http://www.vevo.com/playlists/playlistsbrowse')
     listPlaylists('http://www.vevo.com/playlists/playlists?page=2')
-    xbmcplugin.endOfDirectory(pluginhandle) 
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True) 
 
 def listPlaylists(url):
     data = getURL(url)
@@ -215,7 +215,7 @@ def rootShows():
         thumbnail = show.find('img')['src'].split('?')[0]
         title = show.find('img')['title']
         addDir(title, url, 'listVideos', iconimage=thumbnail)
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Channel listings    
 def rootChannels(url = False):
@@ -229,7 +229,7 @@ def rootChannels(url = False):
         thumbnail = show.find('img')['src'].split('?')[0]
         title = show.find('img')['title']
         addDir(title, url, 'listVideos', iconimage=thumbnail)
-    xbmcplugin.endOfDirectory(pluginhandle)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Search
 def searchVideos():

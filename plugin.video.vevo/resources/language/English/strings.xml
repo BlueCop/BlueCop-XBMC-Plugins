@@ -4,12 +4,12 @@
 	<string id="30001">Password</string>
 
 	<string id="30004">Choosen Bitrate</string>
-	<string id="30005">564kbps</string>
-	<string id="30006">864kbps</string>
-	<string id="30007">1328kbps</string>
-	<string id="30008">1728kbps</string>
-	<string id="30009">2528kbps</string>
-	<string id="30010">3328kbps</string>
-	<string id="30011">4392kbps</string>
-	<string id="30012">5392kbps</string>
+	<string id="30005">288p@564kbps</string>
+	<string id="30006">288p@864kbps</string>
+	<string id="30007">432p@1328kbps</string>
+	<string id="30008">432p@1728kbps</string>
+	<string id="30009">720p@2528kbps</string>
+	<string id="30010">720p@3328kbps</string>
+	<string id="30011">1080p@4392kbps</string>
+	<string id="30012">1080p@5392kbps</string>
 </strings>

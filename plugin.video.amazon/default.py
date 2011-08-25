@@ -397,7 +397,8 @@ def LIST_EPISODES(argname, episode_url,thumbnail):
         asin = episode['asin']
         name = episode.find(attrs={'title':True})['title'].encode('utf-8')
         airDate = episode.find(attrs={'style':'width: 150px; overflow: hidden'}).string.strip()
-        plot =  episode.findAll('div')[1].string.strip()
+        try: plot =  episode.findAll('div')[1].string.strip()
+        except: plot = ''
         episodeNum += 1
         if season == 0:
             displayname =  str(episodeNum)+'. '+name

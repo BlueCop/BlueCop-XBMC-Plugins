@@ -368,9 +368,10 @@ def relatedList():
 def playlistVideo():
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
-    import time
-    time.sleep(5)
     if addoncompat.get_setting('unpause') == 'true':
+        import time
+        sleeptime = int(addoncompat.get_setting('unpausetime'))+1
+        time.sleep(sleeptime)
         xbmc.Player().pause()
 
 def getVideo(pageurl):

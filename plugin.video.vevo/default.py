@@ -302,9 +302,19 @@ def rootChannels(url = False):
         url = BASE+show.a['href']
         thumbnail = show.find('img')['src'].split('?')[0]
         title = show.find('img')['title']
-        addDir(title, url, 'listArtistsVideos', iconimage=thumbnail)
+        addDir(title, url, 'Channel', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
+def Channel():
+    url = params['url']
+    addDir('Videos', url, 'listArtistsVideos')
+    addDir('Playlists', url+'/Playlists', 'ChannelPlaylists')
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def ChannelPlaylists():
+    url = params['url']
+    listPlaylists(url)
+    
 # Show listings
 def rootShows():
     url = params['url']

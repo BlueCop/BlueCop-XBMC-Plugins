@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import urllib, urllib2, re
-import string, os, time, datetime
+import urllib, urllib2, cookielib
+import string, os, re, time, datetime
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 import addoncompat
@@ -14,14 +14,19 @@ pluginhandle = int(sys.argv[1])
 xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
 BASE = 'http://www.vevo.com'
+COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','vevo-cookies.lwp')
+USERFILE = os.path.join(os.getcwd().replace(';', ''),'resources','userfile.js')
 
 # Root listing
 def listCategories():
+    logedin = login_cookie()
     addDir('Music Videos',  'http://www.vevo.com/videos',       'rootVideos')
     addDir('Search Videos', '',                                 'searchVideos')
     addDir('Artists',       'http://www.vevo.com/artists',      'rootArtists')
     addDir('Search Artists','',                                 'searchArtists')
-    addDir('Playlists',     'http://www.vevo.com/playlists',    'rootPlaylists')
+    if logedin:
+        addDir('My Playlists',  'http://www.vevo.com/user/profile/',             'myPlaylists')
+    addDir('VEVO Playlists',     'http://www.vevo.com/playlists',    'rootPlaylists')
     addDir('Shows',         'http://www.vevo.com/shows',        'rootShows')
     addDir('Channels',      'http://www.vevo.com/channels',     'rootChannels')
     xbmcplugin.endOfDirectory(pluginhandle)
@@ -76,10 +81,11 @@ def listVideos(url = False):
     processVideos(tree)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
-def processVideos(tree):
+def processVideos(tree,total=False):
     thumbs = tree.findAll(attrs={'class' : 'listThumb'})
     videos = tree.findAll(attrs={'class' : 'listContent'})
-    total = len(videos)
+    if not total:
+        total = len(videos)
     for video,thumb in zip(videos,thumbs):
         cm = []
         url = BASE+thumb.find(attrs={'class' : 'playOverlay'})['href'].split('?')[0]
@@ -196,7 +202,7 @@ def listArtists(url = False):
 def processArtists(data,total=False):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     artists = tree.findAll(attrs={'class' : 'playOverlay'})
-    if total == False:
+    if not total:
         total = len(artists)
     for artist in artists:
         url = BASE+artist['href']
@@ -205,17 +211,19 @@ def processArtists(data,total=False):
         except:title = artist.find('img')['alt'].encode('utf-8')
         addDir(title, url, 'listArtistsVideos', iconimage=thumbnail, total=total)
 
-def listArtistsVideos(url = False):
+def listArtistsVideos(url = False,total=False):
     if not url:
         url = params['url']
     data = getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    processVideos(tree)
+    processVideos(tree,total)
     try:
         nexturl = BASE+tree.find('a',attrs={'title' : 'Go to Next Page'})['href']
         del tree
         del data
-        listArtistsVideos(nexturl)
+        if not total:
+            total = 60
+        listArtistsVideos(nexturl,total+60)
     except:
         xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
@@ -224,7 +232,16 @@ def rootPlaylists():
     url = params['url']
     addGenres(url, 'listPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True) 
-
+    
+def myPlaylists():
+    url = params['url']
+    userfile = open(USERFILE, "r")
+    userdata = userfile.read()
+    userfile.close()
+    userid = demjson.decode(userdata)['userId']
+    url += str(userid)
+    listPlaylists(url)
+    
 def listPlaylists(url = False):
     if not url:
         url = params['url'].replace('/playlists','/playlists/playlistsbrowse')
@@ -301,12 +318,12 @@ def rootShows():
         addDir(title, url, 'listShowVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
-def listShowVideos(url = False):
+def listShowVideos(url = False,total=10):
     if not url:
         url = params['url']
     data = getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    processVideos(tree)
+    processVideos(tree,total)
     more = tree.find('li',attrs={'class' : 'show-more'})
     if more <> None:
         if '?page=' in url:
@@ -316,7 +333,7 @@ def listShowVideos(url = False):
             nexturl  = url+'?page=2'
         del tree
         del data
-        listShowVideos(nexturl)
+        listShowVideos(nexturl,total+10)
     else:
         xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
@@ -345,7 +362,10 @@ def playVideo():
         relatedList()
 
 def relatedList():
-    url = 'http://www.vevo.com/related/video/'+params['url'].split('/')[-1]+'?source=watch&max=30&mode=b'
+    rmodes = ['a','b']
+    index = int(addoncompat.get_setting('relatedmode'))
+    relatedmode = rmodes[index]
+    url = 'http://www.vevo.com/related/video/'+params['url'].split('/')[-1]+'?source=watch&max=30&mode='+relatedmode
     data = getURL(url)
     relatedvideos = demjson.decode(data)
     playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
@@ -403,22 +423,84 @@ def getVideo(pageurl):
     finalUrl = videobase+path+','+filenames+'.mp4.csmil/bitrate='+str(select)+'?seek=0'
     return finalUrl
 
-# Common                
-def getURL( url, data=None):
-    print url
-    headers =  {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14'}
-    if data:
-        data = urllib.urlencode(data)
-    req = urllib2.Request(url, data, headers)
-    response = urllib2.urlopen(req)
-    data = response.read()
-    response.close()
-    return data
-
+# Common
 def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png' ,folder=True,total=0):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)
     item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
+
+def getURL( url , extraheader=True):
+    print 'VEVO --> common :: getURL :: url = '+url
+    cj = cookielib.LWPCookieJar()
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer', 'http://www.vevo.com'),
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
+    if extraheader:
+        opener.addheaders = [('X-Requested-With', 'XMLHttpRequest')]
+    usock=opener.open(url)
+    response=usock.read()
+    usock.close()
+    if os.path.isfile(COOKIEFILE):
+        cj.save(COOKIEFILE, ignore_discard=True)
+    return response
+
+def UserPost( url ):
+    print 'VEVO --> common :: UserPost :: url = '+url
+    cj = cookielib.LWPCookieJar()
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer', 'http://www.vevo.com'),
+                         ('X-Requested-With', 'XMLHttpRequest'),
+                         ('Accept', 'application/json, text/javascript, */*; q=0.01'),
+                         ('Pragma', 'no-cache'),
+                         ('Cache-Control', 'no-cache'),
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
+    data = ''
+    usock=opener.open(url,data)
+    response=usock.read()
+    usock.close()
+    if os.path.isfile(COOKIEFILE):
+        cj.save(COOKIEFILE, ignore_discard=True)
+    return response
+
+def login_cookie():
+    #don't do anything if they don't have a password or username entered
+    if addoncompat.get_setting('login_name')=='' or addoncompat.get_setting('login_pass')=='':
+        print "VEVO --> WARNING: Could not login.  Please enter a username and password in settings"
+        return False
+    cj = cookielib.LWPCookieJar()
+    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    data = getURL('http://www.vevo.com/loginmodal')
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    token = tree.find(attrs={'name':'__RequestVerificationToken'})['value']
+    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer', 'http://www.vevo.com/'),
+                         ('Content-Type', 'application/x-www-form-urlencoded'),
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)'),
+                         ('Connection', 'keep-alive')]
+    data =urllib.urlencode({"email":addoncompat.get_setting('login_name'),
+                            "password":addoncompat.get_setting('login_pass'),
+                            "__RequestVerificationToken":token,
+                            "btnLogin":"Login"})
+    login_url = 'http://www.vevo.com/login?returnUrl=http%3A%2F%2Fwww.vevo.com%2F'
+    usock = opener.open(login_url, data)
+    response = usock.read()
+    usock.close()
+    print 'VEVO -- > These are the cookies we have received:'
+    for index, cookie in enumerate(cj):
+        print 'VEVO--> '+str(index)+': '+str(cookie)
+    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    usercontext = 'http://www.vevo.com/Proxy/User/GetUserContext.ashx?_=195283'
+    data = UserPost( usercontext )
+    file = open(USERFILE, 'w')
+    file.write(data)
+    file.close()
+    cj.save(COOKIEFILE, ignore_expires=True)
+    return True
 
 def get_params():
     param=[]

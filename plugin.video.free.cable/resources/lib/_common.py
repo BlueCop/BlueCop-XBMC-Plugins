@@ -55,12 +55,13 @@ site_dict = {'ABC': 'abc',
              'TV Land':'tvland',
              'A&E':'aetv',
              #'The Hub':'hub',
-             #'Comedy Central':'comedy',
+             'Comedy Central':'comedy',
              'MTV Shows':'mtv',
              'VH1 Shows':'vh1',
              'Adult Swim':'adultswim',
              'Cartoon Network':'cartoon',
-             'History Channel':'history'
+             'History Channel':'history',
+             'Lifetime':'lifetime'
              }
 
 db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')

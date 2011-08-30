@@ -62,7 +62,8 @@ site_dict = {'ABC': 'abc',
              'Cartoon Network':'cartoon',
              'History Channel':'history',
              'Lifetime':'lifetime',
-             'Bravo':'bravo'
+             'Bravo':'bravo',
+             'Oxygen':'oxygen'
              }
 
 db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')

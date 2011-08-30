@@ -1,5 +1,9 @@
 [B]Version 0.1.0[/B]
 
+added Bravo
+
+[B]Version 0.1.0[/B]
+
 fixed lifetime and added startrek.com to CBS
 
 [B]Version 0.0.6[/B]

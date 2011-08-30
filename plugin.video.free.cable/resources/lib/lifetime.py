@@ -114,15 +114,19 @@ def clips(showid=common.args.url):
 def processEpisodes(url):
     data = common.getURL(url)
     remove = re.compile('<script.*?script>', re.DOTALL)
-    data = re.sub(remove, '', data).split('<!--')[0]
+    data = re.sub(remove, '', data)
+    remove = re.compile('<\\!--.*?-->', re.DOTALL)
+    data = re.sub(remove, '', data)
     htmldata = demjson.decode(data)['display']
     remove = re.compile('"<div.*?div>"')
     htmldata = re.sub(remove, '""', htmldata)
     tree=BeautifulSoup(htmldata, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    print tree.prettify()
     episodes = tree.findAll('div',attrs={'class':re.compile('video-image-wrapper video')})
     if len(episodes) == 0:
         return False
     for episode in episodes:
+        print episode.prettify()
         url = episode.find('a')['href']
         name = episode.find('img')['title']
         thumb = episode.find('img')['src']
@@ -148,7 +152,8 @@ def playepisode(url=common.args.url):
 
    data = common.getURL(url)
    key = re.compile('"player_key":"(.+?)","').findall(data)[0]
-   content_id = re.compile('"defaultVideoID":"(.+?)","').findall(data)[0]
+   try:content_id = re.compile('"defaultVideoID":"(.+?)","').findall(data)[0]
+   except:content_id = re.compile('"video_id":"(.+?)","').findall(data)[0]
    exp_id = re.compile('"player_id":"(.+?)","').findall(data)[0]
    
    renditions = get_episode_info(key, content_id, url, exp_id)['programmedContent']['videoPlayer']['mediaDTO']['renditions']

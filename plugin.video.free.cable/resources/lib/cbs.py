@@ -8,6 +8,7 @@ import os
 import re
 
 from BeautifulSoup import BeautifulSoup
+from BeautifulSoup import MinimalSoup
 import resources.lib._common as common
 
 pluginhandle = int (sys.argv[1])
@@ -53,9 +54,106 @@ def shows(catid = common.args.url):
                 name = show.find('img')['alt'].encode('utf-8')
                 thumbnail = BASE_URL + show.find('img')['src']
                 url = BASE + show.find('a')['href']
+                if 'MacGyver' in name:
+                    url += '?vs=Full%20Episodes'
                 common.addDirectory(name, 'cbs', 'showcats', url, thumb=thumbnail)
             break
+    if catid == 'classics':
+        stShows('http://startrek.com/videos')
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
+
+def stShows(url = common.args.url):
+    stbase = 'http://www.startrek.com'
+    data = common.getURL(url)
+    remove = re.compile('<!.*?">')
+    data = re.sub(remove, '', data)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    stshows=tree.find('div',attrs={'id' : 'channels'}).findAll('li', attrs={'class' : True})       
+    for show in stshows:
+        name = show['class'].replace('-',' ').title()
+        thumb = stbase+show.find('img')['src']
+        url = stbase+show.find('a')['href']
+        common.addDirectory(name+' (startrek.com)', 'cbs', 'stshowcats', url, thumb=thumb)
+ 
+def stshowcats(url = common.args.url):
+    stbase = 'http://www.startrek.com'
+    data = common.getURL(url)
+    remove = re.compile('<!.*?">')
+    data = re.sub(remove, '', data)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    stcats=tree.find('div',attrs={'id' : 'content'}).findAll('div', attrs={'class' : 'box_news'})       
+    for cat in stcats:
+        name = cat.find('h4').contents[1].strip()
+        common.addDirectory(name, 'cbs', 'stvideos', url+'<name>'+name)
+
+def stvideos(url = common.args.url):
+    stbase = 'http://www.startrek.com'
+    argname = url.split('<name>')[1]
+    url = url.split('<name>')[0]
+    stbase = 'http://www.startrek.com'
+    data = common.getURL(url)
+    remove = re.compile('<!.*?">')
+    data = re.sub(remove, '', data)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    stcats=tree.find('div',attrs={'id' : 'content'}).findAll('div', attrs={'class' : 'box_news'})       
+    for cat in stcats:
+        name = cat.find('h4').contents[1].strip()
+        if name == argname:
+            titleUrl=stbase+cat.find('a',attrs={'class' : 'title '})['onclick'].split("url:'")[1].split("'}); return")[0]
+            if 'Full Episodes' in argname:
+                titleUrl += '/page_full/1'
+            stprocessvideos(titleUrl)
+
+def stprocessvideos(purl):
+    stbase = 'http://www.startrek.com'
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    data = common.getURL(purl)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos=tree.find(attrs={'class' : 'videos_container'}).findAll('li')
+    for video in videos:
+        thumb = video.find('img')['src']
+        url = stbase+video.find('a')['href']
+        try:
+            showname,name = video.findAll('a')[1].string.split('-')
+        except:
+            name = video.findAll('a')[1].string
+            showname = ''
+        try:
+            seasonepisode, duration = video.findAll('p')
+            seasonepisode = seasonepisode.string.replace('Season ','').split(' Ep. ')
+            season = int(seasonepisode[0])
+            episode = int(seasonepisode[1])
+            duration = duration.string.split('(')[1].replace(')','')
+        except:
+            season = 0
+            episode = 0
+            duration = ''
+        if season <> 0 or episode <> 0:
+            displayname = '%sx%s - %s' % (str(season),str(episode),name)
+        else:
+            displayname = name
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="cbs"'
+        u += '&sitemode="playST"'
+        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
+        item.setInfo( type="Video", infoLabels={ "Title":displayname,
+                                                 "Season":season,
+                                                 "Episode":episode,
+                                                 #"premiered":aired,
+                                                 "Duration":duration,
+                                                 "TVShowTitle":showname
+                                                 }) 
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+    if len(videos) == 4:
+        if '/page_full/' not in purl and '/page_other/' not in purl:
+            nurl = purl+'/page_other/2'
+        else:
+            page = int(purl.split('/')[-1])
+            nextpage = page + 1
+            nurl = purl.replace('/'+str(page),'/'+str(nextpage))
+        stprocessvideos(nurl)
 
 def showcats(url = common.args.url):
     data = common.getURL(url)
@@ -83,7 +181,7 @@ def showcats(url = common.args.url):
             url += '&k='+item['key']
             url += '&i='+item['i']
             url += '&begin=0'
-            url += '&size=24'
+            url += '&size=500'
             url += '&itemCount=12'
             common.addDirectory(item['title'], 'cbs', 'newvideos', url)
     except:
@@ -179,6 +277,7 @@ def newvideos(url = common.args.url):
         xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)        
         
 def PAGES( tree ):
+    try:
         print 'starting PAGES'
         try:
             search_elements = tree.find(attrs={'name' : 'searchEl'})['value']
@@ -204,6 +303,8 @@ def PAGES( tree ):
             url = 'http://www.cbs.com/sitecommon/includes/video/2009_carousel_data_multiple.php' 
             data = common.getURL(url, values)
             VIDEOLINKS(data)
+    except:
+        print 'Pages Failed'
 
 def VIDEOLINKS( data ):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -262,8 +363,17 @@ def VIDEOLINKS( data ):
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
 
-def play():
-    url = common.args.url
+def playST(url = common.args.url):
+    if 'watch_episode' in url:
+        pid=url.split('/')[-1]
+        play(pid)
+    else:
+        data=common.getURL(url)
+        url = re.compile("flowplayer\\('flow_player', '.*?', '(.*?)'\\)").findall(data)[0]
+        item = xbmcgui.ListItem(path=url)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)   
+
+def play(url = common.args.url):
     if 'http://' in url:
         data=common.getURL(url)
         pid = re.compile("var pid = '(.*?)';").findall(data)[0]

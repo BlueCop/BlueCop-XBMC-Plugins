@@ -1,6 +1,6 @@
-[B]Version 0.0.8[/B]
+[B]Version 0.1.0[/B]
 
-fix for some cbs shows
+fixed lifetime and added startrek.com to CBS
 
 [B]Version 0.0.6[/B]
 

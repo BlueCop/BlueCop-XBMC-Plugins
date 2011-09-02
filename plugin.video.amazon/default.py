@@ -7,6 +7,7 @@ import base64
 import operator
 import cookielib
 import time
+from datetime import datetime
 import demjson
 from BeautifulSoup import BeautifulSoup
 try:
@@ -20,8 +21,9 @@ moviesDB = os.path.join(os.getcwd().replace(';', ''),'resources','cache','movies
 tvDB = os.path.join(os.getcwd().replace(';', ''),'resources','cache','tv.db')
 cj = cookielib.LWPCookieJar()
 BASE_URL = 'http://www.amazon.com'
-MOVIE_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_mov0/182-5606325-6863626?ie=UTF8&node=16386761&field-is_prime_benefit=1'
-TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1'
+#MOVIE_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_mov0/182-5606325-6863626?ie=UTF8&node=16386761&field-is_prime_benefit=1&sort=-releasedate'
+MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011&sort=-releasedate'
+TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1&sort=-releasedate'
 
 def getURL( url , host='www.amazon.com'):
     print 'getHTTP :: url = '+url
@@ -62,7 +64,6 @@ def login():
     postURL(action_url,values)
     cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
 
-
 def GETSTREAMS(getstream):
     try:
         data = getURL(getstream,'atv-ps.amazon.com')
@@ -70,13 +71,112 @@ def GETSTREAMS(getstream):
         rtmpdata = demjson.decode(data)
         print rtmpdata
         sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
-        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
+        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
         rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
         return rtmpurls, sessionId, cdn
     except:
         return False, False, False
 
-def PLAYVIDEO(pageurl):
+def GETTRAILERS(getstream):
+    try:
+        data = getURL(getstream,'atv-ps.amazon.com')
+        print data
+        rtmpdata = demjson.decode(data)
+        print rtmpdata
+        sessionId = rtmpdata['message']['body']['streamingURLInfoSet']['sessionId']
+        cdn = rtmpdata['message']['body']['streamingURLInfoSet']['cdn']
+        rtmpurls = rtmpdata['message']['body']['streamingURLInfoSet']['streamingURLInfo']
+        return rtmpurls, sessionId, cdn
+    except:
+        return False, False, False
+
+def PLAYTRAILER():
+    pageurl = params['url']
+    videoname = params['name']
+    showpage = getURL(pageurl)
+    flashVars = re.compile("'flashVars', '(.*?)' \+ new Date\(\)\.getTime\(\)\+ '(.*?)'",re.DOTALL).findall(showpage)
+    flashVars =(flashVars[0][0] + flashVars[0][1]).split('&')
+    swfUrl = re.compile("avodSwfUrl = '(.*?)'\;").findall(showpage)[0]
+    values={'token'          :'',
+            'deviceTypeID'   :'A13Q6A55DBZB7M',
+            'version'        :'1',
+            'firmware'       :'1',       
+            'customerID'     :'',
+            'format'         :'json',
+            'deviceID'       :'',
+            'asin'           :''      
+            }
+    for item in flashVars:
+        item = item.split('=')
+        if item[0]      == 'token':
+            values[item[0]]         = item[1]
+        elif item[0]    == 'customer':
+            values['customerID']    = item[1]
+        elif item[0]    == 'ASIN':
+            values['asin']          = item[1]
+        elif item[0]    == 'pageType':
+            values['pageType']      = item[1]        
+        elif item[0]    == 'UBID':
+            values['UBID']          = item[1]
+        elif item[0]    == 'sessionID':
+            values['sessionID']     = item[1]
+        elif item[0]    == 'userAgent':
+            values['userAgent']     = item[1]
+            
+    values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
+    getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingTrailerUrls'
+    getstream += '?asin='+values['asin']
+    getstream += '&deviceTypeID='+values['deviceTypeID']
+    getstream += '&deviceID='+values['deviceID']
+    getstream += '&firmware=LNX%2010,3,181,14%20PlugIn'
+    getstream += '&format=json'
+    getstream += '&version=1'
+    rtmpurls, streamSessionID, cdn = GETTRAILERS(getstream)
+    if rtmpurls == False:
+        xbmcgui.Dialog().ok('Trailer Not Available',videoname)
+    else:
+        print rtmpurls
+        quality = [0,2500,1328,996,664,348]
+        try: lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
+        except: lbitrate = 2500
+        mbitrate = 0
+        streams = []
+        for data in rtmpurls:
+            url = data['url']
+            bitrate = int(data['bitrate'])
+            if lbitrate == 0:
+                streams.append([bitrate,url])
+            elif bitrate >= mbitrate and bitrate <= lbitrate:
+                mbitrate = bitrate
+                rtmpurl = url
+        if lbitrate == 0:        
+            quality=xbmcgui.Dialog().select('Please select a quality level:', [str(stream[0])+'kbps' for stream in streams])
+            print quality
+            if quality!=-1:
+                rtmpurl = streams[quality][1]
+        protocolSplit = rtmpurl.split("://")
+        pathSplit   = protocolSplit[1].split("/")
+        hostname    = pathSplit[0]
+        appName     = protocolSplit[1].split(hostname + "/")[1].split('/')[0]    
+        streamAuth  = rtmpurl.split(appName+'/')[1].split('?')
+        stream      = streamAuth[0].replace('.mp4','')
+        auth        = streamAuth[1]
+        identurl = 'http://'+hostname+'/fcs/ident'
+        ident = getURL(identurl)
+        ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
+        basertmp = 'rtmpe://'+ip+':1935/'+appName+'?_fcs_vhost='+hostname+'&ovpfv=2.1.4&'+auth
+        finalUrl = basertmp
+        finalUrl += " playpath=" + stream 
+        finalUrl += " pageurl=" + pageurl
+        finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
+        finalname = videoname+' Trailer'
+        item = xbmcgui.ListItem(finalname,path=finalUrl)
+        item.setInfo( type="Video", infoLabels={ "Title": finalname})
+        item.setProperty('IsPlayable', 'true')
+        xbmc.Player().play(finalUrl,item)
+
+def PLAYVIDEO():
+    pageurl = params['url']
     if os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     showpage = getURL(pageurl)
@@ -120,9 +220,7 @@ def PLAYVIDEO(pageurl):
     getstream += '&xws-fa-ov=true'
     getstream += '&format=json'
     getstream += '&version=1'
-
-    rtmpurls, streamSessionID, cdn = GETSTREAMS(getstream)
-
+    rtmpurls, streamSessionID, cdn = GETSTREAMS(getstream)  
     #if cdn = 'limelight' 
     if rtmpurls <> False:
         print rtmpurls
@@ -225,11 +323,10 @@ def PLAYVIDEO(pageurl):
         surl += '&customerID='+values['customerID']
         print getURL(surl,'atv-ps.amazon.com')
 
-
 def addDir(name,url,mode,iconimage='',plot=''):
     u=sys.argv[0]
     u+="?url="+urllib.quote_plus(url)
-    u+="&mode="+str(mode)
+    u+="&mode="+urllib.quote_plus(mode)
     u+="&name="+urllib.quote_plus(name)
     u+="&thumb="+urllib.quote_plus(iconimage)
     ok=True
@@ -248,12 +345,37 @@ def loadMoviedb():
         conn.text_factory = str
         c = conn.cursor()
         c.execute('''create table movies
-                    (name text, url text, poster text)''')
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, movietitle text, url text, poster text, plot text, director text, runtime text, year integer, premiered text, studio text, mpaa text, actors text, genres text, stars float, votes string)''')
         c.close()
         addMoviesdb()
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select * from movies order by name')
+    return c.execute('select * from movies order by movietitle')
+
+def getMovieGenres():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select genres from movies')
+
+def getMovieStudios():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select studio from movies')
+
+def getMovieActors():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select actors from movies')
+
+def getMovieDirectors():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select director from movies')
+
+def getMovieYears():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select year from movies')
 
 def addMoviesdb(url=MOVIE_URL):
     conn = sqlite.connect(moviesDB)
@@ -262,35 +384,121 @@ def addMoviesdb(url=MOVIE_URL):
     data = getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
+    btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
+    nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
+    if not nextpage:
+        print tree.prettify()
+    del tree
+    del data
     for movie in atf:
         link = movie.find('a', attrs={'class':'title'})
         name = link.string
         url = link['href']
         poster = movie.find(attrs={'class':'image'}).find('img')['src'].replace('_AA160_','_SX500_')
-        moviedata = [name,url,poster]
-        c.execute('insert into movies values (?,?,?)', moviedata)
+        plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes = getMovieInfo(url)
+        moviedata = [None,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes]
+        c.execute('insert into movies values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', moviedata)
         conn.commit() 
-    btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
     for movie in btf:
         link = movie.find('a', attrs={'class':'title'})
         name = link.string
         url = link['href']
         poster = movie.find(attrs={'class':'image'}).find('img')['src'].replace('_AA160_','_SX500_')
-        moviedata = [name,url,poster]
-        c.execute('insert into movies values (?,?,?)', moviedata)
+        plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes = getMovieInfo(url)
+        moviedata = [None,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes]
+        c.execute('insert into movies values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', moviedata)
         conn.commit() 
     c.close()
-    try:
-        pagenext = BASE_URL + re.compile('<a title="Next page" id="pagnNextLink" class="pagnNext" href="(.*?)">').findall(data)[0]
+    if nextpage:
+        del atf
+        del btf
+        pagenext = BASE_URL + nextpage['href']
+        del nextpage
         addMoviesdb(pagenext)
+
+def getMovieInfo(url):
+    tags = re.compile(r'<.*?>')
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    spaces = re.compile(r'\s+')
+    data = getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    try:
+        stardata = tree.find('span',attrs={'class':'crAvgStars'}).renderContents()
+        stardata = scripts.sub('', stardata)
+        stardata = tags.sub('', stardata)
+        stardata = spaces.sub(' ', stardata).strip().split('out of ')
+        stars = float(stardata[0])*2
+        votes = stardata[1].split('customer reviews')[0].split('See all reviews')[1].replace('(','').strip()
     except:
-        print 'No Next Page'
+        stars = 0.0
+        votes = ''
+    try:
+        premieredpossible = tree.find('div', attrs={'class':'bucket','id':'stills'}).findAll('li')
+        for item in premieredpossible:
+            if item.contents[0].string == 'US Theatrical Release Date:':
+                premiered = item.contents[1].strip()
+                d = datetime.strptime(premiered, '%B %d, %Y')
+                premiered = d.strftime('%Y-%m-%d')
+        if not premiered:
+            premiered = ''
+    except:
+        premiered = ''
+    metadatas = tree.findAll('div', attrs={'style':'margin-top:7px;margin-bottom:7px;'})
+    del tree, data
+    metadict = {}
+    for metadata in metadatas:
+        mdata = metadata.renderContents()
+        mdata = scripts.sub('', mdata)
+        mdata = tags.sub('', mdata)
+        mdata = spaces.sub(' ', mdata).strip().split(': ')
+        metadict[mdata[0]] = mdata[1]
+    try:plot = metadict['Synopsis']
+    except: plot = ''
+    try:director = metadict['Directed by']
+    except:director = ''
+    try:
+        runtime = metadict['Runtime']
+        if 'hours' in runtime:
+            split = 'hours'
+        elif 'hour' in runtime:
+            split = 'hour'
+        if 'minutes' in runtime:
+            replace = 'minutes'
+        elif 'minute' in runtime:
+            replace = 'minute'
+        if 'hour' not in runtime:
+            runtime = runtime.replace(replace,'')
+            minutes = int(runtime.strip())
+        elif 'minute' not in runtime:
+            runtime = runtime.replace(split,'')
+            minutes = (int(runtime.strip())*60)     
+        else:
+            runtime = runtime.replace(replace,'').split(split)
+            try:
+                minutes = (int(runtime[0].strip())*60)+int(runtime[1].strip())
+            except:
+                minutes = (int(runtime[0].strip())*60)
+        runtime = str(minutes)
+    except: runtime = ''
+    try: year = int(metadict['Release year'])
+    except: year = 0
+    try: studio = metadict['Studio']
+    except: studio = ''
+    try: mpaa = metadict['MPAA Rating']
+    except: mpaa = ''
+    try: actors = metadict['Starring']+', '+metadict['Supporting actors']
+    except:
+        try: actors = metadict['Starring']
+        except: actors = ''      
+    try: genres = metadict['Genre']
+    except: genres = ''
+    return plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes
 
 ################################ TV db
 
 def loadTVdb():
     #if os.path.exists(tvDB):
-    #    os.remove(tvDB)
+    #   os.remove(tvDB)
     if not os.path.exists(tvDB):
         conn = sqlite.connect(tvDB)
         conn.text_factory = str
@@ -338,37 +546,106 @@ def addTVdb(url=TV_URL):
 ################################ Root listing
 def ROOT():
     login()
-    addDir('Movies'     ,MOVIE_URL ,1)
-    addDir('TV Shows'   ,TV_URL    ,2)
-    addDir('HDTV Shows' ,TV_URL    ,4)
+    addDir('Movie'     ,''   ,'LIST_MOVIE_GENRE')
+    #addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
+    addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')
+    addDir('HDTV Shows' ,''         ,'LIST_HDTVSHOWS')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 ################################ List Videos
 
-def LIST_MOVIES():
+def LIST_MOVIES(genrefilter=False,actorfilter=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
     movies = loadMoviedb()
-    for name, url, poster in movies:
+    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
+        if genrefilter:
+            if genrefilter not in genres:
+                continue
+        elif actorfilter:
+            if actorfilter not in actors:
+                continue
         poster = poster.replace('_AA160_','_SX500_')
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(10)+"&name="+urllib.quote_plus(name)
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
-        liz.setInfo( type="Video", infoLabels={ "Title": name})
+        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+        actors = actors.split(',')
+        liz.setInfo( type="Video", infoLabels={'Title':name,
+                                               'Plot':plot,
+                                               'Year':year,
+                                               'premiered':premiered,
+                                               'rating':stars,
+                                               'votes':votes,
+                                               'Genre':genres,
+                                               'director':director,
+                                               'studio':studio,
+                                               'duration':runtime,
+                                               'mpaa':mpaa,
+                                               'cast':actors,
+                                               'Trailer': utrailer})
         liz.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
+def LIST_MOVIE_GENRE_FILTERED():
+    genrefilter = params['url']
+    LIST_MOVIES(genrefilter=genrefilter)
+
+def LIST_MOVIE_GENRE():
+    addDir(' All Movies'     ,''         ,'LIST_MOVIES')
+    genres = []
+    genreUnsplit = getMovieGenres()
+    for split in genreUnsplit:
+        split = split[0].split(',')
+        for genre in split:
+            genre = genre.strip()
+            if genre not in genres and genre <> '':
+                genres.append(genre)
+    for genre in genres:
+        addDir(genre,genre,'LIST_MOVIE_GENRE_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_MOVIE_ACTORS_FILTERED():
+    actorfilter = params['url']
+    LIST_MOVIES(actorfilter=actorfilter)
+
+def LIST_MOVIE_ACTORS():
+    actors = []
+    actorsUnsplit = getMovieActors()
+    for split in actorsUnsplit:
+        split = split[0].split(',')
+        for actor in split:
+            actor = actor.strip()
+            if actor not in actors and actor <> '':
+                actors.append(actor.encode('utf-8'))
+    for actor in actors:
+        addDir(actor,actor,'LIST_MOVIE_ACTORS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_HDTVSHOWS():
+    LIST_TVSHOWS(HDonly=True)
+    
 def LIST_TVSHOWS(HDonly=False):
     shows = loadTVdb()
     for name, url, poster in shows:
         if HDonly==True:
             if '[HD]' not in name:
                 continue
-        addDir(name,url,3,poster)
+        addDir(name,url,'LIST_EPISODES',poster)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_EPISODES(argname, episode_url,thumbnail):
+def LIST_EPISODES():
+    url = params['url']
+    argname = params['name']
+    thumbnail = params['thumb']
     xbmcplugin.setContent(int(sys.argv[1]), 'Episodes')   
     data = getURL(episode_url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -405,14 +682,17 @@ def LIST_EPISODES(argname, episode_url,thumbnail):
         else:
             displayname =  str(season)+'x'+str(episodeNum)+' - '+name
         url = BASE_URL+'/gp/product/'+asin
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(10)+"&name="+urllib.quote_plus(name)
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         liz=xbmcgui.ListItem(displayname, thumbnailImage=thumbnail)
+        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+        liz.setProperty('IsPlayable', 'true')
         liz.setInfo( type="Video", infoLabels={'Title': name.replace('[HD]',''),
                                                'Plot':plot,
                                                'premiered':airDate,
                                                'Season':season,
                                                'Episode':episodeNum,
-                                               'TVShowTitle':showname})
+                                               'TVShowTitle':showname,
+                                               'Trailer': utrailer})
         liz.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)      
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
@@ -432,34 +712,18 @@ def get_params():
             splitparams={}
             splitparams=pairsofparams[i].split('=')
             if (len(splitparams))==2:
-                param[splitparams[0]]=splitparams[1]                                               
+                param[splitparams[0]]=urllib.unquote_plus(splitparams[1])                                        
     return param
 
-              
 params=get_params()
-url=None
-name=None
-mode=None
-
-
 try:
-    mode=int(params["mode"])
+    mode=params["mode"]
 except:
-    pass
-
+    mode=None
 print "Mode: "+str(mode)
-print "Parameters:"+str(params)
-
+print "Parameters: "+str(params)
 
 if mode==None:
     ROOT()
-elif mode==1:
-    LIST_MOVIES()
-elif mode==2:
-    LIST_TVSHOWS()
-elif mode==3:
-    LIST_EPISODES(urllib.unquote_plus(params["name"]), urllib.unquote_plus(params["url"]),urllib.unquote_plus(params["thumb"]))
-elif mode==4:
-    LIST_TVSHOWS(HDonly=True)
-elif mode==10:
-    PLAYVIDEO(urllib.unquote_plus(params["url"]))
+else:
+    exec '%s()' % mode

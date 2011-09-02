@@ -550,7 +550,7 @@ def addTVdb(url=TV_URL):
 def ROOT():
     login()
     addDir('Movie'      ,''         ,'LIST_MOVIE_GENRE')
-    addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
+    #addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
     addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')
     addDir('HDTV Shows' ,''         ,'LIST_HDTVSHOWS')
     xbmcplugin.endOfDirectory(pluginhandle)

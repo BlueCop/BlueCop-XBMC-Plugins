@@ -548,7 +548,7 @@ def addTVdb(url=TV_URL):
 
 ################################ Root listing
 def ROOT():
-    #login()
+    login()
     addDir('Movie'      ,''         ,'LIST_MOVIE_GENRE')
     addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
     addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')

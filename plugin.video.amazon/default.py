@@ -1,3 +1,5 @@
+# -*- coding: utf_8 -*-
+
 import xbmcplugin,xbmcgui
 import urllib,urllib2,cookielib,re,os.path
 import sys
@@ -23,7 +25,8 @@ cj = cookielib.LWPCookieJar()
 BASE_URL = 'http://www.amazon.com'
 #MOVIE_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_mov0/182-5606325-6863626?ie=UTF8&node=16386761&field-is_prime_benefit=1&sort=-releasedate'
 MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011&sort=-releasedate'
-TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1&sort=-releasedate'
+#TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1&sort=-releasedate'
+TV_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314982661&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2864549011%2Cp_85%3A2470955011&sort=-releasedate'
 
 def getURL( url , host='www.amazon.com'):
     print 'getHTTP :: url = '+url
@@ -65,19 +68,6 @@ def login():
     values['password'] =    xbmcplugin.getSetting(pluginhandle,"login_pass")
     postURL(action_url,values)
     cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-
-def GETSTREAMS(getstream):
-    try:
-        data = getURL(getstream,'atv-ps.amazon.com')
-        print data
-        rtmpdata = demjson.decode(data)
-        print rtmpdata
-        sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
-        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
-        rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
-        return rtmpurls, sessionId, cdn
-    except:
-        return False, False, False
 
 def GETTRAILERS(getstream):
     try:
@@ -176,6 +166,19 @@ def PLAYTRAILER():
         item.setInfo( type="Video", infoLabels={ "Title": finalname})
         item.setProperty('IsPlayable', 'true')
         xbmc.Player().play(finalUrl,item)
+        
+def GETSTREAMS(getstream):
+    try:
+        data = getURL(getstream,'atv-ps.amazon.com')
+        print data
+        rtmpdata = demjson.decode(data)
+        print rtmpdata
+        sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
+        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
+        rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
+        return rtmpurls, sessionId, cdn
+    except:
+        return False, False, False
 
 def PLAYVIDEO():
     pageurl = params['url']
@@ -549,15 +552,22 @@ def addTVdb(url=TV_URL):
 ################################ Root listing
 def ROOT():
     login()
-    addDir('Movie'      ,''         ,'LIST_MOVIE_GENRE')
-    #addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
+    addDir('Movie'      ,''         ,'LIST_MOVIE_ROOT')
     addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')
     addDir('HDTV Shows' ,''         ,'LIST_HDTVSHOWS')
     xbmcplugin.endOfDirectory(pluginhandle)
-
+    
+def LIST_MOVIE_ROOT():
+    addDir('All Movies' ,'' ,'LIST_MOVIES')
+    addDir('Genres'     ,'' ,'LIST_MOVIE_GENRE')
+    addDir('Years'      ,'' ,'LIST_MOVIE_YEARS')
+    addDir('Studios'    ,'' ,'LIST_MOVIE_STUDIOS')
+    addDir('Directors'  ,'' ,'LIST_MOVIE_DIRECTORS')
+    addDir('Actors'     ,'' ,'LIST_MOVIE_ACTORS')
+    xbmcplugin.endOfDirectory(pluginhandle)
 ################################ List Videos
 
-def LIST_MOVIES(genrefilter=False,actorfilter=False):
+def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
     movies = loadMoviedb()
     for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
@@ -567,6 +577,15 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False):
         elif actorfilter:
             if actorfilter not in actors:
                 continue
+        elif directorfilter:
+            if directorfilter not in director:
+                continue
+        elif studiofilter:
+            if studiofilter not in studio:
+                continue
+        elif yearfilter:
+            if yearfilter <> str(year):
+                continue            
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
         utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
@@ -600,7 +619,6 @@ def LIST_MOVIE_GENRE_FILTERED():
     LIST_MOVIES(genrefilter=genrefilter)
 
 def LIST_MOVIE_GENRE():
-    addDir(' All Movies'     ,''         ,'LIST_MOVIES')
     genres = []
     genreUnsplit = getMovieGenres()
     for split in genreUnsplit:
@@ -626,10 +644,57 @@ def LIST_MOVIE_ACTORS():
         for actor in split:
             actor = actor.strip().encode('utf-8')
             if actor not in actors and actor <> '':
-                print actor
                 actors.append(actor)
     for actor in actors:
         addDir(actor,actor,'LIST_MOVIE_ACTORS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_MOVIE_DIRECTORS_FILTERED():
+    directorfilter = params['url']
+    LIST_MOVIES(directorfilter=directorfilter)
+    
+def LIST_MOVIE_DIRECTORS():
+    directors = getMovieDirectors()
+    list = []
+    for director in directors:
+        director = director[0].encode('utf-8')
+        if director not in list and director <> '':
+            list.append(director)
+    for director in list:
+        addDir(director,director,'LIST_MOVIE_DIRECTORS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_MOVIE_STUDIOS_FILTERED():
+    studiofilter = params['url']
+    LIST_MOVIES(studiofilter=studiofilter)
+    
+def LIST_MOVIE_STUDIOS():
+    studios = getMovieStudios()
+    list = []
+    for studio in studios:
+        studio = studio[0].encode('utf-8')
+        if studio not in list and studio <> '':
+            list.append(studio)
+    for studio in list:
+        addDir(studio,studio,'LIST_MOVIE_STUDIOS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    
+def LIST_MOVIE_YEARS_FILTERED():
+    yearfilter = params['url']
+    LIST_MOVIES(yearfilter=yearfilter)
+    
+def LIST_MOVIE_YEARS():
+    years = getMovieYears()
+    list = []
+    for year in years:
+        year = year[0]
+        if year not in list and year <> 0:
+            list.append(year)
+    for year in list:
+        addDir(str(year),str(year),'LIST_MOVIE_YEARS_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 

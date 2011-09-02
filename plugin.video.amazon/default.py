@@ -584,7 +584,7 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False):
                                                'mpaa':mpaa,
                                                'cast':actors,
                                                'Trailer': utrailer})
-        liz.setProperty('fanart_image',poster.replace('_SX500_','_CR0,0,708,500_'))
+        liz.setProperty('fanart_image',poster.replace('_SX500_','_BO354,0,0,0_CR177,354,708,500_'))
         liz.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)

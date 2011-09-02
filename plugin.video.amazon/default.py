@@ -49,7 +49,9 @@ def postURL( url, values, host='www.amazon.com'):
 def login():
     if os.path.isfile(COOKIEFILE):
         os.remove(COOKIEFILE)
-    SIGNIN_URL = re.compile('<a href="(.+?)" rel="nofollow">Sign in</a>').findall(getURL(BASE_URL))[0].replace('&amp;','&')
+    data=getURL(BASE_URL)
+    print data
+    SIGNIN_URL = re.compile('<a href="(.+?)" rel="nofollow">Sign in</a>').findall(data)[0].replace('&amp;','&')
     data = getURL(SIGNIN_URL)
     form =  '<form name="signIn"' + re.compile('<form name="signIn"(.*?)</form>',re.DOTALL).findall(data)[0] + '</form>'
     tree = BeautifulSoup(form, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -643,7 +645,7 @@ def LIST_TVSHOWS(HDonly=False):
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
 def LIST_EPISODES():
-    url = params['url']
+    episode_url = params['url']
     argname = params['name']
     thumbnail = params['thumb']
     xbmcplugin.setContent(int(sys.argv[1]), 'Episodes')   

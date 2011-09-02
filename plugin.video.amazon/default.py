@@ -334,6 +334,7 @@ def addDir(name,url,mode,iconimage='',plot=''):
     ok=True
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
+    liz.setProperty('fanart_image',iconimage)
     ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
     return ok
 
@@ -547,9 +548,9 @@ def addTVdb(url=TV_URL):
 
 ################################ Root listing
 def ROOT():
-    login()
-    addDir('Movie'     ,''   ,'LIST_MOVIE_GENRE')
-    #addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
+    #login()
+    addDir('Movie'      ,''         ,'LIST_MOVIE_GENRE')
+    addDir('Movie Actors'     ,''   ,'LIST_MOVIE_ACTORS')
     addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')
     addDir('HDTV Shows' ,''         ,'LIST_HDTVSHOWS')
     xbmcplugin.endOfDirectory(pluginhandle)
@@ -566,7 +567,6 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False):
         elif actorfilter:
             if actorfilter not in actors:
                 continue
-        poster = poster.replace('_AA160_','_SX500_')
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
         utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
@@ -584,6 +584,7 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False):
                                                'mpaa':mpaa,
                                                'cast':actors,
                                                'Trailer': utrailer})
+        liz.setProperty('fanart_image',poster.replace('_SX500_','_CR0,0,708,500_'))
         liz.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
@@ -623,9 +624,10 @@ def LIST_MOVIE_ACTORS():
     for split in actorsUnsplit:
         split = split[0].split(',')
         for actor in split:
-            actor = actor.strip()
+            actor = actor.strip().encode('utf-8')
             if actor not in actors and actor <> '':
-                actors.append(actor.encode('utf-8'))
+                print actor
+                actors.append(actor)
     for actor in actors:
         addDir(actor,actor,'LIST_MOVIE_ACTORS_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
@@ -635,6 +637,7 @@ def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
     
 def LIST_TVSHOWS(HDonly=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     shows = loadTVdb()
     for name, url, poster in shows:
         if HDonly==True:
@@ -695,6 +698,7 @@ def LIST_EPISODES():
                                                'Episode':episodeNum,
                                                'TVShowTitle':showname,
                                                'Trailer': utrailer})
+        liz.setProperty('fanart_image',thumbnail)
         liz.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)      
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)

@@ -687,9 +687,60 @@ def getShowInfo(url):
 ################################ Root listing
 def ROOT():
     login()
-    addDir('Movie'      ,''                  ,'LIST_MOVIE_ROOT')
+    addDir('Movies'      ,''                  ,'LIST_MOVIE_ROOT')
     addDir('Television' ,''                  ,'LIST_TV_ROOT')
+    addDir('My Library' ,''                  ,'LIBRARY_ROOT')
     xbmcplugin.endOfDirectory(pluginhandle)
+
+################################ Library listing    
+def LIBRARY_ROOT():
+    addDir('Movie Library'      ,'https://www.amazon.com/gp/video/library/movie?show=all&sort=alpha'      ,'LIBRARY_LIST_MOVIES')
+    addDir('Television Library' ,'https://www.amazon.com/gp/video/library/tv?show=all&sort=alpha'         ,'LIBRARY_LIST_TV')
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIBRARY_LIST_MOVIES():
+    url = params['url']
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    data = getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos = tree.findAll(attrs={'asin':True})
+    for video in videos:
+        asin = video['asin']
+        name = video.find('',attrs={'class':'title'}).a.string
+        url = BASE_URL+video.find('div',attrs={'class':'title'}).a['href']
+        thumb = video.find('img')['src'].replace('._SS160_','')
+        fanart = video.find('img')['src'].replace('._SS160_','_BO354,0,0,0_CR177,354,708,500_')
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
+        liz=xbmcgui.ListItem(name, thumbnailImage=thumb)
+        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+        liz.setProperty('IsPlayable', 'true')
+        liz.setInfo( type="Video", infoLabels={'Title': name.replace('[HD]',''),
+                                               'Trailer': utrailer})
+        liz.setProperty('fanart_image',fanart)
+        liz.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz) 
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIBRARY_LIST_TV():
+    url = params['url']
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    data = getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos = tree.findAll(attrs={'asin':True})
+    for video in videos:
+        asin = video['asin']
+        name = video.find('',attrs={'class':'title'}).a.string
+        url = BASE_URL+video.find('div',attrs={'class':'title'}).a['href']
+        thumb = video.find('img')['src'].replace('._SS160_','')
+        addDir(name,url,'LIBRARY_EPISODES',iconimage=thumb)
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIBRARY_EPISODES():
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    LIST_EPISODES(owned=True)
 
 ################################ Movie listing   
 def LIST_MOVIE_ROOT():
@@ -1013,7 +1064,7 @@ def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=Fal
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_EPISODES():
+def LIST_EPISODES(owned=False):
     episode_url = params['url']
     showname = params['name']
     thumbnail = params['thumb']
@@ -1034,6 +1085,10 @@ def LIST_EPISODES():
     #Season and Episode info
     episodeNum = 0
     for episode in episodes:
+        if owned:
+            purchasecheckbox = episode.find('input',attrs={'type':'checkbox'})
+            if purchasecheckbox:
+                continue
         asin = episode['asin']
         name = episode.find(attrs={'title':True})['title'].encode('utf-8')
         airDate = episode.find(attrs={'style':'width: 150px; overflow: hidden'}).string.strip()

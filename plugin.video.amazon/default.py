@@ -53,7 +53,6 @@ def login():
     if os.path.isfile(COOKIEFILE):
         os.remove(COOKIEFILE)
     data=getURL(BASE_URL)
-    print data
     SIGNIN_URL = re.compile('<a href="(.+?)" rel="nofollow">Sign in</a>').findall(data)[0].replace('&amp;','&')
     data = getURL(SIGNIN_URL)
     form =  '<form name="signIn"' + re.compile('<form name="signIn"(.*?)</form>',re.DOTALL).findall(data)[0] + '</form>'
@@ -392,8 +391,8 @@ def addMoviesdb(url=MOVIE_URL):
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
     nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
-    if not nextpage:
-        print tree.prettify()
+    #if not nextpage:
+    #    print tree.prettify()
     del tree
     del data
     for movie in atf:
@@ -510,12 +509,17 @@ def loadTVdb():
         conn.text_factory = str
         c = conn.cursor()
         c.execute('''create table shows
-                    (name text, url text, poster text)''')
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, seriestitle text, url text, poster text, season integer, episodes integer, plot text, creator text, runtime text, year integer, network text, actors text, genres text, stars float, votes string, HD boolean)''')
         c.close()
         addTVdb()
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select * from shows order by name')
+    return c.execute('select * from shows order by seriestitle')
+
+def getShowsdb():
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    return c.execute('select distinct seriestitle from shows')
 
 def addTVdb(url=TV_URL):
     conn = sqlite.connect(tvDB)
@@ -524,37 +528,140 @@ def addTVdb(url=TV_URL):
     data = getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
+    btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
+    nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
+    del tree
+    del data
     for show in atf:
         link = show.find('a', attrs={'class':'title'})
         name = link.string
+        if '[HD]' in name:
+            isHD = True
+        else:
+            isHD = False
+        name = name.split('Season ')[0].split('season ')[0].split('Volume ')[0].split('Series ')[0].split('Year ')[0].split(' The Complete')[0].replace('[HD]','').strip()
+        if name.endswith('-') or name.endswith(',') or name.endswith(':'):
+            name = name[:-1].strip()
         url = link['href']
         poster = show.find(attrs={'class':'image'}).find('img')['src'].replace('_AA160_','_SX500_')
-        showdata = [name,url,poster]
-        c.execute('insert into shows values (?,?,?)', showdata)
+        season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes = getShowInfo(url)
+        strseason = str(season)
+        if len(strseason)>2 and strseason in name:
+            name = name.replace(strseason,'').strip()
+        showdata = [None,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD]
+        c.execute('insert into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
         conn.commit()
-    btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
     for show in btf:
         link = show.find('a', attrs={'class':'title'})
         name = link.string
+        if '[HD]' in name:
+            isHD = True
+        else:
+            isHD = False
+        name = name.split('Season ')[0].split('season ')[0].split('Volume ')[0].split('Series ')[0].split('Year ')[0].split(' The Complete')[0].replace('[HD]','').strip()
+        if name.endswith('-') or name.endswith(',') or name.endswith(':'):
+            name = name[:-1].strip()
         url = link['href']
         poster = show.find(attrs={'class':'image'}).find('img')['src'].replace('_AA160_','_SX500_')
-        showdata = [name,url,poster]
-        c.execute('insert into shows values (?,?,?)', showdata)
-        conn.commit() 
+        season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes = getShowInfo(url)
+        strseason = str(season)
+        if len(strseason)>2 and strseason in name:
+            name = name.replace(strseason,'').strip()
+        showdata = [None,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD]
+        c.execute('insert into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
+        conn.commit()
     c.close()
-    try:
-        pagenext = BASE_URL + re.compile('<a title="Next page" id="pagnNextLink" class="pagnNext" href="(.*?)">').findall(data)[0]
+    if nextpage:
+        del atf
+        del btf
+        pagenext = BASE_URL + nextpage['href']
+        del nextpage
         addTVdb(pagenext)
+
+def getShowInfo(url):
+    tags = re.compile(r'<.*?>')
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    spaces = re.compile(r'\s+')
+    data = getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    try:
+        season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
     except:
-        print 'No Next Page'
-    
+        try:
+            season = int(tree.find('div',attrs={'style':'font-size: 120%;font-weight:bold; margin-top:15px;margin-bottom:10px;'}).contents[0].split('Season')[1].strip())
+        except:
+            season = 0
+    try:
+        episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'}).findAll('tr',attrs={'asin':True})
+        episodes = len(episodebox)
+        del episodebox
+    except:
+        episodes = 1 
+    try:
+        stardata = tree.find('span',attrs={'class':'crAvgStars'}).renderContents()
+        stardata = scripts.sub('', stardata)
+        stardata = tags.sub('', stardata)
+        stardata = spaces.sub(' ', stardata).strip().split('out of ')
+        stars = float(stardata[0])*2
+        votes = stardata[1].split('customer reviews')[0].split('See all reviews')[1].replace('(','').strip()
+    except:
+        stars = 0.0
+        votes = ''
+    metadatas = tree.findAll('div', attrs={'style':'margin-top:7px;margin-bottom:7px;'})
+    del tree, data
+    metadict = {}
+    for metadata in metadatas:
+        mdata = metadata.renderContents()
+        mdata = scripts.sub('', mdata)
+        mdata = tags.sub('', mdata)
+        mdata = spaces.sub(' ', mdata).strip().split(': ')
+        metadict[mdata[0]] = mdata[1]
+    try:plot = metadict['Synopsis']
+    except: plot = ''
+    try:creator = metadict['Creator']
+    except:creator = ''
+    try:
+        runtime = metadict['Runtime']
+        if 'hours' in runtime:
+            split = 'hours'
+        elif 'hour' in runtime:
+            split = 'hour'
+        if 'minutes' in runtime:
+            replace = 'minutes'
+        elif 'minute' in runtime:
+            replace = 'minute'
+        if 'hour' not in runtime:
+            runtime = runtime.replace(replace,'')
+            minutes = int(runtime.strip())
+        elif 'minute' not in runtime:
+            runtime = runtime.replace(split,'')
+            minutes = (int(runtime.strip())*60)     
+        else:
+            runtime = runtime.replace(replace,'').split(split)
+            try:
+                minutes = (int(runtime[0].strip())*60)+int(runtime[1].strip())
+            except:
+                minutes = (int(runtime[0].strip())*60)
+        runtime = str(minutes)
+    except: runtime = ''
+    try: year = int(metadict['Season year'])
+    except: year = 0
+    try: network = metadict['Network']
+    except: network = ''
+    try: actors = metadict['Starring']+', '+metadict['Supporting actors']
+    except:
+        try: actors = metadict['Starring']
+        except: actors = ''      
+    try: genres = metadict['Genre']
+    except: genres = ''
+    return season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes    
 
 ################################ Root listing
 def ROOT():
     login()
-    addDir('Movie'      ,''         ,'LIST_MOVIE_ROOT')
-    addDir('TV Shows'   ,''         ,'LIST_TVSHOWS')
-    addDir('HDTV Shows' ,''         ,'LIST_HDTVSHOWS')
+    addDir('Movie'      ,''                  ,'LIST_MOVIE_ROOT')
+    addDir('TV Shows'   ,'LISTSHOWS'         ,'LIST_TVSHOWS')
+    addDir('HDTV Shows' ,'LISTSHOWS'         ,'LIST_HDTVSHOWS')
     xbmcplugin.endOfDirectory(pluginhandle)
     
 def LIST_MOVIE_ROOT():
@@ -700,45 +807,95 @@ def LIST_MOVIE_YEARS():
 
 def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
-    
-def LIST_TVSHOWS(HDonly=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
+def LIST_TVSHOWS(showmode=False,HDonly=False):
+    if not showmode:
+        showmode = params['url']
     shows = loadTVdb()
-    for name, url, poster in shows:
+    shownamedata = getShowsdb()
+    shownames = []
+    for item in shownamedata:
+        shownames.append(item[0])
+    del shownamedata
+    for id,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD in shows:
         if HDonly==True:
-            if '[HD]' not in name:
+            if not isHD:
                 continue
-        addDir(name,url,'LIST_EPISODES',poster)
+        if showmode == 'LISTSEASONS':
+            xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
+            if params['name'] <> name:
+                continue
+            if season <> 0 and len(str(season)) < 3:
+                displayname = 'Season '+str(season)
+            else:
+                displayname = name
+            if isHD:
+                displayname += ' [HD]'
+            listmode = 'LIST_EPISODES'
+        elif showmode == 'LISTSHOWS':
+            xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+            if name in shownames:
+                shownames.remove(name)
+            else:
+                continue
+            displayname = name
+            url = 'LISTSEASONS'
+            if HDonly==True:
+                listmode = 'LIST_HDTVSHOWS'
+            else:
+                listmode = 'LIST_TVSHOWS'
+
+        actors = actors.split(',')
+        infoLabels={'Title': name,
+                       'Plot':plot,
+                       'year':year,
+                       #'premiered':str(year),
+                       'rating':stars,
+                       'votes':votes,
+                       'Genre':genres,
+                       'Season':season,
+                       'episode':episodes,
+                       'studio':network,
+                       'duration':runtime,
+                       'cast':actors,
+                       'TVShowTitle':name,
+                       'credits':creator}
+        if year <> 0:
+            infoLabels['premiered'] = str(year)
+        u=sys.argv[0]              
+        u+="?url="+urllib.quote_plus(url)
+        u+="&mode="+urllib.quote_plus(listmode)
+        u+="&name="+urllib.quote_plus(name)
+        u+="&thumb="+urllib.quote_plus(poster)
+        liz=xbmcgui.ListItem(displayname, iconImage="DefaultFolder.png", thumbnailImage=poster)
+        liz.setInfo( type="Video", infoLabels=infoLabels)
+        liz.setProperty('fanart_image',poster)
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
 def LIST_EPISODES():
     episode_url = params['url']
-    argname = params['name']
+    showname = params['name']
     thumbnail = params['thumb']
     xbmcplugin.setContent(int(sys.argv[1]), 'Episodes')   
     data = getURL(episode_url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'})
     episodes = episodebox.findAll('tr',attrs={'asin':True})
+    try:
+        season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
+    except:
+        try:
+            season = int(tree.find('div',attrs={'style':'font-size: 120%;font-weight:bold; margin-top:15px;margin-bottom:10px;'}).contents[0].split('Season')[1].strip())
+        except:
+            season = 0
     del tree
     del episodebox
     #Season and Episode info
-    try:
-        if ' Season ' in argname:
-            argsplit = argname.split(' Season ')
-            showname = argsplit[0]
-            season = int(argsplit[1].replace('[HD]','').strip())
-        elif ' Volume ' in argname:
-            argsplit = argname.split(' Volume ')
-            showname = argsplit[0]
-            season = int(argsplit[1].replace('[HD]','').strip())
-        else:
-            showname = argname.replace('[HD]','').strip()
-            season = 0
-    except:
-        showname = argname.replace('[HD]','').strip()
-        season = 0
     episodeNum = 0
     for episode in episodes:
         asin = episode['asin']

@@ -125,6 +125,8 @@ def PLAYTRAILER():
     rtmpurls, streamSessionID, cdn = GETTRAILERS(getstream)
     if rtmpurls == False:
         xbmcgui.Dialog().ok('Trailer Not Available',videoname)
+    elif cdn == 'limelight':
+        xbmcgui.Dialog().ok('Limelight CDN','Limelight uses swfverfiy2. Playback may fail.')
     else:
         print rtmpurls
         quality = [0,2500,1328,996,664,348]
@@ -225,7 +227,8 @@ def PLAYVIDEO():
     getstream += '&format=json'
     getstream += '&version=1'
     rtmpurls, streamSessionID, cdn = GETSTREAMS(getstream)  
-    #if cdn = 'limelight' 
+    if cdn == 'limelight':
+        xbmcgui.Dialog().ok('Limelight CDN','Limelight uses swfverfiy2. Playback may fail.')
     if rtmpurls <> False:
         print rtmpurls
         quality = [0,2500,1328,996,664,348]
@@ -360,27 +363,32 @@ def loadMoviedb():
 def getMovieGenres():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select genres from movies')
+    return c.execute('select distinct genres from movies')
 
 def getMovieStudios():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select studio from movies')
+    return c.execute('select distinct studio from movies')
 
 def getMovieActors():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select actors from movies')
+    return c.execute('select distinct actors from movies')
 
 def getMovieDirectors():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select director from movies')
+    return c.execute('select distinct director from movies')
 
 def getMovieYears():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select year from movies')
+    return c.execute('select distinct year from movies')
+
+def getMovieMPAA():
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    return c.execute('select distinct mpaa from movies')
 
 def addMoviesdb(url=MOVIE_URL):
     conn = sqlite.connect(moviesDB)
@@ -521,6 +529,26 @@ def getShowsdb():
     c = conn.cursor()
     return c.execute('select distinct seriestitle from shows')
 
+def getShowGenres():
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    return c.execute('select distinct genres from shows')
+
+def getShowNetworks():
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    return c.execute('select distinct network from shows')
+
+def getShowCreators():
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    return c.execute('select distinct creator from shows')
+
+def getShowYears():
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    return c.execute('select distinct year from shows')
+
 def addTVdb(url=TV_URL):
     conn = sqlite.connect(tvDB)
     conn.text_factory = str
@@ -660,66 +688,19 @@ def getShowInfo(url):
 def ROOT():
     login()
     addDir('Movie'      ,''                  ,'LIST_MOVIE_ROOT')
-    addDir('TV Shows'   ,'LISTSHOWS'         ,'LIST_TVSHOWS')
-    addDir('HDTV Shows' ,'LISTSHOWS'         ,'LIST_HDTVSHOWS')
+    addDir('Television' ,''                  ,'LIST_TV_ROOT')
     xbmcplugin.endOfDirectory(pluginhandle)
-    
+
+################################ Movie listing   
 def LIST_MOVIE_ROOT():
     addDir('All Movies' ,'' ,'LIST_MOVIES')
     addDir('Genres'     ,'' ,'LIST_MOVIE_GENRE')
     addDir('Years'      ,'' ,'LIST_MOVIE_YEARS')
+    addDir('MPAA Rating','' ,'LIST_MOVIE_MPAA')
     addDir('Studios'    ,'' ,'LIST_MOVIE_STUDIOS')
     addDir('Directors'  ,'' ,'LIST_MOVIE_DIRECTORS')
-    addDir('Actors'     ,'' ,'LIST_MOVIE_ACTORS')
+    #addDir('Actors'     ,'' ,'LIST_MOVIE_ACTORS')
     xbmcplugin.endOfDirectory(pluginhandle)
-################################ List Videos
-
-def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
-    movies = loadMoviedb()
-    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
-        if genrefilter:
-            if genrefilter not in genres:
-                continue
-        elif actorfilter:
-            if actorfilter not in actors:
-                continue
-        elif directorfilter:
-            if directorfilter not in director:
-                continue
-        elif studiofilter:
-            if studiofilter not in studio:
-                continue
-        elif yearfilter:
-            if yearfilter <> str(year):
-                continue            
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
-        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
-        actors = actors.split(',')
-        liz.setInfo( type="Video", infoLabels={'Title':name,
-                                               'Plot':plot,
-                                               'Year':year,
-                                               'premiered':premiered,
-                                               'rating':stars,
-                                               'votes':votes,
-                                               'Genre':genres,
-                                               'director':director,
-                                               'studio':studio,
-                                               'duration':runtime,
-                                               'mpaa':mpaa,
-                                               'cast':actors,
-                                               'Trailer': utrailer})
-        liz.setProperty('fanart_image',poster.replace('_SX500_','_BO354,0,0,0_CR177,354,708,500_'))
-        liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
 def LIST_MOVIE_GENRE_FILTERED():
     genrefilter = params['url']
@@ -805,10 +786,153 @@ def LIST_MOVIE_YEARS():
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
+def LIST_MOVIE_MPAA_FILTERED():
+    mpaafilter = params['url']
+    LIST_MOVIES(mpaafilter=mpaafilter)
+    
+def LIST_MOVIE_MPAA():
+    mpaas = getMovieMPAA()
+    list = []
+    for mpaa in mpaas:
+        mpaa = mpaa[0].split('for')[0].strip()
+        if mpaa not in list and mpaa <> '':
+            list.append(mpaa)
+    for mpaa in list:
+        addDir(mpaa,mpaa,'LIST_MOVIE_MPAA_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
+    movies = loadMoviedb()
+    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
+        if genrefilter:
+            if genrefilter not in genres:
+                continue
+        elif actorfilter:
+            if actorfilter not in actors:
+                continue
+        elif directorfilter:
+            if directorfilter not in director:
+                continue
+        elif studiofilter:
+            if studiofilter not in studio:
+                continue
+        elif yearfilter:
+            if yearfilter <> str(year):
+                continue
+        elif mpaafilter:
+            if mpaafilter not in mpaa:
+                continue      
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
+        liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
+        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+        actors = actors.split(',')
+        liz.setInfo( type="Video", infoLabels={'Title':name,
+                                               'Plot':plot,
+                                               'Year':year,
+                                               'premiered':premiered,
+                                               'rating':stars,
+                                               'votes':votes,
+                                               'Genre':genres,
+                                               'director':director,
+                                               'studio':studio,
+                                               'duration':runtime,
+                                               'mpaa':mpaa,
+                                               'cast':actors,
+                                               'Trailer': utrailer})
+        liz.setProperty('fanart_image',poster.replace('_SX500_','_BO354,0,0,0_CR177,354,708,500_'))
+        liz.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+###################### Television
+
+def LIST_TV_ROOT():
+    addDir('All Shows'  ,'LISTSHOWS'        ,'LIST_TVSHOWS')
+    addDir('HDTV Shows' ,'LISTSHOWS'        ,'LIST_HDTVSHOWS')
+    addDir('Genres'     ,'LISTSHOWS'        ,'LIST_TVSHOWS_GENRE')
+    addDir('Networks'   ,'LISTSHOWS'        ,'LIST_TVSHOWS_NETWORKS')
+    addDir('Years   '   ,'LISTSHOWS'        ,'LIST_TVSHOWS_YEARS')
+    #addDir('Creators'   ,'LISTSHOWS'        ,'LIST_TVSHOWS_CREATORS')
+    xbmcplugin.endOfDirectory(pluginhandle)
+  
+def LIST_TVSHOWS_GENRE_FILTERED():
+    genrefilter = params['url']
+    LIST_TVSHOWS(showmode='LISTSHOWS',genrefilter=genrefilter)
+
+def LIST_TVSHOWS_GENRE():
+    genres = []
+    genreUnsplit = getShowGenres()
+    for split in genreUnsplit:
+        split = split[0].split(',')
+        for genre in split:
+            genre = genre.strip()
+            if genre not in genres and genre <> '':
+                genres.append(genre)
+    for genre in genres:
+        addDir(genre,genre,'LIST_TVSHOWS_GENRE_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_TVSHOWS_CREATORS_FILTERED():
+    creatorfilter = params['url']
+    LIST_TVSHOWS(showmode='LISTSHOWS',creatorfilter=creatorfilter)
+
+def LIST_TVSHOWS_CREATORS():
+    creators = getShowCreators()
+    list = []
+    for creator in creators:
+        creator = creator[0].encode('utf-8')
+        if creator not in list and creator <> '':
+            list.append(creator)
+    for creator in list:
+        addDir(creator,creator,'LIST_TVSHOWS_CREATORS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_TVSHOWS_NETWORKS_FILTERED():
+    networkfilter = params['url']
+    LIST_TVSHOWS(showmode='LISTSHOWS',networkfilter=networkfilter)
+    
+def LIST_TVSHOWS_NETWORKS():
+    networks = getShowNetworks()
+    list = []
+    for network in networks:
+        network = network[0].encode('utf-8')
+        if network not in list and network <> '':
+            list.append(network)
+    for network in list:
+        addDir(network,network,'LIST_TVSHOWS_NETWORKS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    
+def LIST_TVSHOWS_YEARS_FILTERED():
+    yearfilter = params['url']
+    LIST_TVSHOWS(showmode='LISTSHOWS',yearfilter=yearfilter)
+    
+def LIST_TVSHOWS_YEARS():
+    years = getShowYears()
+    list = []
+    for year in years:
+        year = year[0]
+        if year not in list and year <> 0:
+            list.append(year)
+    for year in list:
+        addDir(str(year),str(year),'LIST_TVSHOWS_YEARS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
 def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
 
-def LIST_TVSHOWS(showmode=False,HDonly=False):
+def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False,):
     if not showmode:
         showmode = params['url']
     shows = loadTVdb()
@@ -820,6 +944,18 @@ def LIST_TVSHOWS(showmode=False,HDonly=False):
     for id,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD in shows:
         if HDonly==True:
             if not isHD:
+                continue
+        elif genrefilter:
+            if genrefilter not in genres:
+                continue
+        elif creatorfilter:
+            if creatorfilter not in creator:
+                continue
+        elif networkfilter:
+            if networkfilter not in network:
+                continue
+        elif yearfilter:
+            if yearfilter <> str(year):
                 continue
         if showmode == 'LISTSEASONS':
             xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
@@ -925,7 +1061,7 @@ def LIST_EPISODES():
         xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)      
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-
+############ SET PARAMETERS AND INIT
 def get_params():
     param=[]
     paramstring=sys.argv[2]

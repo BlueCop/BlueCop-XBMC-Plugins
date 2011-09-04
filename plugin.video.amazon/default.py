@@ -330,17 +330,18 @@ def PLAYVIDEO():
         surl += '&customerID='+values['customerID']
         print getURL(surl,'atv-ps.amazon.com')
 
-def addDir(name,url,mode,iconimage='',plot=''):
+def addDir(name,url,mode,iconimage='',infoLabels=False,totalItems=0):
     u=sys.argv[0]
     u+="?url="+urllib.quote_plus(url)
     u+="&mode="+urllib.quote_plus(mode)
     u+="&name="+urllib.quote_plus(name)
     u+="&thumb="+urllib.quote_plus(iconimage)
-    ok=True
+    if not infoLabels:
+        infoLabels={ "Title": name}
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels={ "Title": name, "Plot":plot})
+    liz.setInfo( type="Video", infoLabels=infoLabels)
     liz.setProperty('fanart_image',iconimage)
-    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
+    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True,totalItems=totalItems)
     return ok
 
 ################################ Movie db
@@ -399,8 +400,6 @@ def addMoviesdb(url=MOVIE_URL):
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
     nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
-    #if not nextpage:
-    #    print tree.prettify()
     del tree
     del data
     for movie in atf:
@@ -687,9 +686,10 @@ def getShowInfo(url):
 ################################ Root listing
 def ROOT():
     login()
-    addDir('Movies'      ,''                  ,'LIST_MOVIE_ROOT')
+    addDir('Movies'      ,''                 ,'LIST_MOVIE_ROOT')
     addDir('Television' ,''                  ,'LIST_TV_ROOT')
-    addDir('My Library' ,''                  ,'LIBRARY_ROOT')
+    if xbmcplugin.getSetting(pluginhandle,'enablelibrary') == 'true':
+        addDir('My Library' ,''                  ,'LIBRARY_ROOT')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 ################################ Library listing    
@@ -704,22 +704,41 @@ def LIBRARY_LIST_MOVIES():
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     data = getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    videos = tree.findAll(attrs={'asin':True})
+    videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
+    totalItems = len(videos)
     for video in videos:
+        xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
         asin = video['asin']
         name = video.find('',attrs={'class':'title'}).a.string
         url = BASE_URL+video.find('div',attrs={'class':'title'}).a['href']
-        thumb = video.find('img')['src'].replace('._SS160_','')
-        fanart = video.find('img')['src'].replace('._SS160_','_BO354,0,0,0_CR177,354,708,500_')
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name, thumbnailImage=thumb)
         utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
-        liz.setProperty('IsPlayable', 'true')
-        liz.setInfo( type="Video", infoLabels={'Title': name.replace('[HD]',''),
-                                               'Trailer': utrailer})
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
+        thumb = video.find('img')['src'].replace('._SS160_','')
+        fanart = video.find('img')['src'].replace('._SS160_','._BO354,0,0,0_CR177,354,708,500_')       
+        if xbmcplugin.getSetting(pluginhandle,'enablelibrarymeta') == 'true':
+            plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes = getMovieInfo(url)
+            actors = actors.split(',')
+            infoLabels = { 'Title':name,
+                           'Plot':plot,
+                           'Year':year,
+                           'premiered':premiered,
+                           'rating':stars,
+                           'votes':votes,
+                           'Genre':genres,
+                           'director':director,
+                           'studio':studio,
+                           'duration':runtime,
+                           'mpaa':mpaa,
+                           'cast':actors,
+                           'Trailer': utrailer}
+        else:
+            infoLabels = { 'Title':name,
+                           'Trailer': utrailer}
+        liz=xbmcgui.ListItem(name, thumbnailImage=thumb)
+        liz.setInfo( type="Video",infoLabels=infoLabels)
         liz.setProperty('fanart_image',fanart)
         liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz) 
+        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,totalItems=totalItems)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIBRARY_LIST_TV():
@@ -728,13 +747,35 @@ def LIBRARY_LIST_TV():
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     data = getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    videos = tree.findAll(attrs={'asin':True})
+    videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
+    totalItems = len(videos)
     for video in videos:
+        xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
         asin = video['asin']
         name = video.find('',attrs={'class':'title'}).a.string
         url = BASE_URL+video.find('div',attrs={'class':'title'}).a['href']
+        if xbmcplugin.getSetting(pluginhandle,'enablelibrarymeta') == 'true':
+            season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes = getShowInfo(url)
+            actors = actors.split(',')
+            infoLabels={'Title': name,
+                           'Plot':plot,
+                           'year':year,
+                           'rating':stars,
+                           'votes':votes,
+                           'Genre':genres,
+                           'Season':season,
+                           'episode':episodes,
+                           'studio':network,
+                           'duration':runtime,
+                           'cast':actors,
+                           'TVShowTitle':name,
+                           'credits':creator}
+            if year <> 0:
+                infoLabels['premiered'] = str(year)
+        else:
+            infoLabels = { 'Title':name}  
         thumb = video.find('img')['src'].replace('._SS160_','')
-        addDir(name,url,'LIBRARY_EPISODES',iconimage=thumb)
+        addDir(name,url,'LIBRARY_EPISODES',thumb,infoLabels,totalItems)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIBRARY_EPISODES():
@@ -983,7 +1024,7 @@ def LIST_TVSHOWS_YEARS():
 def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
 
-def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False,):
+def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False):
     if not showmode:
         showmode = params['url']
     shows = loadTVdb()

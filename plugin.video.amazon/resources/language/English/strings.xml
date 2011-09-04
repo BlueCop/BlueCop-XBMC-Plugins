@@ -10,4 +10,9 @@
 	<string id="30008">996kbps</string>
 	<string id="30009">664kbps</string>
 	<string id="30010">348kbps</string>
+	
+	<string id="30011">General</string>
+	<string id="30012">Library</string>
+	<string id="30013">Enable Library</string>
+	<string id="30014">Library Metadata(Slow)</string>
 </strings>

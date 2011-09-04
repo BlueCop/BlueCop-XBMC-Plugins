@@ -1,21 +1,26 @@
 # -*- coding: utf_8 -*-
-
-import xbmcplugin,xbmcgui
-import urllib,urllib2,cookielib,re,os.path
-import sys
-import binascii
-import md5
-import base64
-import operator
-import cookielib
-import time
-from datetime import datetime
-import demjson
 from BeautifulSoup import BeautifulSoup
+from datetime import datetime
+import base64
+import binascii
+import cookielib
+import demjson
+import md5
+import mechanize
+import operator
+import sys
+import time
+import urllib
+import urllib2
+import cookielib
+import re
+import os.path
+import xbmcplugin
+import xbmcgui
 try:
     from sqlite3 import dbapi2 as sqlite
 except:
-    from pysqlite2 import dbapi2 as sqlite    
+    from pysqlite2 import dbapi2 as sqlite
 
 pluginhandle = int(sys.argv[1])
 COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','cookies.lwp')
@@ -66,6 +71,24 @@ def login():
     values['email'] =       xbmcplugin.getSetting(pluginhandle,"login_name")
     values['password'] =    xbmcplugin.getSetting(pluginhandle,"login_pass")
     postURL(action_url,values)
+    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+
+def mechanizeLogin():
+    if os.path.isfile(COOKIEFILE):
+        os.remove(COOKIEFILE)
+    br = mechanize.Browser()  
+    br.set_handle_robots(False)
+    br.set_cookiejar(cj)
+    br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
+    sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html")   
+    br.select_form(name="sign-in")  
+    br["email"] = xbmcplugin.getSetting(pluginhandle,"login_name")
+    br["password"] = xbmcplugin.getSetting(pluginhandle,"login_pass")
+    logged_in = br.submit()  
+    error_str = "The e-mail address and password you entered do not match any accounts on record."  
+    if error_str in logged_in.read():
+        xbmcgui.Dialog().ok('Login Error',error_str)
+        print error_str
     cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
 
 def GETTRAILERS(getstream):
@@ -685,7 +708,8 @@ def getShowInfo(url):
 
 ################################ Root listing
 def ROOT():
-    login()
+    #login()
+    mechanizeLogin()
     addDir('Movies'      ,''                 ,'LIST_MOVIE_ROOT')
     addDir('Television' ,''                  ,'LIST_TV_ROOT')
     if xbmcplugin.getSetting(pluginhandle,'enablelibrary') == 'true':

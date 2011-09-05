@@ -23,14 +23,15 @@ except:
     from pysqlite2 import dbapi2 as sqlite
 
 pluginhandle = int(sys.argv[1])
+
 COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','cookies.lwp')
+cj = cookielib.LWPCookieJar()
+
 moviesDB = os.path.join(os.getcwd().replace(';', ''),'resources','cache','movies.db')
 tvDB = os.path.join(os.getcwd().replace(';', ''),'resources','cache','tv.db')
-cj = cookielib.LWPCookieJar()
+
 BASE_URL = 'http://www.amazon.com'
-#MOVIE_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_mov0/182-5606325-6863626?ie=UTF8&node=16386761&field-is_prime_benefit=1&sort=-releasedate'
 MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011&sort=-releasedate'
-#TV_URL = 'http://www.amazon.com/s/ref=sa_menu_piv_tv0/182-5606325-6863626?ie=UTF8&node=16262841&field-is_prime_benefit=1&sort=-releasedate'
 TV_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314982661&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2864549011%2Cp_85%3A2470955011&sort=-releasedate'
 
 def getURL( url , host='www.amazon.com'):
@@ -42,36 +43,6 @@ def getURL( url , host='www.amazon.com'):
     response = usock.read()
     usock.close()
     return response
-
-def postURL( url, values, host='www.amazon.com'):    
-    print 'postHTTP :: url = '+url
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17'),
-                         ('Host', host)]
-    data = urllib.urlencode(values)
-    usock = opener.open(url, data)
-    response = usock.read()
-    usock.close()
-    return response
-
-def login():
-    if os.path.isfile(COOKIEFILE):
-        os.remove(COOKIEFILE)
-    data=getURL(BASE_URL)
-    SIGNIN_URL = re.compile('<a href="(.+?)" rel="nofollow">Sign in</a>').findall(data)[0].replace('&amp;','&')
-    data = getURL(SIGNIN_URL)
-    form =  '<form name="signIn"' + re.compile('<form name="signIn"(.*?)</form>',re.DOTALL).findall(data)[0] + '</form>'
-    tree = BeautifulSoup(form, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    action_url = tree.form['action']
-    items = tree.findAll('input',attrs={'type' : 'hidden'})
-    values = {}
-    for item in items:
-        values[item['name']] = item['value']
-    values['create'] = '0'
-    values['email'] =       xbmcplugin.getSetting(pluginhandle,"login_name")
-    values['password'] =    xbmcplugin.getSetting(pluginhandle,"login_pass")
-    postURL(action_url,values)
-    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
 
 def mechanizeLogin():
     if os.path.isfile(COOKIEFILE):
@@ -369,50 +340,113 @@ def addDir(name,url,mode,iconimage='',infoLabels=False,totalItems=0):
 
 ################################ Movie db
 
-def loadMoviedb():
-    #if os.path.exists(moviesDB):
-    #    os.remove(moviesDB)
-    if not os.path.exists(moviesDB):
-        conn = sqlite.connect(moviesDB)
-        conn.text_factory = str
-        c = conn.cursor()
-        c.execute('''create table movies
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT, movietitle text, url text, poster text, plot text, director text, runtime text, year integer, premiered text, studio text, mpaa text, actors text, genres text, stars float, votes string)''')
-        c.close()
-        addMoviesdb()
-    conn = sqlite.connect(moviesDB)
-    c = conn.cursor()
-    return c.execute('select * from movies order by movietitle')
-
 def getMovieGenres():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct genres from movies')
+    genreUnsplit = c.execute('select distinct genres from movies')
+    genres = []
+    for split in genreUnsplit:
+        split = split[0].split(',')
+        for genre in split:
+            genre = genre.strip()
+            if genre not in genres and genre <> '':
+                genres.append(genre)
+    c.close()
+    return genres
 
 def getMovieStudios():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct studio from movies')
+    studios = c.execute('select distinct studio from movies')
+    list = []
+    for studio in studios:
+        studio = studio[0].encode('utf-8')
+        if studio not in list and studio <> '':
+            list.append(studio)
+    c.close()
+    return list
 
 def getMovieActors():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct actors from movies')
+    actorsUnsplit = c.execute('select distinct actors from movies')
+    actors = []
+    for split in actorsUnsplit:
+        split = split[0].split(',')
+        for actor in split:
+            actor = actor.strip().encode('utf-8')
+            if actor not in actors and actor <> '':
+                actors.append(actor)
+    c.close()
+    return actors
 
 def getMovieDirectors():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct director from movies')
+    directors = c.execute('select distinct director from movies')
+    list = []
+    for director in directors:
+        director = director[0].encode('utf-8')
+        if director not in list and director <> '':
+            list.append(director)
+    c.close()
+    return list
 
 def getMovieYears():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct year from movies')
+    years = c.execute('select distinct year from movies')
+    list = []
+    for year in years:
+        year = year[0]
+        if year not in list and year <> 0:
+            list.append(year)
+    c.close()
+    return list
 
 def getMovieMPAA():
     conn = sqlite.connect(moviesDB)
     c = conn.cursor()
-    return c.execute('select distinct mpaa from movies')
+    mpaas = c.execute('select distinct mpaa from movies')
+    list = []
+    for mpaa in mpaas:
+        mpaa = mpaa[0].split('for')[0].strip()
+        if mpaa not in list and mpaa <> '':
+            list.append(mpaa)
+    c.close()
+    return list
+
+def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False):
+    if not os.path.exists(moviesDB):
+        createMoviedb()
+        addMoviesdb()
+    conn = sqlite.connect(moviesDB)
+    c = conn.cursor()
+    if genrefilter:
+        genrefilter = '%'+genrefilter+'%'
+        return c.execute('select distinct * from movies where genres like (?)', (genrefilter,))
+    elif mpaafilter:
+        mpaafilter = '%'+mpaafilter+'%'
+        return c.execute('select distinct * from movies where mpaa like (?)', (mpaafilter,))
+    elif actorfilter:
+        actorfilter = '%'+actorfilter+'%'
+        return c.execute('select distinct * from movies where actors like (?)', (actorfilter,))
+    elif directorfilter:
+        return c.execute('select distinct * from movies where director = (?)', (directorfilter,))
+    elif studiofilter:
+        return c.execute('select distinct * from movies where studio = (?)', (studiofilter,))
+    elif yearfilter:    
+        return c.execute('select distinct * from movies where year = (?)', (int(yearfilter),))
+    else:
+        return c.execute('select distinct * from movies')
+
+def createMoviedb():
+    conn = sqlite.connect(moviesDB)
+    conn.text_factory = str
+    c = conn.cursor()
+    c.execute('''create table movies
+                (id INTEGER PRIMARY KEY AUTOINCREMENT, movietitle text, url text, poster text, plot text, director text, runtime text, year integer, premiered text, studio text, mpaa text, actors text, genres text, stars float, votes string)''')
+    c.close()
 
 def addMoviesdb(url=MOVIE_URL):
     conn = sqlite.connect(moviesDB)
@@ -531,45 +565,98 @@ def getMovieInfo(url):
 
 ################################ TV db
 
-def loadTVdb():
-    #if os.path.exists(tvDB):
-    #   os.remove(tvDB)
-    if not os.path.exists(tvDB):
-        conn = sqlite.connect(tvDB)
-        conn.text_factory = str
-        c = conn.cursor()
-        c.execute('''create table shows
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT, seriestitle text, url text, poster text, season integer, episodes integer, plot text, creator text, runtime text, year integer, network text, actors text, genres text, stars float, votes string, HD boolean)''')
-        c.close()
-        addTVdb()
-    conn = sqlite.connect(tvDB)
-    c = conn.cursor()
-    return c.execute('select * from shows order by seriestitle')
-
 def getShowsdb():
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select distinct seriestitle from shows')
+    shownamedata = c.execute('select distinct seriestitle from shows')
+    shownames = []
+    for item in shownamedata:
+        shownames.append(item[0])
+    c.close()
+    return shownames
 
 def getShowGenres():
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select distinct genres from shows')
+    genreUnsplit = c.execute('select distinct genres from shows')
+    genres = []
+    for split in genreUnsplit:
+        split = split[0].split(',')
+        for genre in split:
+            genre = genre.strip()
+            if genre not in genres and genre <> '':
+                genres.append(genre)
+    c.close()
+    return genres
 
 def getShowNetworks():
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select distinct network from shows')
+    networks = c.execute('select distinct network from shows')
+    list = []
+    for network in networks:
+        network = network[0].encode('utf-8')
+        if network not in list and network <> '':
+            list.append(network)
+    c.close()
+    return list
 
 def getShowCreators():
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select distinct creator from shows')
+    creators = c.execute('select distinct creator from shows')
+    list = []
+    for creator in creators:
+        creator = creator[0].encode('utf-8')
+        if creator not in list and creator <> '':
+            list.append(creator)
+    c.close()
+    return list
 
 def getShowYears():
     conn = sqlite.connect(tvDB)
     c = conn.cursor()
-    return c.execute('select distinct year from shows')
+    years = c.execute('select distinct year from shows')
+    list = []
+    for year in years:
+        year = year[0]
+        if year not in list and year <> 0:
+            list.append(year)
+    c.close()
+    return list
+
+def loadTVdb(showname=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False):
+    if not os.path.exists(tvDB):
+        createTVdb()
+        addTVdb()
+    conn = sqlite.connect(tvDB)
+    c = conn.cursor()
+    if HDonly and showname:
+        shows = c.execute('select distinct * from shows where (seriestitle = (?) and HD = (?))', (showname,True))
+    elif showname:
+        shows = c.execute('select distinct * from shows where seriestitle = (?)', (showname,))
+    elif HDonly:
+        shows = c.execute('select distinct * from shows where HD = (?)', (True,))
+    elif genrefilter:
+        genrefilter = '%'+genrefilter+'%'
+        shows = c.execute('select distinct * from shows where genres like (?)', (genrefilter,))
+    elif creatorfilter:
+        shows = c.execute('select distinct * from shows where creator = (?)', (creatorfilter,))
+    elif networkfilter:
+        shows = c.execute('select distinct * from shows where network = (?)', (networkfilter,))
+    elif yearfilter:    
+        shows = c.execute('select distinct * from shows where year = (?)', (int(yearfilter),))
+    else:
+        shows = c.execute('select distinct * from shows')
+    return shows
+
+def createTVdb():
+    conn = sqlite.connect(tvDB)
+    conn.text_factory = str
+    c = conn.cursor()
+    c.execute('''create table shows
+                (id INTEGER PRIMARY KEY AUTOINCREMENT, seriestitle text, url text, poster text, season integer, episodes integer, plot text, creator text, runtime text, year integer, network text, actors text, genres text, stars float, votes string, HD boolean)''')
+    c.close()
 
 def addTVdb(url=TV_URL):
     conn = sqlite.connect(tvDB)
@@ -708,12 +795,11 @@ def getShowInfo(url):
 
 ################################ Root listing
 def ROOT():
-    #login()
     mechanizeLogin()
     addDir('Movies'      ,''                 ,'LIST_MOVIE_ROOT')
     addDir('Television' ,''                  ,'LIST_TV_ROOT')
     if xbmcplugin.getSetting(pluginhandle,'enablelibrary') == 'true':
-        addDir('My Library' ,''                  ,'LIBRARY_ROOT')
+        addDir('My Library' ,''              ,'LIBRARY_ROOT')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 ################################ Library listing    
@@ -810,7 +896,7 @@ def LIBRARY_EPISODES():
 ################################ Movie listing   
 def LIST_MOVIE_ROOT():
     addDir('All Movies' ,'' ,'LIST_MOVIES')
-    addDir('Genres'     ,'' ,'LIST_MOVIE_GENRE')
+    addDir('Genres'     ,'' ,'LIST_MOVIE_GENRES')
     addDir('Years'      ,'' ,'LIST_MOVIE_YEARS')
     addDir('MPAA Rating','' ,'LIST_MOVIE_MPAA')
     addDir('Studios'    ,'' ,'LIST_MOVIE_STUDIOS')
@@ -818,128 +904,70 @@ def LIST_MOVIE_ROOT():
     #addDir('Actors'     ,'' ,'LIST_MOVIE_ACTORS')
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def LIST_MOVIE_GENRE_FILTERED():
-    genrefilter = params['url']
-    LIST_MOVIES(genrefilter=genrefilter)
-
-def LIST_MOVIE_GENRE():
-    genres = []
-    genreUnsplit = getMovieGenres()
-    for split in genreUnsplit:
-        split = split[0].split(',')
-        for genre in split:
-            genre = genre.strip()
-            if genre not in genres and genre <> '':
-                genres.append(genre)
+def LIST_MOVIE_GENRES():
+    genres = getMovieGenres()
     for genre in genres:
-        addDir(genre,genre,'LIST_MOVIE_GENRE_FILTERED')
+        addDir(genre,genre,'LIST_MOVIES_GENRE_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_MOVIE_ACTORS_FILTERED():
-    actorfilter = params['url']
-    LIST_MOVIES(actorfilter=actorfilter)
-
-def LIST_MOVIE_ACTORS():
-    actors = []
-    actorsUnsplit = getMovieActors()
-    for split in actorsUnsplit:
-        split = split[0].split(',')
-        for actor in split:
-            actor = actor.strip().encode('utf-8')
-            if actor not in actors and actor <> '':
-                actors.append(actor)
-    for actor in actors:
-        addDir(actor,actor,'LIST_MOVIE_ACTORS_FILTERED')
+def LIST_MOVIE_YEARS():
+    years = getMovieYears()
+    for year in years:
+        addDir(str(year),str(year),'LIST_MOVIES_YEAR_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_MOVIE_DIRECTORS_FILTERED():
-    directorfilter = params['url']
-    LIST_MOVIES(directorfilter=directorfilter)
-    
-def LIST_MOVIE_DIRECTORS():
-    directors = getMovieDirectors()
-    list = []
-    for director in directors:
-        director = director[0].encode('utf-8')
-        if director not in list and director <> '':
-            list.append(director)
-    for director in list:
-        addDir(director,director,'LIST_MOVIE_DIRECTORS_FILTERED')
+def LIST_MOVIE_MPAA():
+    mpaas = getMovieMPAA()
+    for mpaa in mpaas:
+        addDir(mpaa,mpaa,'LIST_MOVIES_MPAA_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_MOVIE_STUDIOS_FILTERED():
-    studiofilter = params['url']
-    LIST_MOVIES(studiofilter=studiofilter)
     
 def LIST_MOVIE_STUDIOS():
     studios = getMovieStudios()
-    list = []
     for studio in studios:
-        studio = studio[0].encode('utf-8')
-        if studio not in list and studio <> '':
-            list.append(studio)
-    for studio in list:
-        addDir(studio,studio,'LIST_MOVIE_STUDIOS_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    
-def LIST_MOVIE_YEARS_FILTERED():
-    yearfilter = params['url']
-    LIST_MOVIES(yearfilter=yearfilter)
-    
-def LIST_MOVIE_YEARS():
-    years = getMovieYears()
-    list = []
-    for year in years:
-        year = year[0]
-        if year not in list and year <> 0:
-            list.append(year)
-    for year in list:
-        addDir(str(year),str(year),'LIST_MOVIE_YEARS_FILTERED')
+        addDir(studio,studio,'LIST_MOVIES_STUDIO_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_MOVIE_MPAA_FILTERED():
-    mpaafilter = params['url']
-    LIST_MOVIES(mpaafilter=mpaafilter)
-    
-def LIST_MOVIE_MPAA():
-    mpaas = getMovieMPAA()
-    list = []
-    for mpaa in mpaas:
-        mpaa = mpaa[0].split('for')[0].strip()
-        if mpaa not in list and mpaa <> '':
-            list.append(mpaa)
-    for mpaa in list:
-        addDir(mpaa,mpaa,'LIST_MOVIE_MPAA_FILTERED')
+def LIST_MOVIE_DIRECTORS():
+    directors = getMovieDirectors()
+    for director in directors:
+        addDir(director,director,'LIST_MOVIES_DIRECTOR_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    
+def LIST_MOVIE_ACTORS():
+    actors = getMovieActors()
+    for actor in actors:
+        addDir(actor,actor,'LIST_MOVIES_ACTOR_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_MOVIES_GENRE_FILTERED():
+    LIST_MOVIES(genrefilter=params['url'])
+
+def LIST_MOVIES_YEAR_FILTERED():
+    LIST_MOVIES(yearfilter=params['url'])
+
+def LIST_MOVIES_MPAA_FILTERED():
+    LIST_MOVIES(mpaafilter=params['url'])
+    
+def LIST_MOVIES_STUDIO_FILTERED():
+    LIST_MOVIES(studiofilter=params['url'])
+
+def LIST_MOVIES_DIRECTOR_FILTERED():
+    LIST_MOVIES(directorfilter=params['url'])
+
+def LIST_MOVIES_ACTOR_FILTERED():
+    LIST_MOVIES(actorfilter=params['url'])
 
 def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
-    movies = loadMoviedb()
-    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
-        if genrefilter:
-            if genrefilter not in genres:
-                continue
-        elif actorfilter:
-            if actorfilter not in actors:
-                continue
-        elif directorfilter:
-            if directorfilter not in director:
-                continue
-        elif studiofilter:
-            if studiofilter not in studio:
-                continue
-        elif yearfilter:
-            if yearfilter <> str(year):
-                continue
-        elif mpaafilter:
-            if mpaafilter not in mpaa:
-                continue      
+    movies = loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter)
+    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:     
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
         utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
@@ -978,107 +1006,82 @@ def LIST_TV_ROOT():
     addDir('Years   '   ,'LISTSHOWS'        ,'LIST_TVSHOWS_YEARS')
     #addDir('Creators'   ,'LISTSHOWS'        ,'LIST_TVSHOWS_CREATORS')
     xbmcplugin.endOfDirectory(pluginhandle)
-  
-def LIST_TVSHOWS_GENRE_FILTERED():
-    genrefilter = params['url']
-    LIST_TVSHOWS(showmode='LISTSHOWS',genrefilter=genrefilter)
 
 def LIST_TVSHOWS_GENRE():
-    genres = []
-    genreUnsplit = getShowGenres()
-    for split in genreUnsplit:
-        split = split[0].split(',')
-        for genre in split:
-            genre = genre.strip()
-            if genre not in genres and genre <> '':
-                genres.append(genre)
+    genres = getShowGenres()
     for genre in genres:
         addDir(genre,genre,'LIST_TVSHOWS_GENRE_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_TVSHOWS_CREATORS_FILTERED():
-    creatorfilter = params['url']
-    LIST_TVSHOWS(showmode='LISTSHOWS',creatorfilter=creatorfilter)
-
-def LIST_TVSHOWS_CREATORS():
-    creators = getShowCreators()
-    list = []
-    for creator in creators:
-        creator = creator[0].encode('utf-8')
-        if creator not in list and creator <> '':
-            list.append(creator)
-    for creator in list:
-        addDir(creator,creator,'LIST_TVSHOWS_CREATORS_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_TVSHOWS_NETWORKS_FILTERED():
-    networkfilter = params['url']
-    LIST_TVSHOWS(showmode='LISTSHOWS',networkfilter=networkfilter)
-    
 def LIST_TVSHOWS_NETWORKS():
     networks = getShowNetworks()
-    list = []
     for network in networks:
-        network = network[0].encode('utf-8')
-        if network not in list and network <> '':
-            list.append(network)
-    for network in list:
         addDir(network,network,'LIST_TVSHOWS_NETWORKS_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    
-def LIST_TVSHOWS_YEARS_FILTERED():
-    yearfilter = params['url']
-    LIST_TVSHOWS(showmode='LISTSHOWS',yearfilter=yearfilter)
-    
+
 def LIST_TVSHOWS_YEARS():
     years = getShowYears()
-    list = []
     for year in years:
-        year = year[0]
-        if year not in list and year <> 0:
-            list.append(year)
-    for year in list:
         addDir(str(year),str(year),'LIST_TVSHOWS_YEARS_FILTERED')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_TVSHOWS_CREATORS():
+    creators = getShowCreators()
+    for creator in creators:
+        addDir(creator,creator,'LIST_TVSHOWS_CREATORS_FILTERED')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
 def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
 
+def LIST_TVSHOWS_GENRE_FILTERED():
+    LIST_TVSHOWS(showmode='LISTSHOWS',genrefilter=params['url'])
+
+def LIST_TVSHOWS_NETWORKS_FILTERED():
+    LIST_TVSHOWS(showmode='LISTSHOWS',networkfilter=params['url'])
+    
+def LIST_TVSHOWS_YEARS_FILTERED():
+    LIST_TVSHOWS(showmode='LISTSHOWS',yearfilter=params['url'])
+
+def LIST_TVSHOWS_CREATORS_FILTERED():
+    LIST_TVSHOWS(showmode='LISTSHOWS',creatorfilter=params['url'])
+
 def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False):
     if not showmode:
         showmode = params['url']
-    shows = loadTVdb()
-    shownamedata = getShowsdb()
-    shownames = []
-    for item in shownamedata:
-        shownames.append(item[0])
-    del shownamedata
+    if showmode == 'LISTSEASONS':
+        namefilter = params['name']
+    elif showmode == 'LISTSHOWS':
+        shownames = getShowsdb()
+        namefilter = False
+    shows = loadTVdb(showname=namefilter,HDonly=HDonly,genrefilter=genrefilter,creatorfilter=creatorfilter,networkfilter=networkfilter,yearfilter=yearfilter)
     for id,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD in shows:
-        if HDonly==True:
-            if not isHD:
-                continue
-        elif genrefilter:
-            if genrefilter not in genres:
-                continue
-        elif creatorfilter:
-            if creatorfilter not in creator:
-                continue
-        elif networkfilter:
-            if networkfilter not in network:
-                continue
-        elif yearfilter:
-            if yearfilter <> str(year):
-                continue
+        actors = actors.split(',')
+        infoLabels={'Title': name,
+                    'Plot':plot,
+                    'year':year,
+                    'rating':stars,
+                    'votes':votes,
+                    'Genre':genres,
+                    'Season':season,
+                    'episode':episodes,
+                    'studio':network,
+                    'duration':runtime,
+                    'cast':actors,
+                    'TVShowTitle':name,
+                    'credits':creator}
+        if year <> 0:
+            infoLabels['premiered'] = str(year)
         if showmode == 'LISTSEASONS':
             xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
-            if params['name'] <> name:
-                continue
             if season <> 0 and len(str(season)) < 3:
                 displayname = 'Season '+str(season)
+            elif len(str(season)) > 2:
+                displayname = 'Year '+str(season)
             else:
                 displayname = name
             if isHD:
@@ -1096,33 +1099,7 @@ def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=Fal
                 listmode = 'LIST_HDTVSHOWS'
             else:
                 listmode = 'LIST_TVSHOWS'
-
-        actors = actors.split(',')
-        infoLabels={'Title': name,
-                       'Plot':plot,
-                       'year':year,
-                       #'premiered':str(year),
-                       'rating':stars,
-                       'votes':votes,
-                       'Genre':genres,
-                       'Season':season,
-                       'episode':episodes,
-                       'studio':network,
-                       'duration':runtime,
-                       'cast':actors,
-                       'TVShowTitle':name,
-                       'credits':creator}
-        if year <> 0:
-            infoLabels['premiered'] = str(year)
-        u=sys.argv[0]              
-        u+="?url="+urllib.quote_plus(url)
-        u+="&mode="+urllib.quote_plus(listmode)
-        u+="&name="+urllib.quote_plus(name)
-        u+="&thumb="+urllib.quote_plus(poster)
-        liz=xbmcgui.ListItem(displayname, iconImage="DefaultFolder.png", thumbnailImage=poster)
-        liz.setInfo( type="Video", infoLabels=infoLabels)
-        liz.setProperty('fanart_image',poster)
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True)
+        addDir(displayname,url,listmode,poster,infoLabels)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
@@ -1147,7 +1124,6 @@ def LIST_EPISODES(owned=False):
             season = 0
     del tree
     del episodebox
-    #Season and Episode info
     episodeNum = 0
     for episode in episodes:
         if owned:

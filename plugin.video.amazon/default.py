@@ -44,6 +44,32 @@ def getURL( url , host='www.amazon.com'):
     usock.close()
     return response
 
+def addDir(name,url,mode,poster='',infoLabels=False,totalItems=0):
+    u=sys.argv[0]
+    u+="?url="+urllib.quote_plus(url)
+    u+="&mode="+urllib.quote_plus(mode)
+    u+="&name="+urllib.quote_plus(name)
+    u+="&thumb="+urllib.quote_plus(poster)
+    if not infoLabels:
+        infoLabels={ "Title": name}
+    liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=poster)
+    liz.setInfo( type="Video", infoLabels=infoLabels)
+    liz.setProperty('fanart_image',poster)
+    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True,totalItems=totalItems)
+    return ok
+
+def addVideo(name,url,poster='',art='',infoLabels=False,totalItems=0):
+    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
+    liz=xbmcgui.ListItem(name, thumbnailImage=poster)
+    utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+    if not infoLabels:
+        infoLabels={ "Title": name}
+    infoLabels['Trailer']=utrailer
+    liz.setInfo( type="Video", infoLabels=infoLabels)
+    liz.setProperty('fanart_image',art)
+    liz.setProperty('IsPlayable', 'true')
+    xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
+
 def mechanizeLogin():
     if os.path.isfile(COOKIEFILE):
         os.remove(COOKIEFILE)
@@ -324,20 +350,6 @@ def PLAYVIDEO():
         surl += '&customerID='+values['customerID']
         print getURL(surl,'atv-ps.amazon.com')
 
-def addDir(name,url,mode,iconimage='',infoLabels=False,totalItems=0):
-    u=sys.argv[0]
-    u+="?url="+urllib.quote_plus(url)
-    u+="&mode="+urllib.quote_plus(mode)
-    u+="&name="+urllib.quote_plus(name)
-    u+="&thumb="+urllib.quote_plus(iconimage)
-    if not infoLabels:
-        infoLabels={ "Title": name}
-    liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels=infoLabels)
-    liz.setProperty('fanart_image',iconimage)
-    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=True,totalItems=totalItems)
-    return ok
-
 ################################ Movie db
 
 def getMovieGenres():
@@ -400,7 +412,7 @@ def getMovieYears():
     for year in years:
         year = year[0]
         if year not in list and year <> 0:
-            list.append(year)
+            list.append(str(year))
     c.close()
     return list
 
@@ -621,7 +633,7 @@ def getShowYears():
     for year in years:
         year = year[0]
         if year not in list and year <> 0:
-            list.append(year)
+            list.append(str(year))
     c.close()
     return list
 
@@ -821,34 +833,17 @@ def LIBRARY_LIST_MOVIES():
         asin = video['asin']
         name = video.find('',attrs={'class':'title'}).a.string
         url = BASE_URL+video.find('div',attrs={'class':'title'}).a['href']
-        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
         thumb = video.find('img')['src'].replace('._SS160_','')
         fanart = video.find('img')['src'].replace('._SS160_','._BO354,0,0,0_CR177,354,708,500_')       
         if xbmcplugin.getSetting(pluginhandle,'enablelibrarymeta') == 'true':
             plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes = getMovieInfo(url)
             actors = actors.split(',')
-            infoLabels = { 'Title':name,
-                           'Plot':plot,
-                           'Year':year,
-                           'premiered':premiered,
-                           'rating':stars,
-                           'votes':votes,
-                           'Genre':genres,
-                           'director':director,
-                           'studio':studio,
-                           'duration':runtime,
-                           'mpaa':mpaa,
-                           'cast':actors,
-                           'Trailer': utrailer}
+            infoLabels = { 'Title':name,'Plot':plot,'Year':year,'premiered':premiered,
+                           'rating':stars,'votes':votes,'Genre':genres,'director':director,
+                           'studio':studio,'duration':runtime,'mpaa':mpaa,'cast':actors}
         else:
-            infoLabels = { 'Title':name,
-                           'Trailer': utrailer}
-        liz=xbmcgui.ListItem(name, thumbnailImage=thumb)
-        liz.setInfo( type="Video",infoLabels=infoLabels)
-        liz.setProperty('fanart_image',fanart)
-        liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,totalItems=totalItems)
+            infoLabels = { 'Title':name}
+        addVideo(name,url,thumb,fanart,infoLabels=infoLabels,totalItems=totalItems)    
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIBRARY_LIST_TV():
@@ -867,19 +862,9 @@ def LIBRARY_LIST_TV():
         if xbmcplugin.getSetting(pluginhandle,'enablelibrarymeta') == 'true':
             season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes = getShowInfo(url)
             actors = actors.split(',')
-            infoLabels={'Title': name,
-                           'Plot':plot,
-                           'year':year,
-                           'rating':stars,
-                           'votes':votes,
-                           'Genre':genres,
-                           'Season':season,
-                           'episode':episodes,
-                           'studio':network,
-                           'duration':runtime,
-                           'cast':actors,
-                           'TVShowTitle':name,
-                           'credits':creator}
+            infoLabels={'Title': name,'Plot':plot,'year':year,'rating':stars,'votes':votes,
+                        'Genre':genres,'Season':season,'episode':episodes,'studio':network,
+                        'duration':runtime,'cast':actors,'TVShowTitle':name,'credits':creator}
             if year <> 0:
                 infoLabels['premiered'] = str(year)
         else:
@@ -895,56 +880,40 @@ def LIBRARY_EPISODES():
 
 ################################ Movie listing   
 def LIST_MOVIE_ROOT():
-    addDir('All Movies' ,'' ,'LIST_MOVIES')
-    addDir('Genres'     ,'' ,'LIST_MOVIE_GENRES')
-    addDir('Years'      ,'' ,'LIST_MOVIE_YEARS')
-    addDir('MPAA Rating','' ,'LIST_MOVIE_MPAA')
-    addDir('Studios'    ,'' ,'LIST_MOVIE_STUDIOS')
-    addDir('Directors'  ,'' ,'LIST_MOVIE_DIRECTORS')
-    #addDir('Actors'     ,'' ,'LIST_MOVIE_ACTORS')
+    addDir('All Movies' ,''             ,'LIST_MOVIES')
+    addDir('Genres'     ,'GENRE'        ,'LIST_MOVIE_TYPES')
+    addDir('Years'      ,'YEARS'        ,'LIST_MOVIE_TYPES')
+    #addDir('Actors'     ,'ACTORS' ,'LIST_MOVIE_TYPES')
+    addDir('Directors'  ,'DIRECTORS'    ,'LIST_MOVIE_TYPES')
+    addDir('Studios'    ,'STUDIOS'      ,'LIST_MOVIE_TYPES')
+    addDir('MPAA Rating','MPAA'         ,'LIST_MOVIE_TYPES')
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def LIST_MOVIE_GENRES():
-    genres = getMovieGenres()
-    for genre in genres:
-        addDir(genre,genre,'LIST_MOVIES_GENRE_FILTERED')
+def LIST_MOVIE_TYPES(type=False):
+    if not type:
+        type = params['url']
+    if type=='GENRE':
+        mode = 'LIST_MOVIES_GENRE_FILTERED'
+        items = getMovieGenres()
+    elif type=='STUDIOS':
+        mode =  'LIST_MOVIES_STUDIO_FILTERED'
+        items = getMovieStudios() 
+    elif type=='YEARS':
+        mode = 'LIST_MOVIES_YEAR_FILTERED'
+        items = getMovieYears()     
+    elif type=='DIRECTORS':
+        mode = 'LIST_MOVIES_DIRECTOR_FILTERED'
+        items = getMovieDirectors()
+    elif type=='MPAA':
+        mode = 'LIST_MOVIES_MPAA_FILTERED'
+        items = getMovieMPAA()
+    elif type=='ACTORS':        
+        mode = 'LIST_MOVIES_ACTOR_FILTERED'
+        items = getMovieActors()
+    for item in items:
+        addDir(item,item,mode)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_MOVIE_YEARS():
-    years = getMovieYears()
-    for year in years:
-        addDir(str(year),str(year),'LIST_MOVIES_YEAR_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_MOVIE_MPAA():
-    mpaas = getMovieMPAA()
-    for mpaa in mpaas:
-        addDir(mpaa,mpaa,'LIST_MOVIES_MPAA_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    
-def LIST_MOVIE_STUDIOS():
-    studios = getMovieStudios()
-    for studio in studios:
-        addDir(studio,studio,'LIST_MOVIES_STUDIO_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_MOVIE_DIRECTORS():
-    directors = getMovieDirectors()
-    for director in directors:
-        addDir(director,director,'LIST_MOVIES_DIRECTOR_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    
-def LIST_MOVIE_ACTORS():
-    actors = getMovieActors()
-    for actor in actors:
-        addDir(actor,actor,'LIST_MOVIES_ACTOR_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)   
 
 def LIST_MOVIES_GENRE_FILTERED():
     LIST_MOVIES(genrefilter=params['url'])
@@ -967,27 +936,13 @@ def LIST_MOVIES_ACTOR_FILTERED():
 def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
     movies = loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter)
-    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:     
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(name,iconImage=poster, thumbnailImage=poster)
-        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
+    for id,name,url,poster,plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes in movies:
         actors = actors.split(',')
-        liz.setInfo( type="Video", infoLabels={'Title':name,
-                                               'Plot':plot,
-                                               'Year':year,
-                                               'premiered':premiered,
-                                               'rating':stars,
-                                               'votes':votes,
-                                               'Genre':genres,
-                                               'director':director,
-                                               'studio':studio,
-                                               'duration':runtime,
-                                               'mpaa':mpaa,
-                                               'cast':actors,
-                                               'Trailer': utrailer})
-        liz.setProperty('fanart_image',poster.replace('_SX500_','_BO354,0,0,0_CR177,354,708,500_'))
-        liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+        fanart = poster.replace('_SX500_','_BO354,0,0,0_CR177,354,708,500_')
+        infoLabels={'Title':name,'Plot':plot,'Year':year,'premiered':premiered,
+                    'rating':stars,'votes':votes,'Genre':genres,'director':director,
+                    'studio':studio,'duration':runtime,'mpaa':mpaa,'cast':actors}
+        addVideo(name,url,poster,fanart,infoLabels=infoLabels)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
@@ -999,112 +954,100 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiof
 ###################### Television
 
 def LIST_TV_ROOT():
-    addDir('All Shows'  ,'LISTSHOWS'        ,'LIST_TVSHOWS')
-    addDir('HDTV Shows' ,'LISTSHOWS'        ,'LIST_HDTVSHOWS')
-    addDir('Genres'     ,'LISTSHOWS'        ,'LIST_TVSHOWS_GENRE')
-    addDir('Networks'   ,'LISTSHOWS'        ,'LIST_TVSHOWS_NETWORKS')
-    addDir('Years   '   ,'LISTSHOWS'        ,'LIST_TVSHOWS_YEARS')
-    #addDir('Creators'   ,'LISTSHOWS'        ,'LIST_TVSHOWS_CREATORS')
+    addDir('All Shows'  ,''                 ,'LIST_TVSHOWS')
+    addDir('HDTV Shows' ,''                 ,'LIST_HDTVSHOWS')
+    addDir('Genres'     ,'GENRE'            ,'LIST_TVSHOWS_TYPES')
+    addDir('Years   '   ,'YEARS'            ,'LIST_TVSHOWS_TYPES')
+    addDir('Networks'   ,'NETWORKS'         ,'LIST_TVSHOWS_TYPES')
+    #addDir('Creators'   ,'CREATORS'        ,'LIST_TVSHOWS_TYPES')
     xbmcplugin.endOfDirectory(pluginhandle)
-
-def LIST_TVSHOWS_GENRE():
-    genres = getShowGenres()
-    for genre in genres:
-        addDir(genre,genre,'LIST_TVSHOWS_GENRE_FILTERED')
+    
+def LIST_TVSHOWS_TYPES(type=False):
+    if not type:
+        type = params['url']
+    if type=='GENRE':
+        mode = 'LIST_TVSHOWS_GENRE_FILTERED'
+        items = getShowGenres()
+    elif type=='NETWORKS':
+        mode =  'LIST_TVSHOWS_NETWORKS_FILTERED'
+        items = getShowNetworks()  
+    elif type=='YEARS':
+        mode = 'LIST_TVSHOWS_YEARS_FILTERED'
+        items = getShowYears()      
+    elif type=='CREATORS':
+        mode = 'LIST_TVSHOWS_CREATORS_FILTERED'
+        items = getShowCreators()
+    for item in items:
+        addDir(item,item,mode)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_TVSHOWS_NETWORKS():
-    networks = getShowNetworks()
-    for network in networks:
-        addDir(network,network,'LIST_TVSHOWS_NETWORKS_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_TVSHOWS_YEARS():
-    years = getShowYears()
-    for year in years:
-        addDir(str(year),str(year),'LIST_TVSHOWS_YEARS_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-
-def LIST_TVSHOWS_CREATORS():
-    creators = getShowCreators()
-    for creator in creators:
-        addDir(creator,creator,'LIST_TVSHOWS_CREATORS_FILTERED')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)   
 
 def LIST_HDTVSHOWS():
     LIST_TVSHOWS(HDonly=True)
 
 def LIST_TVSHOWS_GENRE_FILTERED():
-    LIST_TVSHOWS(showmode='LISTSHOWS',genrefilter=params['url'])
+    LIST_TVSHOWS(genrefilter=params['url'])
 
 def LIST_TVSHOWS_NETWORKS_FILTERED():
-    LIST_TVSHOWS(showmode='LISTSHOWS',networkfilter=params['url'])
+    LIST_TVSHOWS(networkfilter=params['url'])
     
 def LIST_TVSHOWS_YEARS_FILTERED():
-    LIST_TVSHOWS(showmode='LISTSHOWS',yearfilter=params['url'])
+    LIST_TVSHOWS(yearfilter=params['url'])
 
 def LIST_TVSHOWS_CREATORS_FILTERED():
-    LIST_TVSHOWS(showmode='LISTSHOWS',creatorfilter=params['url'])
+    LIST_TVSHOWS(creatorfilter=params['url'])
 
-def LIST_TVSHOWS(showmode=False,HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False):
-    if not showmode:
-        showmode = params['url']
-    if showmode == 'LISTSEASONS':
-        namefilter = params['name']
-    elif showmode == 'LISTSHOWS':
-        shownames = getShowsdb()
-        namefilter = False
-    shows = loadTVdb(showname=namefilter,HDonly=HDonly,genrefilter=genrefilter,creatorfilter=creatorfilter,networkfilter=networkfilter,yearfilter=yearfilter)
+def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilter=False,yearfilter=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    shownames = getShowsdb()
+    shows = loadTVdb(HDonly=HDonly,genrefilter=genrefilter,creatorfilter=creatorfilter,networkfilter=networkfilter,yearfilter=yearfilter)
     for id,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD in shows:
+        if name in shownames:
+            shownames.remove(name)
+        else:
+            continue
         actors = actors.split(',')
-        infoLabels={'Title': name,
-                    'Plot':plot,
-                    'year':year,
-                    'rating':stars,
-                    'votes':votes,
-                    'Genre':genres,
-                    'Season':season,
-                    'episode':episodes,
-                    'studio':network,
-                    'duration':runtime,
-                    'cast':actors,
-                    'TVShowTitle':name,
-                    'credits':creator}
+        infoLabels={'Title': name,'Plot':plot,'year':year,'rating':stars,'votes':votes,
+                    'Genre':genres,'Season':season,'episode':episodes,'studio':network,
+                    'duration':runtime,'cast':actors,'TVShowTitle':name,'credits':creator}
         if year <> 0:
             infoLabels['premiered'] = str(year)
-        if showmode == 'LISTSEASONS':
-            xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
-            if season <> 0 and len(str(season)) < 3:
-                displayname = 'Season '+str(season)
-            elif len(str(season)) > 2:
-                displayname = 'Year '+str(season)
-            else:
-                displayname = name
-            if isHD:
-                displayname += ' [HD]'
-            listmode = 'LIST_EPISODES'
-        elif showmode == 'LISTSHOWS':
-            xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-            if name in shownames:
-                shownames.remove(name)
-            else:
-                continue
-            displayname = name
-            url = 'LISTSEASONS'
-            if HDonly==True:
-                listmode = 'LIST_HDTVSHOWS'
-            else:
-                listmode = 'LIST_TVSHOWS'
-        addDir(displayname,url,listmode,poster,infoLabels)
+        if HDonly==True:
+            listmode = 'LIST_HDTV_SEASONS'
+        else:
+            listmode = 'LIST_TV_SEASONS'
+        addDir(name,url,listmode,poster,infoLabels)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+
+def LIST_HDTV_SEASONS():
+    LIST_TV_SEASONS(HDonly=True)
+   
+def LIST_TV_SEASONS(HDonly=False):
+    xbmcplugin.setContent(int(sys.argv[1]), 'seasons')
+    namefilter = params['name']
+    shows = loadTVdb(showname=namefilter,HDonly=HDonly)
+    for id,name,url,poster,season,episodes,plot,creator,runtime,year,network,actors,genres,stars,votes,isHD in shows:
+        actors = actors.split(',')
+        infoLabels={'Title': name,'Plot':plot,'year':year,'rating':stars,'votes':votes,
+                    'Genre':genres,'Season':season,'episode':episodes,'studio':network,
+                    'duration':runtime,'cast':actors,'TVShowTitle':name,'credits':creator}
+        if year <> 0:
+            infoLabels['premiered'] = str(year) 
+        if season <> 0 and len(str(season)) < 3:
+            displayname = 'Season '+str(season)
+        elif len(str(season)) > 2:
+            displayname = 'Year '+str(season)
+        else:
+            displayname = name
+        if isHD:
+            displayname += ' [HD]'
+        addDir(displayname,url,'LIST_EPISODES',poster,infoLabels)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)    
 
 def LIST_EPISODES(owned=False):
     episode_url = params['url']
@@ -1115,13 +1058,10 @@ def LIST_EPISODES(owned=False):
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'})
     episodes = episodebox.findAll('tr',attrs={'asin':True})
-    try:
-        season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
+    try:season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
     except:
-        try:
-            season = int(tree.find('div',attrs={'style':'font-size: 120%;font-weight:bold; margin-top:15px;margin-bottom:10px;'}).contents[0].split('Season')[1].strip())
-        except:
-            season = 0
+        try:season = int(tree.find('div',attrs={'style':'font-size: 120%;font-weight:bold; margin-top:15px;margin-bottom:10px;'}).contents[0].split('Season')[1].strip())
+        except:season = 0
     del tree
     del episodebox
     episodeNum = 0
@@ -1141,20 +1081,10 @@ def LIST_EPISODES(owned=False):
         else:
             displayname =  str(season)+'x'+str(episodeNum)+' - '+name
         url = BASE_URL+'/gp/product/'+asin
-        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYVIDEO&name="+urllib.quote_plus(name)
-        liz=xbmcgui.ListItem(displayname, thumbnailImage=thumbnail)
-        utrailer=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode=PLAYTRAILER&name="+urllib.quote_plus(name)
-        liz.setProperty('IsPlayable', 'true')
-        liz.setInfo( type="Video", infoLabels={'Title': name.replace('[HD]',''),
-                                               'Plot':plot,
-                                               'premiered':airDate,
-                                               'Season':season,
-                                               'Episode':episodeNum,
-                                               'TVShowTitle':showname,
-                                               'Trailer': utrailer})
-        liz.setProperty('fanart_image',thumbnail)
-        liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)      
+        infoLabels={'Title': name.replace('[HD]',''),'TVShowTitle':showname,
+                    'Plot':plot,'premiered':airDate,
+                    'Season':season,'Episode':episodeNum}
+        addVideo(displayname,url,thumbnail,thumbnail,infoLabels=infoLabels)    
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
 ############ SET PARAMETERS AND INIT

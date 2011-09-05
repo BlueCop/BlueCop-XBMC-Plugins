@@ -2,5 +2,6 @@
     <string id="30000">Watch in XBMC? (Unselect to watch in Browser)</string>
     <string id="30001">Quality of Recorded Stream</string>
     <string id="30002">Default Browser</string>
+    <string id="30003">Quality of Live Stream</string>
 
 </strings>

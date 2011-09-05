@@ -2,4 +2,5 @@
     <setting id="watchinxbmc" type="bool" label="30000" default="true"/>
     <setting id="quality" type="enum" label="30001" values="Lowest|Low|Medium|High|Highest" default="2"/>
     <setting id="browser" type="enum" label="30002" values="Firefox|Chrome" default="Firefox"/>
+    <setting id="livequality" type="enum" label="30003" values="Low|Medium|High|Highest" default="Highest"/>
 </settings>

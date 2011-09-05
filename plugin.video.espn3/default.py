@@ -20,18 +20,6 @@ usexbmc = selfAddon.getSetting('watchinxbmc')
 defaultimage = 'special://home/addons/plugin.video.espn3/icon.png'
 if usexbmc is '' or usexbmc is None:
     usexbmc = True
-quality =  selfAddon.getSetting('quality')
-if quality == "Lowest":
-    quality = 0
-elif quality == "Low":
-    quality = 1
-elif quality == "High":
-    quality = 3
-elif quality == "Highest":
-    quality = 4
-else:
-    # Set the default quality to medium
-    quality = 2
 
 def CATEGORIES():
     mode = 1
@@ -236,10 +224,12 @@ def PLAY(url):
         #     Lowest, Low,   Medium,  High, Highest
         #Change the [4] to 0-4 to change the bitrate
         if 'ondemand' in rtmp:
-            playpath = soup.findAll('video')[quality]['src']
+            replayquality = selfAddon.getSetting('replayquality')
+            playpath = soup.findAll('video')[int(replayquality)]['src']
             finalurl = rtmp+'/?'+auth+' playpath='+playpath
         elif 'live' in rtmp:
-            playpath = soup.findAll('video')[4]['src']
+            livequality = selfAddon.getSetting('livequality')
+            playpath = soup.findAll('video')[int(livequality)]['src']
             finalurl = rtmp+' live=1 playlist=1 subscribe='+playpath+' playpath='+playpath+'?'+auth
         item = xbmcgui.ListItem(path=finalurl)
         return xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)

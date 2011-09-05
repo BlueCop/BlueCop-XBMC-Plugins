@@ -2,5 +2,5 @@
     <setting id="watchinxbmc" type="bool" label="30000" default="true"/>
     <setting id="replayquality" type="enum" label="30001" values="Low|Medium|High|Highest" default="Highest"/>
     <setting id="browser" type="enum" label="30002" values="Firefox|Chrome" default="Firefox"/>
-    <setting id="livequality" type="enum" label="30003" values="Low|Medium|High|Highest" default="Highest"/>
+    <setting id="livequality" type="enum" label="30003" values="Lowest|Low|Medium|High|Highest" default="Highest"/>
 </settings>

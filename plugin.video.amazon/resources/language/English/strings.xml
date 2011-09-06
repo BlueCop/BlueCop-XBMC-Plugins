@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
+	<string id="30011">General</string>
 	<string id="30000">E-Mail</string>
 	<string id="30001">Password</string>
-
 	<string id="30004">Choosen Bitrate</string>
 	<string id="30005">Ask</string>
 	<string id="30006">2500kbps</string>
@@ -11,8 +11,17 @@
 	<string id="30009">664kbps</string>
 	<string id="30010">348kbps</string>
 	
-	<string id="30011">General</string>
+
 	<string id="30012">Library</string>
 	<string id="30013">Enable Library</string>
-	<string id="30014">Library Metadata(Slow)</string>
+	<string id="30014">Library Metadata(cached)</string>
+
+	<string id="30015">Metadata</string>
+	<string id="30016">Movie Image Source</string>
+	<string id="30017">TV Image Source</string>
+	<string id="30018">TVDB Posters</string>
+	<string id="30019">TVDB Banners</string>
+	<string id="30020">TMDB Posters</string>
+	<string id="30021">TMDB Banners</string>
+	<string id="30022">Amazon</string>
 </strings>

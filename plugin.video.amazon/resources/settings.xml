@@ -12,7 +12,14 @@
 	<category label="30012">
 		<setting type="sep" />
 		<setting id="enablelibrary" type ="bool" label="30013" default="true"/>
-		<setting id="enablelibrarymeta" type ="bool" label="30014" default="false"/>
+		<setting id="enablelibrarymeta" type ="bool" label="30014" default="true"/>
+		<setting type="sep" />
+	</category>
+	<!-- Metadata -->
+	<category label="30015">
+		<setting type="sep" />
+		<setting id="movieart" type="enum" lvalues="30020|30021|30022" label="30016" default="0"/>
+		<setting id="tvart" type="enum" lvalues="30018|30019|30022" label="30017" default="0"/>
 		<setting type="sep" />
 	</category>
 </settings>

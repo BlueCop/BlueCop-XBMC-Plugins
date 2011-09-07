@@ -376,7 +376,10 @@ def playST(url = common.args.url):
 def play(url = common.args.url):
     if 'http://' in url:
         data=common.getURL(url)
-        pid = re.compile("var pid = '(.*?)';").findall(data)[0]
+        try:
+            pid = re.compile('var pid = "(.*?)";').findall(data)[0]
+        except:
+            pid = re.compile("var pid = '(.*?)';").findall(data)[0]
     else:
         pid = url  
     url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid

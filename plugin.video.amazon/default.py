@@ -882,6 +882,12 @@ def getShowTypes(col):
                 list.append(str(data))
     c.close()
     return list
+
+def getPoster(seriestitle):
+    c = tvDB.cursor()
+    data = c.execute('select distinct poster from seasons where seriestitle = (?)', (seriestitle,)).fetchone()
+    return data[0]
+
     
 def deleteShowdb(seriestitle=False):
     if not seriestitle:
@@ -1304,16 +1310,22 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
         if HDonly==True: listmode = 'LIST_HDTV_SEASONS'
         else: listmode = 'LIST_TV_SEASONS'
         #TVDBbanner,TVDBposter,TVDBfanart
-        if TVDBposter:
+        artOptions = ['Poster','Banner','Amazon']
+        tvart=int(xbmcplugin.getSetting(pluginhandle,"tvart"))
+        option = artOptions[tvart]
+        if TVDBposter and option == 'Poster':
             poster = TVDBposter
-        elif TVDBbanner:
+        elif TVDBbanner and option == 'Banner':
             poster = TVDBbanner
         else:
-            poster = ''
+            seriesposter = getPoster(seriestitle)
+            poster = seriesposter
         if TVDBfanart:
             fanart = TVDBfanart
+        elif seriesposter:
+            fanart = seriesposter
         else:
-            poster = ''
+            fanart = getPoster(seriestitle)
         cm = []
         if favor: cm.append( ('Remove from Favorites', "XBMC.RunPlugin(%s?mode=unfavorShowdb&title=%s)" % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         else: cm.append( ('Add to Favorites', "XBMC.RunPlugin(%s?mode=favorShowdb&title=%s)" % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )

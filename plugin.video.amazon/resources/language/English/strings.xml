@@ -13,7 +13,7 @@
 	
 
 	<string id="30012">Library</string>
-	<string id="30013">Enable Library</string>
+	<string id="30013">Enable Amazon Library</string>
 	<string id="30014">Library Metadata(cached)</string>
 
 	<string id="30015">Views</string>
@@ -37,4 +37,7 @@
 	<string id="30030">Show View</string>
 	<string id="30031">Season View</string>
 	<string id="30032">Episode View</string>
+	
+	<string id="30033">Enable DB Edit</string>
+	<string id="30035">Enable Views</string>
 </strings>

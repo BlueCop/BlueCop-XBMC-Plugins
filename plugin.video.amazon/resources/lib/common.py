@@ -1,12 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
 import cookielib
 import mechanize
-import operator
+#import operator
 import sys
 import urllib
 import urllib2
-import cookielib
 import re
 import os.path
 import xbmcplugin
@@ -46,7 +47,7 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
-    u += '&name="'+urllib.quote_plus(name)+'"'
+    u += '&name="'+urllib.quote_plus(name.replace("'",'"'))+'"'
     if fanart == '':
         try:fanart = args.fanart
         except:fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
@@ -64,15 +65,18 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     item.setInfo( type="Video", infoLabels=infoLabels)
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True,totalItems=totalItems)
 
-def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False):
+def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False,traileronly=False):
     if not infoLabels:
         infoLabels={ "Title": name}
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="play"'
-    u += '&name="'+urllib.quote_plus(name)+'"'
+    u += '&name="'+urllib.quote_plus(name.replace("'",'"'))+'"'
     utrailer = u+'&sitemode="PLAYTRAILER"'
-    u += '&sitemode="PLAYVIDEO"'
+    if traileronly:
+        u += '&sitemode="PLAYTRAILER_RESOLVE"'        
+    else:
+        u += '&sitemode="PLAYVIDEO"'
     infoLabels['Trailer']=utrailer
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)

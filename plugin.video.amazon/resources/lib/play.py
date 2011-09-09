@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import re
 import time
 import urllib
@@ -22,7 +24,10 @@ def GETTRAILERS(getstream):
     except:
         return False, False, False
 
-def PLAYTRAILER():
+def PLAYTRAILER_RESOLVE():
+    PLAYTRAILER(resolve=True)
+
+def PLAYTRAILER(resolve=False):
     videoname = common.args.name
     swfUrl, values = GETFLASHVARS(common.args.url) 
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
@@ -39,7 +44,7 @@ def PLAYTRAILER():
     elif cdn == 'limelight':
         xbmcgui.Dialog().ok('Limelight CDN','Limelight uses swfverfiy2. Playback may fail.')
     else:
-        PLAY(rtmpurls,swfUrl=swfUrl,Trailer=videoname)
+        PLAY(rtmpurls,swfUrl=swfUrl,Trailer=videoname,resolve=resolve)
         
 def GETSTREAMS(getstream):
     try:
@@ -175,7 +180,7 @@ def GETFLASHVARS(pageurl):
             values['userAgent']     = item[1]
     return swfUrl, values
         
-def PLAY(rtmpurls,swfUrl,Trailer=False):
+def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True):
     print rtmpurls
     quality = [0,2500,1328,996,664,348]
     lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
@@ -209,7 +214,7 @@ def PLAY(rtmpurls,swfUrl,Trailer=False):
     finalUrl += " playpath=" + stream 
     finalUrl += " pageurl=" + common.args.url
     finalUrl += " swfurl=" + swfUrl + " swfvfy=true"
-    if Trailer:
+    if Trailer and not resolve:
         finalname = Trailer+' Trailer'
         item = xbmcgui.ListItem(finalname,path=finalUrl)
         item.setInfo( type="Video", infoLabels={ "Title": finalname})

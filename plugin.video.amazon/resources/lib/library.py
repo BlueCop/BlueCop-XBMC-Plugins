@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
 import xbmcplugin
@@ -103,7 +105,8 @@ def LIST_EPISODES(owned=False):
         airDate = episode.find(attrs={'style':'width: 150px; overflow: hidden'}).string.strip()
         try: plot =  episode.findAll('div')[1].string.strip()
         except: plot = ''
-        episodeNum = int(episode.find('div',attrs={'style':'width: 185px;'}).string.split('.')[0].strip())
+        try:episodeNum = int(episode.find('div',attrs={'style':'width: 185px;'}).string.split('.')[0].strip())
+        except:episodeNum =0
         if season == 0: displayname =  str(episodeNum)+'. '+name
         else: displayname =  str(season)+'x'+str(episodeNum)+' - '+name
         url = common.BASE_URL+'/gp/product/'+asin

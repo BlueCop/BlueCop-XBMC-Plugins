@@ -18,7 +18,7 @@ confluence_views = [500,501,502,503,504,508]
 def LIST_MOVIE_ROOT():
     common.addDir('Favorited','listmovie','LIST_MOVIES_FAVOR_FILTERED')
     common.addDir('All Movies','listmovie','LIST_MOVIES')
-    common.addDir('Alphabetical','listmovie','LIST_MOVIE_AZ')
+    #common.addDir('Alphabetical','listmovie','LIST_MOVIE_AZ')
     common.addDir('Genres','listmovie','LIST_MOVIE_TYPES','GENRE')
     common.addDir('Years','listmovie','LIST_MOVIE_TYPES','YEARS')
     common.addDir('Studios','listmovie','LIST_MOVIE_TYPES','STUDIOS')

@@ -43,7 +43,7 @@ def createTVdb():
                  PRIMARY KEY(seriestitle)
                  );''')
     c.execute('''CREATE TABLE seasons(
-                 url TEXT,
+                 url TEXT UNIQUE,
                  poster TEXT,
                  season INTEGER,
                  seriestitle TEXT,
@@ -64,7 +64,7 @@ def createTVdb():
                  FOREIGN KEY(seriestitle) REFERENCES shows(seriestitle)
                  );''')
     c.execute('''create table episodes(
-                 asin TEXT,
+                 asin TEXT UNIQUE,
                  seriestitle TEXT,
                  season INTEGER,
                  episode INTEGER,
@@ -165,11 +165,14 @@ def fixYears():
 def deleteShowdb(seriestitle=False):
     if not seriestitle:
         seriestitle = common.args.title
-    c = tvDB.cursor()
-    c.execute('delete from shows where seriestitle = (?)', (seriestitle,))
-    c.execute('delete from seasons where seriestitle = (?)', (seriestitle,))
-    tvDB.commit()
-    c.close()
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('Delete Season', 'Delete %s ?' % (seriestitle))
+    if ret:
+        c = tvDB.cursor()
+        c.execute('delete from shows where seriestitle = (?)', (seriestitle,))
+        c.execute('delete from seasons where seriestitle = (?)', (seriestitle,))
+        tvDB.commit()
+        c.close()
 
 def renameShowdb(seriestitle=False):
     if not seriestitle:
@@ -189,11 +192,14 @@ def deleteSeasondb(seriestitle=False,season=False):
     if not seriestitle and not season:
         seriestitle = common.args.title
         season = int(common.args.season)
-    c = tvDB.cursor()
-    c.execute('delete from seasons where seriestitle = (?) and season = (?)', (seriestitle,season))
-    c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
-    tvDB.commit()
-    c.close()
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('Delete Season', 'Delete %s Season %s?' % (seriestitle,season))
+    if ret:
+        c = tvDB.cursor()
+        c.execute('delete from seasons where seriestitle = (?) and season = (?)', (seriestitle,season))
+        c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
+        tvDB.commit()
+        c.close()
 
 def renameSeasondb(seriestitle=False,season=False):
     if not seriestitle and not season:
@@ -272,21 +278,24 @@ def addTVdb(url=TV_URL,isprime=True):
     dialog.create('Building Prime TV Database')
     dialog.update(0,'Initializing TV Scan')
     data = common.getURL(url)
-    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    total = int(tree.find('div',attrs={'id':'resultCount','class':'resultCount'}).span.string.replace(',','').split('of')[1].split('Results')[0].strip())
+    try:
+        tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        total = int(tree.find('div',attrs={'id':'resultCount','class':'resultCount'}).span.string.replace(',','').split('of')[1].split('Results')[0].strip())
+    except:
+        total=12
     del tree; del data
     pages = (total/12)+1
     increment = 100.0 / pages 
     page = 1
     percent = int(increment*page)
-    dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)))
-    pagenext = scrapeTVdb(url,isprime)
+    dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)),'Added %s Episodes' % str(0))
+    pagenext,episodetotal = scrapeTVdb(url,isprime)
     while pagenext:
-        pagenext = scrapeTVdb(pagenext,isprime)
         page += 1
         percent = int(increment*page)
-        dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)))
-        pagenext = scrapeMoviesdb(pagenext,isprime)
+        dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)),'Added %s Episodes' % str(episodetotal))
+        pagenext,nextotal = scrapeTVdb(pagenext,isprime)
+        episodetotal += nextotal
         if (dialog.iscanceled()):
             return False
     fixHDshows()
@@ -306,9 +315,15 @@ def scrapeTVdb(url,isprime):
     nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
     del tree
     del data
+    returnTotal = 0
     for show in atf:
         showasin = show['name']
         url = common.BASE_URL+'/gp/product/'+showasin
+        seasondata = checkURLInfo(url)
+        if seasondata:
+            print 'AMAZON: Returning Cached Meta for URL: '+url
+            print seasondata
+            continue
         name = show.find('a', attrs={'class':'title'}).string
         poster = show.find(attrs={'class':'image'}).find('img')['src'].replace('._AA160_','')
         if '[HD]' in name: isHD = True
@@ -316,32 +331,6 @@ def scrapeTVdb(url,isprime):
         seriestitle = name.split('Season ')[0].split('season ')[0].split('Volume ')[0].split('Series ')[0].split('Year ')[0].split(' The Complete')[0].replace('[HD]','').strip().strip('-').strip(',').strip(':').strip()
         if seriestitle.endswith('-') or seriestitle.endswith(',') or seriestitle.endswith(':'):
             seriestitle = name[:-1].strip()
-        try:
-            if 'Season' in name:
-                seasonGuess = int(name.split('Season')[1].replace('[HD]','').strip('-').strip(',').strip(':').strip())
-            elif 'Volume' in name:
-                seasonGuess = int(name.split('Volume')[1].replace('[HD]','').strip('-').strip(',').strip(':').strip())
-            elif 'Series' in name:
-                seasonGuess = int(name.split('Series')[1].replace('[HD]','').strip('-').strip(',').strip(':').strip())
-            elif 'Year' in name:
-                seasonGuess = int(name.split('Year')[1].replace('[HD]','').strip('-').strip(',').strip(':').strip())
-            elif 'season' in name:
-                seasonGuess = int(name.split('season')[1].replace('[HD]','').strip('-').strip(',').strip(':').strip())
-            else:
-                seasonGuess = False
-        except:
-            seasonGuess = False
-        if seasonGuess:
-            strseason = str(seasonGuess)
-            if len(strseason)>2 and strseason in name:
-                seriesnamecheck = seriestitle.replace(strseason,'').strip()
-            else:
-                seriesnamecheck = seriestitle
-            seasondata = checkSeasonInfo(seriesnamecheck,seasonGuess,isHD)
-            if seasondata:
-                print 'AMAZON: Returning Cached Meta for SEASON: '+str(seasonGuess)+' SERIES: '+seriestitle
-                print seasondata
-                continue
         showdata, episodes = scrapeShowInfo(url,owned=False)
         season,episodetotal,plot,creator,runtime,year,network,actors,genres,stars,votes = showdata
         strseason = str(season)
@@ -352,6 +341,8 @@ def scrapeTVdb(url,isprime):
             print 'AMAZON: Returning Cached Meta for SEASON: '+str(season)+' SERIES: '+seriestitle
             print seasondata
             continue
+        if episodetotal:
+            returnTotal += episodetotal
         #          seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart
         addShowdb([seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,0,episodetotal,isHD,isprime,False,None,None,None,None])
         for episodeASIN,Eseason,episodeNum,episodetitle,eurl,eplot,eairDate,eisHD in episodes:
@@ -363,13 +354,20 @@ def scrapeTVdb(url,isprime):
     if nextpage:
         pagenext = common.BASE_URL + nextpage['href']
         del nextpage
-        return pagenext
+        return pagenext,returnTotal
     else:
-        return False
+        return False,returnTotal
 
 def checkSeasonInfo(seriestitle,season,isHD):
     c = tvDB.cursor()
     metadata = c.execute('select * from seasons where seriestitle = (?) and season = (?) and isHD = (?)', (seriestitle,season,isHD))
+    returndata = metadata.fetchone()
+    c.close()
+    return returndata
+
+def checkURLInfo(url):
+    c = tvDB.cursor()
+    metadata = c.execute('select * from seasons where url = (?)', (url,))
     returndata = metadata.fetchone()
     c.close()
     return returndata
@@ -490,6 +488,18 @@ def refreshTVDBshow(seriestitle=False):
             year = None
     c.execute("update shows set TVDBbanner=?,TVDBposter=?,TVDBfanart=?,TVDB_ID=?,genres=?,year=? where seriestitle=?", (TVDBbanner,TVDBposter,TVDBfanart,seriesid,genre,year,seriestitle))
     tvDB.commit()
+    
+def deleteUserDatabase():
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('Delete User Database', 'Delete User Television Database?')
+    if ret:
+        os.remove(tvDByourfile)
+        
+def deleteBackupDatabase():
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('Delete Backuo Database', 'Delete Backup Television Database?')
+    if ret:
+        os.remove(tvDBfile)
 
 def scanTVDBshow(seriestitle=False):
     if not seriestitle:
@@ -614,8 +624,21 @@ def get_series_id(seriesid,seriesname):
         seriesid = shows[0].find('seriesid').string
     return seriesid
 
-tvDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','tv.db')
+tvDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','backtv.db')
+tvDBnewfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newtv.db')
 tvDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
+if os.path.exists(tvDBnewfile):
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('New TV Database Detected', 'Update to new Database?')
+    if ret:
+        import shutil
+        shutil.copyfile(tvDBnewfile, tvDByourfile)
+        shutil.copyfile(tvDBnewfile, tvDBfile)
+        os.remove(tvDBnewfile)
+    else:
+        shutil.copyfile(tvDBnewfile, tvDBfile)
+        os.remove(tvDBnewfile)
+
 if not os.path.exists(tvDByourfile) and os.path.exists(tvDBfile):
     import shutil
     shutil.copyfile(tvDBfile, tvDByourfile)

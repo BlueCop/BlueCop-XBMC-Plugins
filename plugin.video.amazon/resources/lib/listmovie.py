@@ -6,6 +6,7 @@ import xbmcgui
 import os.path
 import sys
 import urllib
+import string
 import resources.lib.common as common
 
 pluginhandle = common.pluginhandle
@@ -17,6 +18,7 @@ confluence_views = [500,501,502,503,504,508]
 def LIST_MOVIE_ROOT():
     common.addDir('Favorited','listmovie','LIST_MOVIES_FAVOR_FILTERED')
     common.addDir('All Movies','listmovie','LIST_MOVIES')
+    common.addDir('Alphabetical','listmovie','LIST_MOVIE_AZ')
     common.addDir('Genres','listmovie','LIST_MOVIE_TYPES','GENRE')
     common.addDir('Years','listmovie','LIST_MOVIE_TYPES','YEARS')
     common.addDir('Studios','listmovie','LIST_MOVIE_TYPES','STUDIOS')
@@ -25,6 +27,17 @@ def LIST_MOVIE_ROOT():
     #common.addDir('Actors','listmovie','LIST_MOVIE_TYPES','ACTORS')
     common.addDir('Watched History','listmovie','LIST_MOVIES_WATCHED_FILTERED')
     xbmcplugin.endOfDirectory(pluginhandle)
+    
+def LIST_MOVIE_AZ():
+    common.addDir('#','listmovie','LIST_MOVIES_WATCHED_FILTERED','')
+    alphabet=set(string.ascii_uppercase)
+    for letter in alphabet:
+        common.addDir(letter,'listmovie','LIST_MOVIES_AZ_FILTERED',letter)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIST_MOVIES_AZ_FILTERED():
+    LIST_MOVIES(alphafilter=common.args.url)
 
 def LIST_MOVIE_TYPES(type=False):
     import movies as moviesDB
@@ -77,11 +90,11 @@ def LIST_MOVIES_WATCHED_FILTERED():
 def LIST_MOVIES_FAVOR_FILTERED():
     LIST_MOVIES(favorfilter=True)
 
-def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False):
+def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False):
     xbmcplugin.setContent(pluginhandle, 'Movies')
     editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
     import movies as moviesDB
-    movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter)
+    movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter,alphafilter=alphafilter)
     for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor,TMDB_ID in movies:
         fanart = poster.replace('.jpg','._BO354,0,0,0_CR177,354,708,500_.jpg')
         infoLabels={'Title':movietitle}

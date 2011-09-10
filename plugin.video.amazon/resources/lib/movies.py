@@ -93,7 +93,7 @@ def unfavorMoviedb(asin=False):
     MovieDB.commit()
     c.close()
 
-def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,isprime=True):
+def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False,isprime=True):
     c = MovieDB.cursor()
     if genrefilter:
         genrefilter = '%'+genrefilter+'%'
@@ -113,7 +113,9 @@ def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiof
     elif watchedfilter:
         return c.execute('select distinct * from movies where isprime = (?) and watched = (?)', (isprime,watchedfilter))
     elif favorfilter:
-        return c.execute('select distinct * from movies where isprime = (?) and favor = (?)', (isprime,favorfilter))        
+        return c.execute('select distinct * from movies where isprime = (?) and favor = (?)', (isprime,favorfilter))
+    elif alphafilter:
+        return c.execute('select distinct * from movies where isprime = (?) and movietitle regexp (?)', (isprime,alphafilter+'*'))       
     else:
         return c.execute('select distinct * from movies where isprime = (?)', (isprime,))
 
@@ -290,9 +292,23 @@ def scrapeMovieInfo(asin):
     try: genres = metadict['Genre']
     except: genres = None
     return plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes
-    
-MovieDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','movies.db')
+
+
+MovieDBnewfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newmovies.db')
+MovieDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','backmovies.db')
 MovieDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
+if os.path.exists(MovieDBnewfile):
+    dialog = xbmcgui.Dialog()
+    ret = dialog.yesno('New Movie Database Detected', 'Update to new Database?')
+    if ret:
+        import shutil
+        shutil.copyfile(MovieDBnewfile, MovieDByourfile)
+        shutil.copyfile(MovieDBnewfile, MovieDBfile)
+        os.remove(MovieDBnewfile)
+    else:
+        shutil.copyfile(MovieDBnewfile, MovieDBfile)
+        os.remove(MovieDBnewfile)
+
 if not os.path.exists(MovieDByourfile) and os.path.exists(MovieDBfile):
     import shutil
     shutil.copyfile(MovieDBfile, MovieDByourfile)

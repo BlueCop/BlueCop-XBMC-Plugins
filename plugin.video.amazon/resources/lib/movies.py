@@ -3,6 +3,7 @@
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
 import os.path
+import re
 import xbmcplugin
 import xbmc
 import xbmcgui
@@ -12,7 +13,6 @@ try:
 except:
     from pysqlite2 import dbapi2 as sqlite
 
-NEW_MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_nr_p_n_date_0?rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011%2Cp_n_date%3A2693527011&bbn=2858905011&ie=UTF8&qid=1315385409&rnid=2693522011'
 MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011&sort=-releasedate'
 
 ################################ Movie db
@@ -20,7 +20,76 @@ MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A262
 def createMoviedb():
     c = MovieDB.cursor()
     c.execute('''create table movies
-                (asin UNIQUE,movietitle PRIMARY KEY,url text,poster text,plot text,director text,writer text,runtime text,year integer,premiered text,studio text,mpaa text,actors text,genres text,stars float,votes string,TMDBbanner string,TMDBposter string,TMDBfanart string,isprime boolean,watched boolean,favor boolean)''')
+                (asin UNIQUE,
+                 movietitle TEXT,
+                 url TEXT,
+                 poster TEXT,
+                 plot TEXT,
+                 director TEXT,
+                 writer TEXT,
+                 runtime TEXT,
+                 year INTEGER,
+                 premiered TEXT,
+                 studio TEXT,
+                 mpaa TEXT,
+                 actors TEXT,
+                 genres TEXT,
+                 stars FLOAT,
+                 votes TEXT,
+                 TMDBbanner TEXT,
+                 TMDBposter TEXT,
+                 TMDBfanart TEXT,
+                 isprime BOOLEAN,
+                 watched BOOLEAN,
+                 favor BOOLEAN,
+                 TMDB_ID TEXT,
+                 PRIMARY KEY(movietitle,year))''')
+    MovieDB.commit()
+    c.close()
+
+def addMoviedb(moviedata):
+    c = MovieDB.cursor()
+    c.execute('insert or ignore into movies values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', moviedata)
+    MovieDB.commit()
+    c.close()
+
+def deleteMoviedb(asin=False):
+    if not asin:
+        asin = common.args.url
+    c = MovieDB.cursor()
+    shownamedata = c.execute('delete from movies where asin = (?)', (asin,))
+    MovieDB.commit()
+    c.close()
+
+def watchMoviedb(asin=False):
+    if not asin:
+        asin = common.args.url
+    c = MovieDB.cursor()
+    c.execute("update movies set watched=? where asin=?", (True,asin))
+    MovieDB.commit()
+    c.close()
+    
+def unwatchMoviedb(asin=False):
+    if not asin:
+        asin = common.args.url
+    c = MovieDB.cursor()
+    c.execute("update movies set watched=? where asin=?", (False,asin))
+    MovieDB.commit()
+    c.close()
+
+def favorMoviedb(asin=False):
+    if not asin:
+        asin = common.args.url
+    c = MovieDB.cursor()
+    c.execute("update movies set favor=? where asin=?", (True,asin))
+    MovieDB.commit()
+    c.close()
+    
+def unfavorMoviedb(asin=False):
+    if not asin:
+        asin = common.args.url
+    c = MovieDB.cursor()
+    c.execute("update movies set favor=? where asin=?", (False,asin))
     MovieDB.commit()
     c.close()
 
@@ -71,10 +140,36 @@ def getMovieTypes(col):
     return list
 
 def addNewMoviesdb():
-    addMoviesdb(NEW_MOVIE_URL)
+    addMoviesdb(MOVIE_URL,singlepage=True)
 
-def addMoviesdb(url=MOVIE_URL):
-    data = getURL(url)
+def addMoviesdb(url=MOVIE_URL,isprime=True,singlepage=False):
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('Refreshing Prime Movie Database')
+    dialog.update(0,'Initializing Movie Scan')
+    if not singlepage:
+        data = common.getURL(url)
+        tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        total = int(tree.find('div',attrs={'id':'resultCount','class':'resultCount'}).span.string.replace(',','').split('of')[1].split('Results')[0].strip())
+        del tree; del data
+    else:
+        total=12
+    pages = (total/12)+1
+    increment = 100.0 / pages 
+    page = 1
+    percent = int(increment*page)
+    dialog.update(percent,'Scanning Page %s of %s' % (str(page),str(pages)),'Scanned %s of %s Movies' % (str((page-1)*12),str(total)))
+    pagenext = scrapeMoviesdb(url,isprime)
+    if not singlepage:
+        while pagenext:
+            page += 1
+            percent = int(increment*page)
+            dialog.update(percent,'Scanning Page %s of %s' % (str(page),str(pages)),'Scanned %s of %s Movies' % (str((page-1)*12),str(total)))
+            pagenext = scrapeMoviesdb(pagenext,isprime)
+            if (dialog.iscanceled()):
+                return False
+ 
+def scrapeMoviesdb(url,isprime=True):
+    data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     try:
@@ -96,74 +191,30 @@ def addMoviesdb(url=MOVIE_URL):
     if nextpage:
         pagenext = common.BASE_URL + nextpage['href']
         del nextpage
-        addMoviesdb(pagenext)
+        return pagenext
+    else:
+        return False
 
 def getMovieInfo(asin,movietitle,url,poster,isPrime=False):
     c = MovieDB.cursor()
-    returndata = c.execute('select asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor from movies where asin = (?) or movietitle = (?)', (asin,movietitle)).fetchone()
+    returndata = c.execute('select asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor from movies where asin = (?) and movietitle = (?)', (asin,movietitle)).fetchone()
     c.close()
     if returndata:
         print 'AMAZON: Returning Cached Meta for ASIN: '+asin
         return returndata
     else:
         plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes = scrapeMovieInfo(asin)
-        moviedata = [asin,movietitle,url,poster,plot,director,'',runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,'','','',isPrime,False,False]
+        moviedata = [asin,movietitle,url,poster,plot,director,None,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,None,None,None,isPrime,False,False,None]
         addMoviedb(moviedata)
         print 'AMAZON: Cached Meta for ASIN: '+asin
         return moviedata
-
-def addMoviedb(moviedata):
-    c = MovieDB.cursor()
-    c.execute('insert or ignore into movies values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', moviedata)
-    MovieDB.commit()
-    c.close()
-
-def deleteMoviedb(asin=False):
-    if not asin:
-        asin = common.args.url
-    c = MovieDB.cursor()
-    shownamedata = c.execute('delete from movies where asin = (?)', (asin,))
-    MovieDB.commit()
-    c.close()
-
-def watchMoviedb(asin=False):
-    if not asin:
-        asin = common.args.url
-    c = MovieDB.cursor()
-    c.execute("update movies set watched=? where asin=?", (True,asin))
-    MovieDB.commit()
-    c.close()
-    
-def unwatchMoviedb(asin=False):
-    if not asin:
-        asin = common.args.url
-    c = MovieDB.cursor()
-    c.execute("update movies set watched=? where asin=?", (False,asin))
-    MovieDB.commit()
-    c.close()
-
-def favorMoviedb(asin=False):
-    if not asin:
-        asin = common.args.url
-    c = MovieDB.cursor()
-    c.execute("update movies set favor=? where asin=?", (True,asin))
-    MovieDB.commit()
-    c.close()
-    
-def unfavorMoviedb(asin=False):
-    if not asin:
-        asin = common.args.url
-    c = MovieDB.cursor()
-    c.execute("update movies set favor=? where asin=?", (False,asin))
-    MovieDB.commit()
-    c.close()
 
 def scrapeMovieInfo(asin):
     url = common.BASE_URL+'/gp/product/'+asin
     tags = re.compile(r'<.*?>')
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     spaces = re.compile(r'\s+')
-    data = getURL(url)
+    data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     try:
         stardata = tree.find('span',attrs={'class':'crAvgStars'}).renderContents()
@@ -239,12 +290,18 @@ def scrapeMovieInfo(asin):
     try: genres = metadict['Genre']
     except: genres = None
     return plot,director,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes
-
-MovieDBfile = os.path.join(os.getcwd().replace(';', ''),'resources','cache','movies.db')
-if not os.path.exists(MovieDBfile):
-    MovieDB = sqlite.connect(MovieDBfile)
+    
+MovieDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','movies.db')
+MovieDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
+if not os.path.exists(MovieDByourfile) and os.path.exists(MovieDBfile):
+    import shutil
+    shutil.copyfile(MovieDBfile, MovieDByourfile)
+    MovieDB = sqlite.connect(MovieDByourfile)
+    MovieDB.text_factory = str
+elif not os.path.exists(MovieDByourfile):
+    MovieDB = sqlite.connect(MovieDByourfile)
     MovieDB.text_factory = str
     createMoviedb()
 else:
-    MovieDB = sqlite.connect(MovieDBfile)
+    MovieDB = sqlite.connect(MovieDByourfile)
     MovieDB.text_factory = str

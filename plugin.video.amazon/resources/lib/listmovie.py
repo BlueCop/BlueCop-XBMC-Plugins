@@ -82,12 +82,31 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiof
     editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
     import movies as moviesDB
     movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter)
-    for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor in movies:
-        actors = actors.split(',')
+    for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor,TMDB_ID in movies:
         fanart = poster.replace('.jpg','._BO354,0,0,0_CR177,354,708,500_.jpg')
-        infoLabels={'Title':movietitle,'Plot':plot,'Year':year,'Premiered':premiered,
-                    'Rating':stars,'Votes':votes,'Genre':genres,'Director':director,
-                    'Studio':studio,'Duration':runtime,'mpaa':mpaa,'Cast':actors}
+        infoLabels={'Title':movietitle}
+        if plot:
+            infoLabels['Plot'] = plot
+        if actors:
+            infoLabels['Cast'] = actors.split(',')
+        if director:
+            infoLabels['Director'] = director
+        if year:
+            infoLabels['Year'] = year
+        if premiered:
+            infoLabels['Premiered'] = premiered
+        if stars:
+            infoLabels['Rating'] = stars           
+        if votes:
+            infoLabels['Votes'] = votes  
+        if genres:
+            infoLabels['Genre'] = genres 
+        if mpaa:
+            infoLabels['mpaa'] = mpaa
+        if studio:
+            infoLabels['Studio'] = studio
+        if runtime:
+            infoLabels['Duration'] = runtime
         cm = []
         if watched:
             infoLabels['overlay']=7

@@ -3,6 +3,8 @@
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
 import os.path
+import re
+import urllib
 import xbmcplugin
 import xbmc
 import xbmcgui
@@ -37,6 +39,7 @@ def createTVdb():
                  TVDBbanner TEXT,
                  TVDBposter TEXT,
                  TVDBfanart TEXT,
+                 TVDB_ID TEXT,
                  PRIMARY KEY(seriestitle)
                  );''')
     c.execute('''CREATE TABLE seasons(
@@ -260,17 +263,38 @@ def addShowdb(showdata):
     seriestitle = showdata[0]
     #seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart
     c = tvDB.cursor()
-    c.execute('insert or ignore into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
+    c.execute('insert or ignore into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
     tvDB.commit()
     c.close()
 
 def addTVdb(url=TV_URL,isprime=True):
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('Building Prime TV Database')
+    dialog.update(0,'Initializing TV Scan')
+    data = common.getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    total = int(tree.find('div',attrs={'id':'resultCount','class':'resultCount'}).span.string.replace(',','').split('of')[1].split('Results')[0].strip())
+    del tree; del data
+    pages = (total/12)+1
+    increment = 100.0 / pages 
+    page = 1
+    percent = int(increment*page)
+    dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)))
     pagenext = scrapeTVdb(url,isprime)
     while pagenext:
         pagenext = scrapeTVdb(pagenext,isprime)
+        page += 1
+        percent = int(increment*page)
+        dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)))
+        pagenext = scrapeMoviesdb(pagenext,isprime)
+        if (dialog.iscanceled()):
+            return False
+    fixHDshows()
+    fixGenres()
+    fixYears()
     
 def scrapeTVdb(url,isprime):
-    data = getURL(url)
+    data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     try:
@@ -329,7 +353,7 @@ def scrapeTVdb(url,isprime):
             print seasondata
             continue
         #          seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart
-        addShowdb([seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,0,episodetotal,isHD,isprime,False,None,None,None])
+        addShowdb([seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,0,episodetotal,isHD,isprime,False,None,None,None,None])
         for episodeASIN,Eseason,episodeNum,episodetitle,eurl,eplot,eairDate,eisHD in episodes:
             #                    asin,seriestitle,season,episode,episodetitle,url,plot,airdate,runtime,isHD,isprime,watched
             addEpisodedb([episodeASIN,seriestitle,Eseason,episodeNum,episodetitle,eurl,eplot,eairDate,runtime,eisHD,isprime,False])
@@ -354,7 +378,7 @@ def scrapeShowInfo(url,owned=False):
     tags = re.compile(r'<.*?>')
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     spaces = re.compile(r'\s+')
-    data = getURL(url)
+    data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     try:season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
     except:
@@ -449,51 +473,105 @@ def scrapeShowInfo(url,owned=False):
     showdata = [season,episodecount,plot,creator,runtime,year,network,actors,genres,stars,votes]
     return showdata, episodes
 
+
+def refreshTVDBshow(seriestitle=False):
+    if not seriestitle:
+        seriestitle = common.args.title
+    c = tvDB.cursor()
+    seriestitle,genre,year,TVDB_ID = c.execute('select distinct seriestitle,genres,year,TVDB_ID from shows where seriestitle = ?', (seriestitle,)).fetchone()
+    #for seriestitle,genre,year,TVDB_ID in show:
+    TVDBbanner,TVDBposter,TVDBfanart,genre2,year2,seriesid = tv_db_id_lookup(TVDB_ID,seriestitle)
+    if not genre:
+        genre = genre2
+    if not year:
+        try:
+            year = int(year2.split('-')[0])
+        except:
+            year = None
+    c.execute("update shows set TVDBbanner=?,TVDBposter=?,TVDBfanart=?,TVDB_ID=?,genres=?,year=? where seriestitle=?", (TVDBbanner,TVDBposter,TVDBfanart,seriesid,genre,year,seriestitle))
+    tvDB.commit()
+
+def scanTVDBshow(seriestitle=False):
+    if not seriestitle:
+        seriestitle = common.args.title
+    c = tvDB.cursor()
+    seriestitle,genre,year,TVDB_ID = c.execute('select distinct seriestitle,genres,year,TVDB_ID from shows where seriestitle = ?', (seriestitle,)).fetchone()
+    #for seriestitle,genre,year,TVDB_ID in show:
+    TVDBbanner,TVDBposter,TVDBfanart,genre2,year2,seriesid = tv_db_series_lookup(seriestitle,manualsearch=True)
+    if not genre:
+        genre = genre2
+    if not year:
+        try:
+            year = int(year2.split('-')[0])
+        except:
+            year = None
+    c.execute("update shows set TVDBbanner=?,TVDBposter=?,TVDBfanart=?,TVDB_ID=?,genres=?,year=? where seriestitle=?", (TVDBbanner,TVDBposter,TVDBfanart,seriesid,genre,year,seriestitle))
+    tvDB.commit()
+
 def scanTVDBshows():
     c = tvDB.cursor()
-    shows = c.execute('select distinct seriestitle,genres from shows order by seriestitle').fetchall()
-    for seriestitle,genre in shows:
-        TVDBbanner,TVDBposter,TVDBfanart,genre2 = tv_db_series_lookup(seriestitle)
-        if genre:
-            genre = genre
-        else:
+    shows = c.execute('select distinct seriestitle,genres,year from shows order by seriestitle').fetchall()
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('Refreshing Prime TV Database')
+    dialog.update(0,'Scanning TVDB Data')
+    #len(shows)
+    for seriestitle,genre,year in shows:
+        TVDBbanner,TVDBposter,TVDBfanart,genre2,year2,seriesid = tv_db_series_lookup(seriestitle)
+        if not genre:
             genre = genre2
-        c.execute("update shows set TVDBbanner=?,TVDBposter=?,TVDBfanart=?,genres=? where seriestitle=?", (TVDBbanner,TVDBposter,TVDBfanart,genre,seriestitle))
+        if not year:
+            try:
+                year = int(year2.split('-')[0])
+            except:
+                year = None
+        c.execute("update shows set TVDBbanner=?,TVDBposter=?,TVDBfanart=?,TVDB_ID=?,genres=?,year=? where seriestitle=?", (TVDBbanner,TVDBposter,TVDBfanart,seriesid,genre,year,seriestitle))
         tvDB.commit()
+        if (dialog.iscanceled()):
+            return False
     c.close()
 
 
-def tv_db_series_lookup(seriesname):
+def tv_db_series_lookup(seriesname,manualsearch=False):
     tv_api_key = '03B8C17597ECBD64'
     mirror = 'http://thetvdb.com'
     banners = 'http://thetvdb.com/banners/'
     try:
         print 'intial search'
         series_lookup = 'http://www.thetvdb.com/api/GetSeries.php?seriesname='+urllib.quote_plus(seriesname)
-        seriesid = getURL(series_lookup)
+        seriesid = common.getURL(series_lookup)
         seriesid = get_series_id(seriesid,seriesname)
     except:
         try:
             print 'strip search'
             series_lookup = 'http://www.thetvdb.com/api/GetSeries.php?seriesname='+urllib.quote_plus(seriesname.split('(')[0].split(':')[0].strip())
-            seriesid = getURL(series_lookup)
+            seriesid = common.getURL(series_lookup)
             seriesid = get_series_id(seriesid,seriesname)
         except:
             #return None,None,None,None
-            print 'manual search'
-            keyb = xbmc.Keyboard(seriesname, 'Manual Search')
-            keyb.doModal()
-            if (keyb.isConfirmed()):
-                try:
-                    series_lookup = 'http://www.thetvdb.com/api/GetSeries.php?seriesname='+urllib.quote_plus(keyb.getText())
-                    seriesid = getURL(series_lookup)
-                    seriesid = get_series_id(seriesid,seriesname)
-                except:
-                    print 'manual search failed'
-                    return None,None,None,None
+            if manualsearch:
+                print 'manual search'
+                keyb = xbmc.Keyboard(seriesname, 'Manual Search')
+                keyb.doModal()
+                if (keyb.isConfirmed()):
+                    try:
+                        series_lookup = 'http://www.thetvdb.com/api/GetSeries.php?seriesname='+urllib.quote_plus(keyb.getText())
+                        seriesid = common.getURL(series_lookup)
+                        seriesid = get_series_id(seriesid,seriesname)
+                    except:
+                        print 'manual search failed'
+                        return None,None,None,None,None,None
+            else:
+                return None,None,None,None,None,None
+    if seriesid:
+        return tv_db_id_lookup(seriesid,seriesname)
+  
+def tv_db_id_lookup(seriesid,seriesname):
+    tv_api_key = '03B8C17597ECBD64'
+    mirror = 'http://thetvdb.com'
+    banners = 'http://thetvdb.com/banners/'
     if seriesid:
         series_xml = mirror+('/api/%s/series/%s/en.xml' % (tv_api_key, seriesid))
-        series_xml = getURL(series_xml)
+        series_xml = common.getURL(series_xml)
         tree = BeautifulStoneSoup(series_xml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         try:
             genre = tree.find('genre').string
@@ -502,6 +580,10 @@ def tv_db_series_lookup(seriesname):
         except:
             print '%s - Genre Failed' % seriesname
             genre = None
+        try: aired = tree.find('firstaired').string
+        except:
+            print '%s - Air Date Failed' % seriesname
+            aired = None
         try: banner = banners + tree.find('banner').string
         except:
             print '%s - Banner Failed' % seriesname
@@ -514,9 +596,9 @@ def tv_db_series_lookup(seriesname):
         except:
             print '%s - Poster Failed' % seriesname
             poster = None
-        return banner, poster, fanart, genre
+        return banner, poster, fanart, genre, aired, seriesid
     else:
-        return None,None,None,None
+        return None,None,None,None,None,None
 
 def get_series_id(seriesid,seriesname):
     shows = BeautifulStoneSoup(seriesid, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('series')
@@ -532,11 +614,17 @@ def get_series_id(seriesid,seriesname):
         seriesid = shows[0].find('seriesid').string
     return seriesid
 
-tvDBfile = os.path.join(os.getcwd().replace(';', ''),'resources','cache','tv.db')
-if not os.path.exists(tvDBfile):
-    tvDB = sqlite.connect(tvDBfile)
+tvDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','tv.db')
+tvDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
+if not os.path.exists(tvDByourfile) and os.path.exists(tvDBfile):
+    import shutil
+    shutil.copyfile(tvDBfile, tvDByourfile)
+    tvDB = sqlite.connect(tvDByourfile)
+    tvDB.text_factory = str
+elif not os.path.exists(tvDByourfile):
+    tvDB = sqlite.connect(tvDByourfile)
     tvDB.text_factory = str
     createTVdb()
 else:
-    tvDB = sqlite.connect(tvDBfile)
+    tvDB = sqlite.connect(tvDByourfile)
     tvDB.text_factory = str

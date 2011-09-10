@@ -12,11 +12,16 @@ import re
 import os.path
 import xbmcplugin
 import xbmcgui
+import xbmcaddon
+import xbmc
 import addoncompat
 
 pluginhandle = int(sys.argv[1])
 
-COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','cookies.lwp')
+addon = xbmcaddon.Addon(id='plugin.video.amazon')
+pluginpath = addon.getAddonInfo('path')
+
+COOKIEFILE = os.path.join(xbmc.translatePath(pluginpath),'resources','cache','cookies.lwp')
 
 BASE_URL = 'http://www.amazon.com'
 
@@ -26,7 +31,7 @@ class _Info:
         print kwargs
         self.__dict__.update( kwargs )
 
-exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"','\'')) , )
+exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"',"\"")) , )
 
 
 def getURL( url , host='www.amazon.com',useCookie=False):
@@ -47,7 +52,7 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
-    u += '&name="'+urllib.quote_plus(name.replace("'",'"'))+'"'
+    u += '&name="'+urllib.quote_plus(name)+'"'
     if fanart == '':
         try:fanart = args.fanart
         except:fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
@@ -71,7 +76,7 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="play"'
-    u += '&name="'+urllib.quote_plus(name.replace("'",'"'))+'"'
+    u += '&name="'+urllib.quote_plus(name)+'"'
     utrailer = u+'&sitemode="PLAYTRAILER"'
     if traileronly:
         u += '&sitemode="PLAYTRAILER_RESOLVE"'        

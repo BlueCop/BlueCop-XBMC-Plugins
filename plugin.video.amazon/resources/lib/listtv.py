@@ -72,7 +72,7 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
     tvart=int(xbmcplugin.getSetting(pluginhandle,"tvart"))
     option = artOptions[tvart]
     editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
-    for seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart in shows:
+    for seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid in shows:
         infoLabels={'Title': seriestitle,'TVShowTitle':seriestitle}
         if plot:
             infoLabels['Plot'] = plot
@@ -110,7 +110,10 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
         else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="favorShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         if editenable == 'true':
             cm.append( ('Rename Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
-            cm.append( ('Remove Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
+            if TVDBseriesid:
+                cm.append( ('Refresh TVDB Data', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="refreshTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
+            cm.append( ('Lookup Show in TVDB', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="scanTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
+            #cm.append( ('Remove Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         common.addDir(seriestitle,'listtv',listmode,seriestitle,poster,fanart,infoLabels,cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
@@ -129,8 +132,15 @@ def LIST_TV_SEASONS(HDonly=False):
     namefilter = common.args.url
     editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
     import tv as tvDB
-    seasons = tvDB.loadTVSeasonsdb(showname=namefilter,HDonly=HDonly)
+    seasons = tvDB.loadTVSeasonsdb(showname=namefilter,HDonly=HDonly).fetchall()
+    seasonTotal = len(seasons)   
     for url,poster,season,seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime in seasons:
+        if seasonTotal == 1:
+            if isHD:
+                LIST_HDEPISODES_DB(url=seriestitle+'<split>'+str(season))
+            else:
+                LIST_EPISODES_DB(url=seriestitle+'<split>'+str(season))
+            return
         infoLabels={'Title': seriestitle,'TVShowTitle':seriestitle}
         if plot:
             infoLabels['Plot'] = plot
@@ -164,7 +174,7 @@ def LIST_TV_SEASONS(HDonly=False):
         cm = []
         if editenable == 'true':
             cm.append( ('Rename Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
-            cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
+            #cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
         if common.args.fanart and common.args.fanart <> '': fanart = common.args.fanart
         else: fanart=poster
         common.addDir(displayname,'listtv',mode,seriestitle+'<split>'+str(season),poster,fanart,infoLabels,cm=cm)
@@ -176,11 +186,13 @@ def LIST_TV_SEASONS(HDonly=False):
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
-def LIST_HDEPISODES_DB():
-    LIST_EPISODES_DB(HDonly=True)
+def LIST_HDEPISODES_DB(url=False):
+    LIST_EPISODES_DB(HDonly=True,url=url)
 
-def LIST_EPISODES_DB(HDonly=False,owned=False):
-    split = common.args.url.split('<split>')
+def LIST_EPISODES_DB(HDonly=False,owned=False,url=False):
+    if not url:
+        url = common.args.url
+    split = url.split('<split>')
     seriestitle = split[0]
     season = int(split[1])
     import tv as tvDB

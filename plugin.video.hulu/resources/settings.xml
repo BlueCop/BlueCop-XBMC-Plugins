@@ -22,8 +22,17 @@
 		<setting id="login_name" type="text" label="30001" default=""/>
 		<setting id="login_pass" type="text" label="30002" enable="!eq(-1,)" option="hidden" default=""/>
 		<setting type="sep" />
-	</category>
 
+	</category>
+	
+	<!-- Library -->
+	<category label="30104">
+		<setting type="sep" />
+		<setting id="enablelibraryfolder" type="bool" label="30033" default="true"/>
+		<setting id="customlibraryfolder" type="folder" label="30032" default=""/>
+		<setting id="updatelibrary" type="bool" label="30034" default="true"/>
+		<setting type="sep" />	
+	</category>
 
 	<!-- Advanced -->
 	<category label="30103">

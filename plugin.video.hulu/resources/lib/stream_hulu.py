@@ -41,13 +41,13 @@ class Main:
 
     def __init__( self ):
         #Initialize playback progress dialog
-        self.pDialog = xbmcgui.DialogProgress()
-        self.Heading = 'Hulu'
-        self.text1 = 'Preparing for Playback'
-        self.text2 = ''
-        self.text3 = ''
-        self.pDialog.create(self.Heading)
-        self.pDialog.update(0 , self.text1, self.text2, self.text3)
+        #self.pDialog = xbmcgui.DialogProgress()
+        #self.Heading = 'Hulu'
+        #self.text1 = 'Preparing for Playback'
+        #self.text2 = ''
+        #self.text3 = ''
+        #self.pDialog.create(self.Heading)
+        #self.pDialog.update(0 , self.text1, self.text2, self.text3)
         #select from avaliable streams, then play the file
         self.play()
         
@@ -182,7 +182,7 @@ class Main:
         srt_output = ''
 
         print "HULU: --> Converting subtitles to SRT"
-        self.update_dialog('Converting Subtitles to SRT')
+        #self.update_dialog('Converting Subtitles to SRT')
         lines = subtitle_data.findAll('sync') #split the file into lines
         for line in lines:
             if(line['encrypted'] == 'true'):
@@ -226,7 +226,7 @@ class Main:
         file.write(srt_output)
         file.close()
         print "HULU: --> Successfully converted subtitles to SRT"
-        self.update_dialog('Conversion Complete')
+        #self.update_dialog('Conversion Complete')
         return True
 
     def checkCaptions(self, video_id):
@@ -236,19 +236,19 @@ class Main:
         hasSubs = capSoup.find('en')
         if(hasSubs):
             print "HULU --> Grabbing subtitles..."
-            self.update_dialog('Downloading Subtitles')
+            #self.update_dialog('Downloading Subtitles')
             html=common.getHTML(hasSubs.string)
             ok = self.convert_subtitles(html,video_id)
             if ok:
                 print "HULU --> Subtitles enabled."
-                self.update_dialog('Subtitles Completed Successfully')
+                #self.update_dialog('Subtitles Completed Successfully')
             else:
                 print "HULU --> There was an error grabbing the subtitles."
-                self.update_dialog('Error Downloading Subtitles')
+                #self.update_dialog('Error Downloading Subtitles')
 
         else:
             print "HULU --> No subtitles available."
-            self.update_dialog('No Subtitles Available')
+            #self.update_dialog('No Subtitles Available')
 
 
     def getSMIL(self, video_id):
@@ -282,9 +282,9 @@ class Main:
             smilURL += '&language='+parameters['language']
             smilURL += '&bcs='+self.content_sig(parameters)
             print 'HULU --> SMILURL: ' + smilURL
-            self.update_dialog('Grabbing SMIL File')
+            #self.update_dialog('Grabbing SMIL File')
             smilXML=common.getFEED(smilURL)
-            self.update_dialog('Decrypting SMIL File')
+            #self.update_dialog('Decrypting SMIL File')
             tmp=self.decrypt_SMIL(smilXML)
             smilSoup=BeautifulStoneSoup(tmp, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
             return smilSoup
@@ -312,20 +312,27 @@ class Main:
     def play( self ):
         video_id=common.args.url
         print 'Video ID: '+video_id
-        self.update_dialog('Playing Video ID: '+video_id)
+        #self.update_dialog('Playing Video ID: '+video_id)
 
         #get closed captions/subtitles
         if (common.settings['enable_captions'] == 'true'):
-            self.update_dialog('Subtitles Enabled')
+            #self.update_dialog('Subtitles Enabled')
             self.checkCaptions(video_id)
-        else:
-            self.update_dialog('Subtitles Disabled')
+        #else:
+            #self.update_dialog('Subtitles Disabled')
 
         #getSMIL
         smilSoup = self.getSMIL(video_id)
         print smilSoup.prettify()
 
-        self.update_dialog('Selecting Video Stream')
+        #self.update_dialog('Selecting Video Stream')
+        ref = smilSoup.findAll('ref')[1]
+        title = ref['title']
+        series_title = ref['tp:series_title']
+        try:season = int(ref['tp:season_number'])
+        except:season = -1
+        try:episode = int(ref['tp:episode_number'])
+        except:episode = -1
         
         #getRTMP
         video=smilSoup.findAll('video')
@@ -402,7 +409,11 @@ class Main:
             if (common.settings['swfverify'] == 'true'):
                 newUrl += " swfvfy=true"
             
-            item = xbmcgui.ListItem(path=newUrl)
+            item = xbmcgui.ListItem(title,path=newUrl)
+            item.setInfo( type="Video", infoLabels={ "Title":title,
+                                                     "TVShowTitle":series_title,
+                                                     "Season":season,
+                                                     "Episode":episode})
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
             #Enable Subtitles
@@ -412,14 +423,13 @@ class Main:
                 import time
                 time.sleep(4)
                 xbmc.Player().setSubtitles(subtitles)
-            # DISABLED HISTORY    
             #if common.settings['enable_login']=='true' and common.settings['usertoken']:     
             #    action = "event"
             #    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
             #    parameters = {'event_type':'view',
             #                  'token':common.settings['usertoken'],
             #                  'target_type':'video',
-            #                  'id':pid,
+            #                  'id':video_id,
             #                  'app':app}
             #    common.postAPI(action,parameters,False)
             #    print "Posted view to Hulu"

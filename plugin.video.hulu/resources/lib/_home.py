@@ -1,7 +1,7 @@
 import xbmc
 import xbmcplugin
 from xbmcgui import Dialog
-
+import urllib
 import common
 import os
 import sys
@@ -43,14 +43,16 @@ class Main:
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_search.jpg"))
             common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,page='1',perpage='25')
         if common.settings['enable_login']=='true':
-            try:
-                if not os.path.isfile(common.QUEUETOKEN):
-                    common.login_queue()
-                thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_queue.jpg"))
-                common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
-                thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_subscriptions.jpg"))
-                common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
-                thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_history.jpg"))
-                common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
-            except:
-                print 'Hulu Queue Failure'
+            #try:
+            if not os.path.isfile(common.QUEUETOKEN):
+                common.login_queue()
+            thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_queue.jpg"))
+            cm = [ ('Add Queue to Library', "XBMC.RunPlugin(%s?mode='updatexbmclibrary')" % ( sys.argv[0] ) ) ]
+            common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
+            thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_subscriptions.jpg"))
+            cm = [ ('Add Subscriptions to Library', "XBMC.RunPlugin(%s?mode='xbmclibrary')" % ( sys.argv[0] ) ) ]
+            common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
+            thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_history.jpg"))
+            common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
+            #except:
+            #    print 'Hulu Queue Failure'

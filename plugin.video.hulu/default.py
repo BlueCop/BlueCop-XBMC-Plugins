@@ -28,6 +28,9 @@ def modes( ):
         if sys.argv[2]=='':
             import resources.lib._home as home
             home.Main()
+        elif common.args.mode.endswith('xbmclibrary'):
+            import resources.lib.xbmclibrary as xbmclibrary
+            xbmclibrary.Main()
         elif common.args.mode.endswith('_play'):
             import resources.lib.stream_hulu as stream_media
             stream_media.Main()
@@ -46,7 +49,6 @@ def modes( ):
         elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history') or common.args.mode.endswith('vote'):
             common.queueEdit()
         else:
-            import xbmcgui
             xbmcgui.Dialog().ok('common.args.mode',common.args.mode)
             print "unknown mode--> "+common.args.mode
 

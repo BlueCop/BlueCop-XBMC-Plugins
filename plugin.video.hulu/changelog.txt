@@ -1,3 +1,7 @@
+[B]Version 2.9.3[/B]
+
+- added some strm and nfo dumping to add subscriptions and queue to xbmc library
+
 [B]Version 2.9.2[/B]
 
 - fixed bug for items without thumbnail data

@@ -1,6 +1,7 @@
 import xbmcplugin
 import xbmc
 import xbmcgui
+import xbmcaddon
 #import xbmcaddon
 import addoncompat
 import urllib
@@ -35,11 +36,14 @@ BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu?show_id=0&dp_id=huludesktop
 #define etc.
 login_url   = "https://secure.hulu.com/account/authenticate"
 #define file locations
-COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','cache','hulu-cookies.lwp')
-QUEUETOKEN = os.path.join(os.getcwd().replace(';', ''),'resources','cache','token.xml')
-cachepath = os.path.join(os.getcwd().replace(';', ''),'resources','cache')
-imagepath  = os.path.join(os.getcwd().replace(';', ''),'resources','images')
-hulu_fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
+addon = xbmcaddon.Addon(id='plugin.video.hulu')
+pluginpath = addon.getAddonInfo('path')
+
+COOKIEFILE = os.path.join(pluginpath,'resources','cache','hulu-cookies.lwp')
+QUEUETOKEN = os.path.join(pluginpath,'resources','cache','token.xml')
+cachepath = os.path.join(pluginpath,'resources','cache')
+imagepath  = os.path.join(pluginpath,'resources','images')
+hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
 #addon = xbmcaddon.Addon(id='plugin.video.hulu')
 
 
@@ -68,6 +72,11 @@ allperpage = int(addoncompat.get_setting("allperpage" ))
 settings['allperpage'] = page[allperpage]
 searchperpage = int(addoncompat.get_setting("searchperpage" ))
 settings['searchperpage'] = page[searchperpage]
+
+settings['enablelibraryfolder'] = addoncompat.get_setting("enablelibraryfolder")
+settings['customlibraryfolder'] = addoncompat.get_setting("customlibraryfolder")
+settings['updatelibrary'] = addoncompat.get_setting("updatelibrary")
+
 #settings login
 settings['login_name'] = addoncompat.get_setting("login_name")
 settings['login_pass'] = addoncompat.get_setting("login_pass")
@@ -105,7 +114,7 @@ try:
 except:
     args.fanart=''
 
-def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plot='', genre='', showid='', season='', page = '1',perpage='',popular='false',updatelisting='false'):
+def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plot='', genre='', showid='', season='', page = '1',perpage='',popular='false',updatelisting='false',cm=False):
     ok=True
     u = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
@@ -118,6 +127,8 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
     liz=xbmcgui.ListItem(name, iconImage=icon, thumbnailImage=icon)
     liz.setInfo( type="Video", infoLabels={ "Title":name, "Plot":cleanNames(plot), "Genre":genre})
     liz.setProperty('fanart_image',fanart)
+    if cm:
+        liz.addContextMenuItems( cm )
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
     return ok
 

@@ -30,8 +30,13 @@
 	<string id="30029">limelight</string>
 	<string id="30030">akamai</string>
 	<string id="30031">SWF Verify</string>
-
+	
+	<string id="30032">Custom Library Folder</string>
+	<string id="30033">Library Folder stored in addon settings</string>
+	<string id="30034">Update Library when complete</string>
+	
 	<string id="30101">General</string>
 	<string id="30102">Hulu+ Login</string>
-	<string id="30103">Advanced</string>
+	<string id="30103">Streaming</string>
+	<string id="30104">Library</string>
 </strings>

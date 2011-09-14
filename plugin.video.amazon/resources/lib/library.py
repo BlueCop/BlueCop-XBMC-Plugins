@@ -41,7 +41,7 @@ def LIBRARY_LIST_MOVIES():
         #else:
         infoLabels = { 'Title':name}
         common.addVideo(name,url,thumb,fanart,infoLabels=infoLabels,totalItems=totalItems)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")

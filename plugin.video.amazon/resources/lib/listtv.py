@@ -69,9 +69,9 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
     import tv as tvDB
     shows = tvDB.loadTVShowdb(HDonly=HDonly,genrefilter=genrefilter,creatorfilter=creatorfilter,networkfilter=networkfilter,yearfilter=yearfilter,favorfilter=favorfilter)
     artOptions = ['Poster','Banner','Amazon']
-    tvart=int(xbmcplugin.getSetting(pluginhandle,"tvart"))
+    tvart=int(common.addon.getSetting("tvart"))
     option = artOptions[tvart]
-    editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
+    editenable=common.addon.getSetting("editenable")
     for seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid in shows:
         infoLabels={'Title': seriestitle,'TVShowTitle':seriestitle}
         if plot:
@@ -119,9 +119,9 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"showview"))
+        view=int(common.addon.getSetting("showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
@@ -130,7 +130,7 @@ def LIST_HDTV_SEASONS():
    
 def LIST_TV_SEASONS(HDonly=False):
     namefilter = common.args.url
-    editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
+    editenable=common.addon.getSetting("editenable")
     import tv as tvDB
     seasons = tvDB.loadTVSeasonsdb(showname=namefilter,HDonly=HDonly).fetchall()
     seasonTotal = len(seasons)   
@@ -180,9 +180,9 @@ def LIST_TV_SEASONS(HDonly=False):
         common.addDir(displayname,'listtv',mode,seriestitle+'<split>'+str(season),poster,fanart,infoLabels,cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.setContent(pluginhandle, 'tvshows')
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"seasonview"))
+        view=int(common.addon.getSetting("seasonview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
 
@@ -222,8 +222,8 @@ def LIST_EPISODES_DB(HDonly=False,owned=False,url=False):
         common.addVideo(displayname,url,poster,fanart,infoLabels=infoLabels,cm=cm)
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.setContent(pluginhandle, 'Episodes')
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"episodeview"))
+        view=int(common.addon.getSetting("episodeview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")  
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)

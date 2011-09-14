@@ -557,7 +557,6 @@ def tv_db_series_lookup(seriesname,manualsearch=False):
             seriesid = common.getURL(series_lookup)
             seriesid = get_series_id(seriesid,seriesname)
         except:
-            #return None,None,None,None
             if manualsearch:
                 print 'manual search'
                 keyb = xbmc.Keyboard(seriesname, 'Manual Search')
@@ -574,6 +573,8 @@ def tv_db_series_lookup(seriesname,manualsearch=False):
                 return None,None,None,None,None,None
     if seriesid:
         return tv_db_id_lookup(seriesid,seriesname)
+    else:
+        return None,None,None,None,None,None
   
 def tv_db_id_lookup(seriesid,seriesname):
     tv_api_key = '03B8C17597ECBD64'

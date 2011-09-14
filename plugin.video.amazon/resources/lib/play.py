@@ -55,11 +55,13 @@ def GETSTREAMS(getstream):
         sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
         cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
         rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
-        return rtmpurls, sessionId, cdn
+        title = rtmpdata['message']['body']['metadata']['title'].replace('[HD]','')
+        return rtmpurls, sessionId, cdn, title
     except:
         return False, False, False
 
 def PLAYVIDEO():
+    common.mechanizeLogin()
     swfUrl, values = GETFLASHVARS(common.args.url)            
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
@@ -72,11 +74,11 @@ def PLAYVIDEO():
     getstream += '&xws-fa-ov=true'
     getstream += '&format=json'
     getstream += '&version=1'
-    rtmpurls, streamSessionID, cdn = GETSTREAMS(getstream)
+    rtmpurls, streamSessionID, cdn, title = GETSTREAMS(getstream)
     if cdn == 'limelight':
         xbmcgui.Dialog().ok('Limelight CDN','Limelight uses swfverfiy2. Playback may fail.')
     if rtmpurls <> False:
-        basertmp, ip = PLAY(rtmpurls,swfUrl=swfUrl)
+        basertmp, ip = PLAY(rtmpurls,swfUrl=swfUrl,title=title)
     if streamSessionID <> False:
         epoch = str(int(time.mktime(time.gmtime()))*1000)
         USurl =  'https://atv-ps.amazon.com/cdp/usage/UpdateStream'
@@ -180,10 +182,10 @@ def GETFLASHVARS(pageurl):
             values['userAgent']     = item[1]
     return swfUrl, values
         
-def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True):
+def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True,title=False):
     print rtmpurls
     quality = [0,2500,1328,996,664,348]
-    lbitrate = quality[int(xbmcplugin.getSetting(pluginhandle,"bitrate"))]
+    lbitrate = quality[int(common.addon.getSetting("bitrate"))]
     mbitrate = 0
     streams = []
     for data in rtmpurls:
@@ -222,5 +224,6 @@ def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True):
         xbmc.Player().play(finalUrl,item)
     else:
         item = xbmcgui.ListItem(path=finalUrl)
+        item.setInfo( type="Video", infoLabels={ "Title": title})
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     return basertmp, ip

@@ -13,7 +13,7 @@
 	
 
 	<string id="30012">Library</string>
-	<string id="30013">Enable Amazon Library</string>
+	<string id="30013">Enable Amazon Rented/Purchased Library</string>
 	<string id="30014">Library Metadata(cached)</string>
 
 	<string id="30015">Views</string>
@@ -40,4 +40,8 @@
 	
 	<string id="30033">Enable DB Edit</string>
 	<string id="30035">Enable Views</string>
+	
+	<string id="30036">Custom Library Folder</string>
+	<string id="30037">Library Folder stored in addon settings</string>
+	<string id="30038">Update Library when complete</string>
 </strings>

@@ -13,8 +13,11 @@
 	<category label="30012">
 		<setting type="sep" />
 		<setting id="enablelibrary" type ="bool" label="30013" default="true"/>
-		<setting id="editenable" type ="bool" label="30033" default="false"/>
 		<!-- <setting id="enablelibrarymeta" type ="bool" label="30014" default="true"/> -->
+		<setting type="sep" />
+		<setting id="enablelibraryfolder" type="bool" label="30037" default="true"/>
+		<setting id="customlibraryfolder" type="folder" label="30036" default=""/>
+		<setting id="updatelibrary" type="bool" label="30038" default="false"/>
 		<setting type="sep" />
 	</category>
 	<!-- Views -->
@@ -22,6 +25,7 @@
 		<setting type="sep" />
 		<!-- <setting id="movieart" type="enum" lvalues="30020|30021|30022" label="30016" default="0"/> -->
 		<setting id="tvart" type="enum" lvalues="30018|30019|30022" label="30017" default="0"/>
+		<setting id="editenable" type ="bool" label="30033" default="false"/>
 		<setting type="sep" />
 		<setting id="viewenable" type ="bool" label="30035" default="true"/>
 		<setting id="movieview" type="enum" lvalues="30023|30024|30025|30026|30027|30028" label="30029" default="5"/>

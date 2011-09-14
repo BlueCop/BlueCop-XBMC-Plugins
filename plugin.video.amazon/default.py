@@ -26,21 +26,23 @@ print "\n\n\n\n\n\n\n====================AMAZON START====================\n\n\n\
 def modes( ):
     if sys.argv[2]=='':
         common.mechanizeLogin()
-        updatemovie = []  
-        updatemovie.append( ('Full Movie Refresh', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="addMoviesdb")' % ( sys.argv[0] ) ) )
-        updatemovie.append( ('Recent Movies Refresh',  'XBMC.RunPlugin(%s?mode="movies"&sitemode="addNewMoviesdb")' % ( sys.argv[0] ) ) )
+        updatemovie = []
+        updatemovie.append( ('Export Movie Favorites to Library',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="xbmclibrary"&sitemode="LIST_MOVIES")' ) )
+        updatemovie.append( ('Full Movie Refresh(DB)', 'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="movies"&sitemode="addMoviesdb")' ) )
+        updatemovie.append( ('Recent Movies Refresh(DB)',  'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="movies"&sitemode="addNewMoviesdb")' ) )
         common.addDir('Movies','listmovie','LIST_MOVIE_ROOT', cm=updatemovie)
-        updatetv = [] 
-        updatetv.append( ('Full Television Refresh', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="addTVdb")' % ( sys.argv[0] ) ) )
+        updatetv = []
+        updatetv.append( ('Export TV Favorites to Library',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="xbmclibrary"&sitemode="LIST_TVSHOWS")' ) )
+        updatetv.append( ('Full Television Refresh(DB)', 'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="addTVdb")' ) )
         #updatetv.append( ('Update New Television',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="addNewTVdb")' % ( sys.argv[0] ) ) )
-        updatetv.append( ('Scan TVDB',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="scanTVDBshows")' % ( sys.argv[0] ) ) )
-        updatetv.append( ('Delete User Database',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteUserDatabase")' % ( sys.argv[0] ) ) )
-        updatetv.append( ('Delete Backup Database',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteBackupDatabase")' % ( sys.argv[0] ) ) )
+        updatetv.append( ('Scan TVDB(DB)',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="scanTVDBshows")' ) )
+        updatetv.append( ('Delete User Database',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="deleteUserDatabase")' ) )
+        updatetv.append( ('Delete Backup Database',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="deleteBackupDatabase")' ) )
         #updatetv.append( ('Fix HD Shows',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixHDshows")' % ( sys.argv[0] ) ) )
         #updatetv.append( ('Fix Genres',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixGenres")' % ( sys.argv[0] ) ) )
         #updatetv.append( ('Fix Years',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixYears")' % ( sys.argv[0] ) ) )
         common.addDir('Television','listtv','LIST_TV_ROOT', cm=updatetv)
-        if xbmcplugin.getSetting(pluginhandle,'enablelibrary') == 'true':
+        if common.addon.getSetting('enablelibrary') == 'true':
             common.addDir('My Library','library','LIBRARY_ROOT')
         xbmcplugin.endOfDirectory(pluginhandle)
     else:

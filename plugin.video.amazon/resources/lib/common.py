@@ -14,12 +14,12 @@ import xbmcplugin
 import xbmcgui
 import xbmcaddon
 import xbmc
-import addoncompat
+
+print sys.argv
+addon = xbmcaddon.Addon('plugin.video.amazon')
+pluginpath = addon.getAddonInfo('path')
 
 pluginhandle = int(sys.argv[1])
-
-addon = xbmcaddon.Addon(id='plugin.video.amazon')
-pluginpath = addon.getAddonInfo('path')
 
 COOKIEFILE = os.path.join(xbmc.translatePath(pluginpath),'resources','cache','cookies.lwp')
 
@@ -32,7 +32,6 @@ class _Info:
         self.__dict__.update( kwargs )
 
 exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"',"\"")) , )
-
 
 def getURL( url , host='www.amazon.com',useCookie=False):
     print 'getURL: '+url
@@ -66,7 +65,7 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     if not infoLabels:
         infoLabels={ "Title": name}
     if cm:
-        item.addContextMenuItems( cm )
+        item.addContextMenuItems( cm, replaceItems=True  )
     item.setInfo( type="Video", infoLabels=infoLabels)
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True,totalItems=totalItems)
 
@@ -88,7 +87,7 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     liz.setProperty('fanart_image',fanart)
     liz.setProperty('IsPlayable', 'true')
     if cm:
-        liz.addContextMenuItems( cm )
+        liz.addContextMenuItems( cm , replaceItems=True )
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
 
 def mechanizeLogin():
@@ -101,8 +100,8 @@ def mechanizeLogin():
     br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
     sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html")   
     br.select_form(name="sign-in")  
-    br["email"] = xbmcplugin.getSetting(pluginhandle,"login_name")
-    br["password"] = xbmcplugin.getSetting(pluginhandle,"login_pass")
+    br["email"] = addon.getSetting("login_name")
+    br["password"] = addon.getSetting("login_pass")
     logged_in = br.submit()  
     error_str = "The e-mail address and password you entered do not match any accounts on record."  
     if error_str in logged_in.read():

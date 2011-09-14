@@ -92,7 +92,7 @@ def LIST_MOVIES_FAVOR_FILTERED():
 
 def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False):
     xbmcplugin.setContent(pluginhandle, 'Movies')
-    editenable=xbmcplugin.getSetting(pluginhandle,"editenable")
+    editenable=common.addon.getSetting("editenable")
     import movies as moviesDB
     movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter,alphafilter=alphafilter)
     for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor,TMDB_ID in movies:
@@ -136,8 +136,8 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiof
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
+        view=int(common.addon.getSetting("movieview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)

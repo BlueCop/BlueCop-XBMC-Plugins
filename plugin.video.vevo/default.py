@@ -9,13 +9,18 @@ import addoncompat
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import demjson
+import glob
+import unicodedata 
 
 pluginhandle = int(sys.argv[1])
 xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
+addon = xbmcaddon.Addon('plugin.video.amazon')
+pluginpath = addon.getAddonInfo('path')
+
 BASE = 'http://www.vevo.com'
-COOKIEFILE = os.path.join(os.getcwd().replace(';', ''),'resources','vevo-cookies.lwp')
-USERFILE = os.path.join(os.getcwd().replace(';', ''),'resources','userfile.js')
+COOKIEFILE = os.path.join(pluginpath,'resources','vevo-cookies.lwp')
+USERFILE = os.path.join(pluginpath,'resources','userfile.js')
 
 # Root listing
 def listCategories():
@@ -105,11 +110,11 @@ def processVideos(tree,total=False):
         displayname = artist+' - '+title
         item=xbmcgui.ListItem(displayname, iconImage=thumbnail, thumbnailImage=thumbnail)
         item.setInfo( type="Music", infoLabels={ "Title":title,
-                                                 "Artist":artist
-                                                 })
+                                                 "Artist":artist})
         item.addContextMenuItems( cm )
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
+    return total
 
 # common genre listing for artists and videos
 def addGenres(url,mode):
@@ -215,17 +220,22 @@ def listArtistsVideos(url = False,total=False):
     if not url:
         url = params['url']
     data = getURL(url)
+    artistid = re.compile("Vevo.pageData = { pageType: 'artistProfile', artistID: '(.*?)' };").findall(data)[0]
+    page1 = 'http://www.vevo.com/videos/artist/'+artistid
+    listArtistsVideos2(page1,artistid)
+    
+def listArtistsVideos2(url,artistid,pagenumber=False):
+    data = getURL(url) 
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    processVideos(tree,total)
-    try:
-        nexturl = BASE+tree.find('a',attrs={'title' : 'Go to Next Page'})['href']
-        del tree
-        del data
-        if not total:
-            total = 60
-        listArtistsVideos(nexturl,total+60)
-    except:
-        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    total = processVideos(tree)
+    if 'Show More Videos' in data:
+        if pagenumber:
+            pagenumber += 1
+        else:
+            pagenumber = 2
+        nextpage = 'http://www.vevo.com/videos/artistvideos/'+artistid+'?page='+str(pagenumber)
+        listArtistsVideos2(nextpage,artistid,pagenumber)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Playlist listings
 def rootPlaylists():
@@ -291,8 +301,8 @@ def playPlaylist():
         playlist.add(url=u, listitem=item)
     xbmc.Player().play(playlist)
 
-# Channel listings    
-def rootChannels(url = False):
+# Channel listings
+def rootChannels(url = False,playlist=True):
     if not url:
         url = params['url']
     data = getURL(url)
@@ -302,14 +312,33 @@ def rootChannels(url = False):
         url = BASE+show.a['href']
         thumbnail = show.find('img')['src'].split('?')[0]
         title = show.find('img')['title']
-        addDir(title, url, 'Channel', iconimage=thumbnail)
+        if playlist:
+            addDir(title, url, 'Channel', iconimage=thumbnail)
+        else:
+            addDir(title, url, 'listArtistsVideos', iconimage=thumbnail)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def Channel():
     url = params['url']
-    addDir('Videos', url, 'listArtistsVideos')
+    addDir('Videos', url, 'listChannelVideos')
     addDir('Playlists', url+'/Playlists', 'ChannelPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle)
+
+def listChannelVideos(url = False,total=False):
+    if not url:
+        url = params['url']
+    data = getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    processVideos(tree,total)
+    try:
+        nexturl = BASE+tree.find('a',attrs={'title' : 'Go to Next Page'})['href']
+        del tree
+        del data
+        if not total:
+            total = 60
+        listChannelVideos(nexturl,total+60)
+    except:
+        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def ChannelPlaylists():
     url = params['url']
@@ -363,7 +392,7 @@ def Search(mode):
                 if mode == 'Videos':
                     listVideos(url)
                 elif mode == 'Artists':
-                    rootChannels(url)
+                    rootChannels(url=url,playlist=False)
     
 # Play Video
 def playVideo():

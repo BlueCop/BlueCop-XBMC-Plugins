@@ -471,9 +471,9 @@ class Main:
                 print 'HULU --> Not Playing'
                 xbmc.sleep(100)
             #Enable Subtitles
+            subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
             if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
                 print "HULU --> Setting subtitles"
-                subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
                 self.p.setSubtitles(subtitles)
             if common.settings['enable_login']=='true' and common.settings['usertoken']:
                 action = "event"

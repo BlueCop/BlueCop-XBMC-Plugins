@@ -4,7 +4,6 @@ import urllib, urllib2, cookielib
 import string, os, re, time, datetime
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
-import addoncompat
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
@@ -397,12 +396,12 @@ def Search(mode):
 # Play Video
 def playVideo():
     playlistVideo()
-    if addoncompat.get_setting('continousplay') == 'true':
+    if addon.getSetting('continousplay') == 'true':
         relatedList()
 
 def relatedList():
     rmodes = ['a','b']
-    index = int(addoncompat.get_setting('relatedmode'))
+    index = int(addon.getSetting('relatedmode'))
     relatedmode = rmodes[index]
     url = 'http://www.vevo.com/related/video/'+params['url'].split('/')[-1]+'?source=watch&max=30&mode='+relatedmode
     data = getURL(url)
@@ -427,15 +426,15 @@ def relatedList():
 def playlistVideo():
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
-    if addoncompat.get_setting('unpause') == 'true':
+    if addon.getSetting('unpause') == 'true':
         import time
-        sleeptime = int(addoncompat.get_setting('unpausetime'))+1
+        sleeptime = int(addon.getSetting('unpausetime'))+1
         time.sleep(sleeptime)
         xbmc.Player().pause()
 
 def getVideo(pageurl):
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
-    select = int(addoncompat.get_setting('bitrate'))
+    select = int(addon.getSetting('bitrate'))
     maxbitrate = quality[select]
     vevoID = pageurl.split('/')[-1]
     url = 'http://smilstream.vevo.com/HDFlash/v1/smil/%s/%s.smil' % (vevoID,vevoID.lower())
@@ -507,7 +506,7 @@ def UserPost( url ):
 
 def login_cookie():
     #don't do anything if they don't have a password or username entered
-    if addoncompat.get_setting('login_name')=='' or addoncompat.get_setting('login_pass')=='':
+    if addon.getSetting('login_name')=='' or addon.getSetting('login_pass')=='':
         print "VEVO --> WARNING: Could not login.  Please enter a username and password in settings"
         return False
     cj = cookielib.LWPCookieJar()
@@ -521,8 +520,8 @@ def login_cookie():
                          ('Content-Type', 'application/x-www-form-urlencoded'),
                          ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)'),
                          ('Connection', 'keep-alive')]
-    data =urllib.urlencode({"email":addoncompat.get_setting('login_name'),
-                            "password":addoncompat.get_setting('login_pass'),
+    data =urllib.urlencode({"email":addon.getSetting('login_name'),
+                            "password":addon.getSetting('login_pass'),
                             "__RequestVerificationToken":token,
                             "btnLogin":"Login"})
     login_url = 'http://www.vevo.com/login?returnUrl=http%3A%2F%2Fwww.vevo.com%2F'

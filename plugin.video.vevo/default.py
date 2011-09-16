@@ -14,7 +14,7 @@ import unicodedata
 pluginhandle = int(sys.argv[1])
 xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
-addon = xbmcaddon.Addon('plugin.video.amazon')
+addon = xbmcaddon.Addon('plugin.video.vevo')
 pluginpath = addon.getAddonInfo('path')
 
 BASE = 'http://www.vevo.com'
@@ -532,7 +532,7 @@ def login_cookie():
     for index, cookie in enumerate(cj):
         print 'VEVO--> '+str(index)+': '+str(cookie)
     cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    usercontext = 'http://www.vevo.com/Proxy/User/GetUserContext.ashx?_=195283'
+    usercontext = 'http://www.vevo.com/Proxy/User/GetUserContext.ashx'
     data = UserPost( usercontext )
     file = open(USERFILE, 'w')
     file.write(data)

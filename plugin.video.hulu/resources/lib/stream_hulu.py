@@ -38,27 +38,19 @@ smildeckeys = [
 
 class ResumePlayer( xbmc.Player ) :            
     def __init__ ( self ):
-        pass
-        #xbmc.Player.__init__( self )
+        xbmc.Player.__init__( self )
+        self.player_playing = False
         
     def onPlayBackStarted(self):
-        print 'HULU --> playback started'
-        self.player_playing = True
+        print 'HULU --> onPlayBackStarted'
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            self.content_id=common.args.url
-            try:
-                url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
-                data= common.getFEED(url)
-                tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-                position = float(tree.find('position').string)
-                should_resume = tree.find('should_resume').string
-                if should_resume == '1':
-                    self.seekTime(position)
-            except: print 'HULU --> failed to seek'
+            if self.player_playing:
+                self.seekPlayback()
+            self.player_playing = True
             while self.player_playing:
                 try:
-                    self.stoptime = self.getTime()
                     xbmc.sleep(1000)
+                    self.stoptime = self.getTime()
                 except:
                     pass
 
@@ -67,7 +59,6 @@ class ResumePlayer( xbmc.Player ) :
             print "HULU --> onPlayBackStopped "+str(self.stoptime)
             common.postSTOP( 'stop',self.content_id, self.stoptime )
             self.player_playing = False
-            return False
 
     def onPlayBackEnded(self):
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
@@ -83,8 +74,19 @@ class ResumePlayer( xbmc.Player ) :
             common.postAPI(action,parameters,False)
             print "HULU --> Posted view_complete complete"
             self.player_playing = False
-            return False
 
+    def seekPlayback(self):
+        if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            self.content_id=common.args.url
+            try:
+                url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
+                data= common.getFEED(url)
+                tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                position = float(tree.find('position').string)
+                should_resume = tree.find('should_resume').string
+                if should_resume == '1':
+                    self.seekTime(position)
+            except: print 'HULU --> failed to seek'
 
 class Main:
 
@@ -271,7 +273,7 @@ class Main:
             line = str(i+1)+"\n"+str(subtitle['start'])+" --> "+str(subtitle['end'])+"\n"+str(subtitle['text'])+"\n\n"
             srt_output += line
         
-        file = open(os.path.join(os.getcwd().replace(';', ''),'resources','cache',output+'.srt'), 'w')
+        file = open(os.path.join(common.pluginpath,'resources','cache',output+'.srt'), 'w')
         file.write(srt_output)
         file.close()
         print "HULU: --> Successfully converted subtitles to SRT"
@@ -465,12 +467,13 @@ class Main:
                                                      "Episode":episode})
             self.p=ResumePlayer()
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            while not self.p.isPlaying():
+                print 'HULU --> Not Playing'
+                xbmc.sleep(100)
             #Enable Subtitles
-            subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',video_id+'.srt')
             if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
                 print "HULU --> Setting subtitles"
-                import time
-                time.sleep(4)
+                subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
                 self.p.setSubtitles(subtitles)
             if common.settings['enable_login']=='true' and common.settings['usertoken']:
                 action = "event"
@@ -482,4 +485,4 @@ class Main:
                               'app':app}
                 common.postAPI(action,parameters,False)
                 print "HULU --> Posted view"
-            self.p.onPlayBackStarted()
+                self.p.onPlayBackStarted()

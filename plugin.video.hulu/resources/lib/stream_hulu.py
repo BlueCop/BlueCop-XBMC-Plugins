@@ -42,25 +42,25 @@ class ResumePlayer( xbmc.Player ) :
         
     def onPlayBackStarted(self):
         print 'HULU --> playback started'
-        #if common.settings['enable_login']=='true' and common.settings['usertoken']:     
-        #    action = "event"
-        #    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-        #    parameters = {'event_type':'view',
-        #                  'token':common.settings['usertoken'],
-        #                  'target_type':'video',
-        #                  'id':video_id,
-        #                  'app':app}
-        #    common.postAPI(action,parameters,False)
-        #    print "HULU --> Posted view"
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            action = "event"
+            app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+            parameters = {'event_type':'view',
+                          'token':common.settings['usertoken'],
+                          'target_type':'video',
+                          'id':common.args.videoid,
+                          'app':app}
+            common.postAPI(action,parameters,False)
+            print "HULU --> Posted view"
             self.content_id=common.args.url
-            xbmc.sleep(1000)
             try:
                 url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
                 data= common.getFEED(url)
                 tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
                 position = float(tree.find('position').string)
-                self.seekTime(position)
+                should_resume = tree.find('should_resume').string
+                if should_resume == '1':
+                    self.seekTime(position)
             except: print 'HULU --> failed to seek'
             self.player_playing = True
             while self.player_playing:
@@ -73,14 +73,23 @@ class ResumePlayer( xbmc.Player ) :
     def onPlayBackStopped(self):
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
             print "HULU --> onPlayBackStopped "+str(self.stoptime)
-            common.postSTOP( self.content_id, self.stoptime )
+            common.postSTOP( 'stop',self.content_id, self.stoptime )
             self.player_playing = False
             return False
 
     def onPlayBackEnded(self):
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
             print "HULU --> onPlayBackEnded"
-            #common.postSTOP( self.content_id, self.stoptime )
+            common.postSTOP( 'seek',self.content_id, self.stoptime )
+            action = "event"
+            app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+            parameters = {'event_type':'view_complete',
+                          'token':common.settings['usertoken'],
+                          'target_type':'video',
+                          'id':common.args.videoid,
+                          'app':app}
+            common.postAPI(action,parameters,False)
+            print "HULU --> Posted view_complete complete"
             self.player_playing = False
             return False
 
@@ -464,7 +473,6 @@ class Main:
                                                      "Episode":episode})
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
             self.p=ResumePlayer()
-            self.p.onPlayBackStarted()
 
             #Enable Subtitles
             subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',video_id+'.srt')
@@ -473,3 +481,4 @@ class Main:
                 import time
                 time.sleep(4)
                 self.p.setSubtitles(subtitles)
+            self.p.onPlayBackStarted()

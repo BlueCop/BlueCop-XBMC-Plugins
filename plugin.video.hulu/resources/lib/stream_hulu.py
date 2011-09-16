@@ -36,6 +36,54 @@ smildeckeys = [
              ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
              ]
 
+class ResumePlayer( xbmc.Player ) :            
+    def __init__ ( self ):
+        xbmc.Player.__init__( self )
+        
+    def onPlayBackStarted(self):
+        print 'HULU --> playback started'
+        #if common.settings['enable_login']=='true' and common.settings['usertoken']:     
+        #    action = "event"
+        #    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+        #    parameters = {'event_type':'view',
+        #                  'token':common.settings['usertoken'],
+        #                  'target_type':'video',
+        #                  'id':video_id,
+        #                  'app':app}
+        #    common.postAPI(action,parameters,False)
+        #    print "HULU --> Posted view"
+        if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            self.content_id=common.args.url
+            xbmc.sleep(1000)
+            try:
+                url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
+                data= common.getFEED(url)
+                tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                position = float(tree.find('position').string)
+                self.seekTime(position)
+            except: print 'HULU --> failed to seek'
+            self.player_playing = True
+            while self.player_playing:
+                try:
+                    self.stoptime = self.getTime()
+                    xbmc.sleep(500)
+                except:
+                    self.player_playing = False
+
+    def onPlayBackStopped(self):
+        if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            print "HULU --> onPlayBackStopped "+str(self.stoptime)
+            common.postSTOP( self.content_id, self.stoptime )
+            self.player_playing = False
+            return False
+
+    def onPlayBackEnded(self):
+        if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            print "HULU --> onPlayBackEnded"
+            #common.postSTOP( self.content_id, self.stoptime )
+            self.player_playing = False
+            return False
+
 
 class Main:
 
@@ -124,7 +172,7 @@ class Main:
                 smil = smil + x
 
             if (smil.find("<smil") == 0):
-                print key
+                #print key
                 i = smil.rfind("</smil>")
                 smil = smil[0:i+7]
                 return smil
@@ -153,7 +201,7 @@ class Main:
             substart = subs.find("<P")
 
             if (substart > -1):
-                print key
+                #print key
                 i = subs.rfind("</P>")
                 subs = subs[substart:i+4]
                 return subs
@@ -415,6 +463,8 @@ class Main:
                                                      "Season":season,
                                                      "Episode":episode})
             xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            self.p=ResumePlayer()
+            self.p.onPlayBackStarted()
 
             #Enable Subtitles
             subtitles = os.path.join(os.getcwd().replace(';', ''),'resources','cache',video_id+'.srt')
@@ -422,15 +472,4 @@ class Main:
                 print "HULU --> Setting subtitles"
                 import time
                 time.sleep(4)
-                xbmc.Player().setSubtitles(subtitles)
-            #if common.settings['enable_login']=='true' and common.settings['usertoken']:     
-            #    action = "event"
-            #    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-            #    parameters = {'event_type':'view',
-            #                  'token':common.settings['usertoken'],
-            #                  'target_type':'video',
-            #                  'id':video_id,
-            #                  'app':app}
-            #    common.postAPI(action,parameters,False)
-            #    print "Posted view to Hulu"
-
+                self.p.setSubtitles(subtitles)

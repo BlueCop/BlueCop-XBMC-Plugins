@@ -167,6 +167,25 @@ def getFEED( url, max_age=0 ):
     except:
         return False
 
+def postSTOP( content_id,position ):
+    print 'HULU --> common :: postSTOP :: content_id = '+content_id
+    opener = urllib2.build_opener()
+    opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
+                         ('x-flash-version', '10,1,51,66'),
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
+    url = 'http://www.hulu.com/pt/position'
+    strposition = "%.2f" % position
+    values = {'type':'stop',
+              'position':strposition,
+              'token':settings['usertoken'],
+              'content_id':content_id,
+              'device_name':'huludesktop'}
+    data = urllib.urlencode(values)
+    usock=opener.open(url,data)
+    response=usock.read()
+    usock.close()
+    return response
+
 
 def cacheFEED( url, max_age=0,cache_dir=cachepath):
     print 'HULU --> common :: cacheFEED :: url = '+url

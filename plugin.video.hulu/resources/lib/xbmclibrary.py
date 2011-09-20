@@ -48,20 +48,18 @@ class Main:
 
     def UpdateLibrary(self):
         xbmc.executebuiltin("UpdateLibrary(video)") 
-    
-    def CreateStreamFile(self, name, content_id, dir):
-        try:
-            u = 'plugin://plugin.video.hulu/'
-            u += '?mode="TV_play"'
-            u += '&url="'+urllib.quote_plus(content_id)+'"'
-            filename = name + ".strm"
-            path = os.path.join(dir, filename)
-            file = open(path,'w')
-            file.write(u)
-            file.close()
-        except:
-            print "Error while creating strm file for : " + name
-        
+            
+    def SaveFile(self, filename, data, dir):
+        path = os.path.join(dir, filename)
+        file = open(path,'w')
+        file.write(data)
+        file.close()
+
+    def CreateDirectory(self, dir_path):
+        dir_path = dir_path.strip()
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+       
     def createElement(self, tagname,contents):
         soup = BeautifulSoup()
         element = Tag(soup, tagname)
@@ -72,21 +70,24 @@ class Main:
     def cleanfilename(self, name):    
         valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         return ''.join(c for c in name if c in valid_chars)
-
     
     def GetQueue(self, NFO=True):
         url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         episodes = self.GetEpisodesData(url)
-        for content_id,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,ishd,expires_at in episodes:
+        for content_id,video_id,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
             episodetitle = episodetitle.replace(':','').replace('/',' ').strip()
+            u = 'plugin://plugin.video.hulu/'
+            u += '?mode="TV_play"'
+            u += '&url="'+urllib.quote_plus(content_id)+'"'
+            u += '&videoid="'+urllib.quote_plus(video_id)+'"'
             if media_type == 'TV':
                 filename = self.cleanfilename('S%sE%s - %s' % (season,episode,episodetitle))
-                directorname = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
-                self.CreateDirectory(directorname)
-                self.CreateStreamFile(filename, content_id, directorname)
+                directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
+                self.CreateDirectory(directory)
+                self.SaveFile( filename+'.nfo', u, directory)
             elif media_type == 'Film':
                 filename = self.cleanfilename(episodetitle)
-                self.CreateStreamFile(filename, content_id, MOVIE_PATH) 
+                self.SaveFile( filename+'.nfo', u, MOVIE_PATH)
             if NFO:
                 soup = BeautifulStoneSoup()
                 if media_type == 'Film':
@@ -123,10 +124,11 @@ class Main:
                     streamdetails.insert(1,video)
                     fileinfo.insert(0,streamdetails)
                     movie.insert(9, fileinfo)
-                    movieNFO = os.path.join(MOVIE_PATH,filename+'.nfo')
-                    file = open(movieNFO, 'w')
-                    file.write(str(soup))
-                    file.close()
+                    self.SaveFile( filename+'.nfo', str(soup), MOVIE_PATH)
+                    #movieNFO = os.path.join(MOVIE_PATH,filename+'.nfo')
+                    #file = open(movieNFO, 'w')
+                    #file.write(str(soup))
+                    #file.close()
                 elif media_type == 'TV':
                     episodedetails = Tag(soup, "episodedetails")
                     soup.insert(0, episodedetails)
@@ -163,17 +165,18 @@ class Main:
                     streamdetails.insert(1,video)
                     fileinfo.insert(0,streamdetails)
                     episodedetails.insert(11, fileinfo)
-                    episodeNFO = os.path.join(directorname,filename+'.nfo')
-                    file = open(episodeNFO, 'w')
-                    file.write(str(soup))
-                    file.close()
+                    self.SaveFile( filename+'.nfo', str(soup), directory)
+                    #episodeNFO = os.path.join(directory,filename+'.nfo')
+                    #file = open(episodeNFO, 'w')
+                    #file.write(str(soup))
+                    #file.close()
             
     def GetSubscriptions(self, NFO=False):
         url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         shows = self.GetSubscriptionsData(url)
         for show_name,art,genre,plot,stars,network,premiered,year,show_id in shows:
-            directorname = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
-            self.CreateDirectory(directorname)
+            directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
+            self.CreateDirectory(directory)
             if NFO:
                 soup = BeautifulStoneSoup()
                 tvshow = Tag(soup, "tvshow")
@@ -195,11 +198,8 @@ class Main:
                     tvshow.insert(7, self.createElement('thumb',art))
                 if genre:
                     tvshow.insert(8, self.createElement('genre',genre))
-                tvshowNFO = os.path.join(directorname,'tvshow.nfo')
-                file = open(tvshowNFO, 'w')
-                file.write(str(soup))
-                file.close()
-            self.GetEpisodes( directorname, show_id)
+                self.SaveFile( 'tvshow.nfo', str(soup), directory)
+            self.GetEpisodes( directory, show_id)
         
     def GetSubscriptionsData(self, url):
         data=common.getFEED(url)
@@ -250,10 +250,15 @@ class Main:
     def GetEpisodes(self, directory, showid, NFO=True):
         url = 'http://m.hulu.com/menu/11674?show_id='+showid+'&dp_id=hulu&limit=2000&package_id='+package_id
         episodes = self.GetEpisodesData(url)
-        for content_id,media_type,showname,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,ishd,expires_at in episodes:
+        for content_id,video_id,media_type,showname,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
             episodetitle = episodetitle.replace(':','').replace('/',' ').strip()
             filename = self.cleanfilename('S%sE%s - %s' % (season,episode,episodetitle))
-            self.CreateStreamFile(filename, content_id, directory)
+            u = 'plugin://plugin.video.hulu/'
+            u += '?mode="TV_play"'
+            u += '&url="'+urllib.quote_plus(content_id)+'"'
+            u += '&videoid="'+urllib.quote_plus(video_id)+'"'
+            self.SaveFile( filename+".strm", u, directory)
+            #self.CreateStreamFile(filename, content_id, directory)
             if NFO:
                 soup = BeautifulStoneSoup()
                 episodedetails = Tag(soup, "episodedetails")
@@ -300,10 +305,7 @@ class Main:
                 streamdetails.insert(1,video)
                 fileinfo.insert(0,streamdetails)
                 episodedetails.insert(11, fileinfo)
-                episodeNFO = os.path.join(directory,filename+'.nfo')
-                file = open(episodeNFO, 'w')
-                file.write(str(soup))
-                file.close()
+                self.SaveFile( filename+'.nfo', str(soup), directory)
 
     def GetEpisodesData(self, url):
         data=common.getFEED(url)
@@ -317,10 +319,14 @@ class Main:
             data = episode('data')
             if data:
                 data = data[0]
-                #canonical_name = data('show_canonical_name')[0].string
+                canonical_name = data('show_canonical_name')[0].string
+                if canonical_name:
+                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
+                else:
+                    fanart = False
                 content_id = data('content_id')[0].string
                 media_type = data('media_type')[0].string
-                #video_id = data('video_id')[0].string
+                video_id = data('video_id')[0].string
                 if media_type == 'TV' or media_type == 'Web Original':
                     show_name = data('show_name')[0].string.encode('utf-8')
                     season_number = data('season_number')[0].string.encode('utf-8')
@@ -350,6 +356,7 @@ class Main:
                 ishd = data('has_hd')[0].string
                 #art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                 returnepisodes.append([content_id,
+                                       video_id,
                                        media_type,
                                        show_name,
                                        episodetitle,
@@ -364,14 +371,10 @@ class Main:
                                        rating,
                                        votes,
                                        thumb,
+                                       fanart,
                                        ishd,
                                        expires_at])
         return returnepisodes
-    
-    def CreateDirectory(self, dir_path):
-        dir_path = dir_path.strip()
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
     
     def SetupHuluLibrary(self):
         print "Trying to add Amazon source paths..."

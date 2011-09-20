@@ -1,7 +1,6 @@
 import xbmcplugin
 import xbmc
 import xbmcgui
-import xbmcaddon
 #import xbmcaddon
 import addoncompat
 import urllib
@@ -16,6 +15,7 @@ import time
 import md5
 import tempfile
 from BeautifulSoup import BeautifulStoneSoup
+
 
 """
     PARSE ARGV
@@ -36,16 +36,14 @@ BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu?show_id=0&dp_id=huludesktop
 #define etc.
 login_url   = "https://secure.hulu.com/account/authenticate"
 #define file locations
-addon = xbmcaddon.Addon(id='plugin.video.hulu')
-pluginpath = addon.getAddonInfo('path')
+addoncompat.get_revision()
+pluginpath = addoncompat.get_path()
 
 COOKIEFILE = os.path.join(pluginpath,'resources','cache','hulu-cookies.lwp')
 QUEUETOKEN = os.path.join(pluginpath,'resources','cache','token.xml')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
-#addon = xbmcaddon.Addon(id='plugin.video.hulu')
-
 
 """
     GET SETTINGS
@@ -131,7 +129,6 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
         liz.addContextMenuItems( cm )
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
     return ok
-
 
 """
     READ PAGE

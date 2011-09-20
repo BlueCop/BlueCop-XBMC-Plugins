@@ -40,6 +40,7 @@ class ResumePlayer( xbmc.Player ) :
     def __init__ ( self ):
         xbmc.Player.__init__( self )
         self.player_playing = False
+        self.content_id=common.args.url
         
     def onPlayBackStarted(self):
         print 'HULU --> onPlayBackStarted'
@@ -77,7 +78,6 @@ class ResumePlayer( xbmc.Player ) :
 
     def seekPlayback(self):
         if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            self.content_id=common.args.url
             try:
                 url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
                 data= common.getFEED(url)
@@ -174,6 +174,11 @@ class Main:
                 x=a.tostring()
                 smil = smil + x
 
+            expire_message = 'Your access to play this content has expired.'
+            if expire_message in smil:
+                pass
+                xbmcgui.Dialog().ok('Content Expired',expire_message)
+                return False
             if (smil.find("<smil") == 0):
                 #print key
                 i = smil.rfind("</smil>")
@@ -336,9 +341,12 @@ class Main:
             #self.update_dialog('Grabbing SMIL File')
             smilXML=common.getFEED(smilURL)
             #self.update_dialog('Decrypting SMIL File')
-            tmp=self.decrypt_SMIL(smilXML)
-            smilSoup=BeautifulStoneSoup(tmp, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            return smilSoup
+            smilXML=self.decrypt_SMIL(smilXML)
+            if smilXML:
+                smilSoup=BeautifulStoneSoup(smilXML, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                return smilSoup
+            else:
+                return False
         except:
             heading = 'SMIL ERROR'
             message = 'Error retrieving SMIL file'
@@ -374,115 +382,116 @@ class Main:
 
         #getSMIL
         smilSoup = self.getSMIL(video_id)
-        print smilSoup.prettify()
-
-        #self.update_dialog('Selecting Video Stream')
-        ref = smilSoup.findAll('ref')[1]
-        title = ref['title']
-        series_title = ref['tp:series_title']
-        try:season = int(ref['tp:season_number'])
-        except:season = -1
-        try:episode = int(ref['tp:episode_number'])
-        except:episode = -1
-        
-        #getRTMP
-        video=smilSoup.findAll('video')
-        streams=[]
-        selectedStream = None
-        cdn = None
-        qtypes=['ask', 'p011', 'p010', 'p008', 'H264 Medium', 'H264 650K', 'H264 400K', 'High', 'Medium','Low']        
-        #label streams
-        qt = int(common.settings['quality'])
-        if qt < 0 or qt > 9: qt = 0
-        while qt < 9:
-            qtext = qtypes[qt]
-            for vid in video:
-                #if qt == 0:
-                streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
-                if qt > 6 and 'H264' in vid['profile']: continue
-                if qtext in vid['profile']:
-                    if vid['cdn'] == common.settings['defaultcdn']:
-                        selectedStream = [vid['server'],vid['stream'],vid['token']]
+        if smilSoup:
+            print smilSoup.prettify()
+    
+            #self.update_dialog('Selecting Video Stream')
+            ref = smilSoup.findAll('ref')[1]
+            title = ref['title']
+            series_title = ref['tp:series_title']
+            try:season = int(ref['tp:season_number'])
+            except:season = -1
+            try:episode = int(ref['tp:episode_number'])
+            except:episode = -1
+            
+            #getRTMP
+            video=smilSoup.findAll('video')
+            streams=[]
+            selectedStream = None
+            cdn = None
+            qtypes=['ask', 'p011', 'p010', 'p008', 'H264 Medium', 'H264 650K', 'H264 400K', 'High', 'Medium','Low']        
+            #label streams
+            qt = int(common.settings['quality'])
+            if qt < 0 or qt > 9: qt = 0
+            while qt < 9:
+                qtext = qtypes[qt]
+                for vid in video:
+                    #if qt == 0:
+                    streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
+                    if qt > 6 and 'H264' in vid['profile']: continue
+                    if qtext in vid['profile']:
+                        if vid['cdn'] == common.settings['defaultcdn']:
+                            selectedStream = [vid['server'],vid['stream'],vid['token']]
+                            print selectedStream
+                            cdn = vid['cdn']
+                            break
+    
+                if qt == 0 or selectedStream != None: break
+                qt += 1
+            
+            if qt == 0 or selectedStream == None:
+                if selectedStream == None:
+                    #ask user for quality level
+                    quality=xbmcgui.Dialog().select('Please select a quality level:', [stream[0]+' ('+stream[1]+')' for stream in streams])
+                    print quality
+                    if quality!=-1:
+                        selectedStream = [streams[quality][2], streams[quality][3], streams[quality][4]]
+                        cdn = streams[quality][1]
+                        print "stream url"
                         print selectedStream
-                        cdn = vid['cdn']
-                        break
-
-            if qt == 0 or selectedStream != None: break
-            qt += 1
-        
-        if qt == 0 or selectedStream == None:
-            if selectedStream == None:
-                #ask user for quality level
-                quality=xbmcgui.Dialog().select('Please select a quality level:', [stream[0]+' ('+stream[1]+')' for stream in streams])
-                print quality
-                if quality!=-1:
-                    selectedStream = [streams[quality][2], streams[quality][3], streams[quality][4]]
-                    cdn = streams[quality][1]
-                    print "stream url"
-                    print selectedStream
-            
-        if selectedStream != None:
-            #form proper streaming url
-            server = selectedStream[0]
-            stream = selectedStream[1]
-            token = selectedStream[2]
-
-            protocolSplit = server.split("://")
-            pathSplit = protocolSplit[1].split("/")
-            hostname = pathSplit[0]
-            appName = protocolSplit[1].split(hostname + "/")[1]
-
-            if "level3" in cdn:
-                appName += "?sessionid=sessionId&" + token
-                stream = stream[0:len(stream)-4]
-                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
-
-            elif "limelight" in cdn:
-                appName += '?sessionid=sessionId&' + token
-                stream = stream[0:len(stream)-4]
-                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
-
-            elif "akamai" in cdn:
-                appName += '?sessionid=sessionId&' + token
-                newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
                 
-            else:
-                xbmcgui.Dialog().ok('Unsupported Content Delivery Network',cdn+' is unsupported at this time')
-                return
-
-            print "item url -- > " + newUrl
-            print "app name -- > " + appName
-            print "playPath -- > " + stream
-
-            #define item
-            SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
-            newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
-            if (common.settings['swfverify'] == 'true'):
-                newUrl += " swfvfy=true"
-            
-            item = xbmcgui.ListItem(title,path=newUrl)
-            item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                     "TVShowTitle":series_title,
-                                                     "Season":season,
-                                                     "Episode":episode})
-            self.p=ResumePlayer()
-            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-            while not self.p.isPlaying():
-                print 'HULU --> Not Playing'
-                xbmc.sleep(100)
-            #Enable Subtitles
-            subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
-            if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
-                print "HULU --> Setting subtitles"
-                self.p.setSubtitles(subtitles)
-            if common.settings['enable_login']=='true' and common.settings['usertoken']:
-                action = "event"
-                app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-                parameters = {'event_type':'view',
-                              'token':common.settings['usertoken'],
-                              'target_type':'video',
-                              'id':common.args.videoid,
-                              'app':app}
-                common.postAPI(action,parameters,False)
-                print "HULU --> Posted view"
-                self.p.onPlayBackStarted()
+            if selectedStream != None:
+                #form proper streaming url
+                server = selectedStream[0]
+                stream = selectedStream[1]
+                token = selectedStream[2]
+    
+                protocolSplit = server.split("://")
+                pathSplit = protocolSplit[1].split("/")
+                hostname = pathSplit[0]
+                appName = protocolSplit[1].split(hostname + "/")[1]
+    
+                if "level3" in cdn:
+                    appName += "?sessionid=sessionId&" + token
+                    stream = stream[0:len(stream)-4]
+                    newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
+    
+                elif "limelight" in cdn:
+                    appName += '?sessionid=sessionId&' + token
+                    stream = stream[0:len(stream)-4]
+                    newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
+    
+                elif "akamai" in cdn:
+                    appName += '?sessionid=sessionId&' + token
+                    newUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
+                    
+                else:
+                    xbmcgui.Dialog().ok('Unsupported Content Delivery Network',cdn+' is unsupported at this time')
+                    return
+    
+                print "item url -- > " + newUrl
+                print "app name -- > " + appName
+                print "playPath -- > " + stream
+    
+                #define item
+                SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
+                newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
+                if (common.settings['swfverify'] == 'true'):
+                    newUrl += " swfvfy=true"
+                
+                item = xbmcgui.ListItem(title,path=newUrl)
+                item.setInfo( type="Video", infoLabels={ "Title":title,
+                                                         "TVShowTitle":series_title,
+                                                         "Season":season,
+                                                         "Episode":episode})
+                self.p=ResumePlayer()
+                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                while not self.p.isPlaying():
+                    print 'HULU --> Not Playing'
+                    xbmc.sleep(100)
+                #Enable Subtitles
+                subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
+                if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
+                    print "HULU --> Setting subtitles"
+                    self.p.setSubtitles(subtitles)
+                if common.settings['enable_login']=='true' and common.settings['usertoken']:
+                    action = "event"
+                    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+                    parameters = {'event_type':'view',
+                                  'token':common.settings['usertoken'],
+                                  'target_type':'video',
+                                  'id':common.args.videoid,
+                                  'app':app}
+                    common.postAPI(action,parameters,False)
+                    print "HULU --> Posted view"
+                    self.p.onPlayBackStarted()

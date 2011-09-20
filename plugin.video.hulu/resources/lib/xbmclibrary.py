@@ -84,10 +84,10 @@ class Main:
                 filename = self.cleanfilename('S%sE%s - %s' % (season,episode,episodetitle))
                 directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
                 self.CreateDirectory(directory)
-                self.SaveFile( filename+'.nfo', u, directory)
+                self.SaveFile( filename+'.strm', u, directory)
             elif media_type == 'Film':
                 filename = self.cleanfilename(episodetitle)
-                self.SaveFile( filename+'.nfo', u, MOVIE_PATH)
+                self.SaveFile( filename+'.strm', u, MOVIE_PATH)
             if NFO:
                 soup = BeautifulStoneSoup()
                 if media_type == 'Film':
@@ -125,10 +125,6 @@ class Main:
                     fileinfo.insert(0,streamdetails)
                     movie.insert(9, fileinfo)
                     self.SaveFile( filename+'.nfo', str(soup), MOVIE_PATH)
-                    #movieNFO = os.path.join(MOVIE_PATH,filename+'.nfo')
-                    #file = open(movieNFO, 'w')
-                    #file.write(str(soup))
-                    #file.close()
                 elif media_type == 'TV':
                     episodedetails = Tag(soup, "episodedetails")
                     soup.insert(0, episodedetails)
@@ -166,10 +162,6 @@ class Main:
                     fileinfo.insert(0,streamdetails)
                     episodedetails.insert(11, fileinfo)
                     self.SaveFile( filename+'.nfo', str(soup), directory)
-                    #episodeNFO = os.path.join(directory,filename+'.nfo')
-                    #file = open(episodeNFO, 'w')
-                    #file.write(str(soup))
-                    #file.close()
             
     def GetSubscriptions(self, NFO=False):
         url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']

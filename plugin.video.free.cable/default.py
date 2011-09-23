@@ -26,7 +26,8 @@ def modes( ):
         if common.sqliteAvailable == True:
             common.addDirectory(' All Shows','Masterlist')
         for name , network in common.site_dict.iteritems():
-            common.addDirectory(name, network, 'rootlist')
+            station_icon = os.path.join(common.imagepath,network+'.png')
+            common.addDirectory(name, network, 'rootlist',thumb=station_icon)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )
     elif common.args.mode is 'Masterlist':

@@ -49,8 +49,8 @@ site_dict = {'ABC': 'abc',
              #'FOX': 'fox',
              'The CW':'thecw',
              'FX': 'fx',
-             'TNT': 'tnt',
-             'TBS': 'tbs',
+             #'TNT': 'tnt',
+             #'TBS': 'tbs',
              'Spike':'spike',
              'TV Land':'tvland',
              'A&E':'aetv',
@@ -69,7 +69,7 @@ site_dict = {'ABC': 'abc',
 
 db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')
 cachepath = os.path.join(os.getcwd().replace(';', ''),'resources','cache')
-
+imagepath = os.path.join(os.getcwd().replace(';', ''),'resources','images')
 
 """
     GET SETTINGS

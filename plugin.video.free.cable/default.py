@@ -6,6 +6,7 @@ import xbmcplugin
 import xbmc
 import xbmcgui
 import sys
+import os
 import resources.lib._common as common
 import urllib
 

@@ -67,9 +67,12 @@ site_dict = {'ABC': 'abc',
              'Food Network':'food'
              }
 
-db_file = os.path.join(os.getcwd().replace(';', ''),'resources','shows.db')
-cachepath = os.path.join(os.getcwd().replace(';', ''),'resources','cache')
-imagepath = os.path.join(os.getcwd().replace(';', ''),'resources','images')
+addoncompat.get_revision()
+pluginpath = addoncompat.get_path()
+
+db_file = os.path.join(pluginpath,'resources','shows.db')
+cachepath = os.path.join(pluginpath,'resources','cache')
+imagepath = os.path.join(pluginpath,'resources','images')
 
 """
     GET SETTINGS

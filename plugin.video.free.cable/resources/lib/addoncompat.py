@@ -12,7 +12,7 @@ except:
 
 __plugin_handle__ = int(sys.argv[1])
 if __has_addons__:
-    __addon__ = xbmcaddon.Addon(os.path.basename(os.getcwd()))
+    __addon__ = xbmcaddon.Addon('plugin.video.free.cable')
 
 def get_os():
     try: xbmc_os = os.environ.get('OS')
@@ -46,4 +46,13 @@ def open_settings():
         __addon__.openSettings() 
     else:
         xbmcplugin.openSettings(sys.argv[ 0 ])
-
+        
+def get_path():
+    if __has_addons__:
+        try:
+            pluginpath = __addon__.getAddonInfo('path')
+        except:
+            pluginpath = os.getcwd().replace(';', '')
+    else:
+        pluginpath = os.getcwd().replace(';', '')
+    return pluginpath

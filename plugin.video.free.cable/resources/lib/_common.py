@@ -70,9 +70,9 @@ site_dict = {'ABC': 'abc',
 addoncompat.get_revision()
 pluginpath = addoncompat.get_path()
 
-db_file = os.path.join(pluginpath,'resources','shows.db')
-cachepath = os.path.join(pluginpath,'resources','cache')
-imagepath = os.path.join(pluginpath,'resources','images')
+db_file = os.path.join(xbmc.translatePath(pluginpath),'resources','shows.db')
+cachepath = os.path.join(xbmc.translatePath(pluginpath),'resources','cache')
+imagepath = os.path.join(xbmc.translatePath(pluginpath),'resources','images')
 
 """
     GET SETTINGS
@@ -224,24 +224,22 @@ def create_db(db_file):
 """
 
 def addDirectory(name, mode='', sitemode='', url='', thumb='', fanart='', description='', aired='', genre='', rating=0.0):
-    if fanart == '':
-        try:
-            fanart = args.fanart
-        except:
-            pass
-    if thumb == '':
-        try:
-            thumb = args.thumb
-        except:
-            pass
-    ok=True
+    #if fanart == '':
+    #    try:
+    #        fanart = args.fanart
+    #    except:
+    #        pass
+    #if thumb == '':
+    #    try:
+    #        thumb = args.thumb
+    #    except:
+    #        pass
     u  = sys.argv[0]
-    print url
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
-    u += '&thumb="'+urllib.quote_plus(thumb)+'"'
-    u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+    #u += '&thumb="'+urllib.quote_plus(thumb)+'"'
+    #u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     u += '&name="'+urllib.quote_plus(name.replace("'",''))+'"'
     item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     item.setProperty('fanart_image',fanart)
@@ -249,8 +247,7 @@ def addDirectory(name, mode='', sitemode='', url='', thumb='', fanart='', descri
                                              "Genre":genre,
                                              "premiered":aired,
                                              "Plot":description})
-    ok=xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True)
-    return ok
+    xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True)
 
 
 def cacheURL( url, values = None, proxy = False, max_age=(30*60),cache_dir=cachepath):

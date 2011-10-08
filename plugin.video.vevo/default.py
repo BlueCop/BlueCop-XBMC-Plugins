@@ -92,7 +92,7 @@ def processVideos(tree,total=False):
         total = len(videos)
     for video,thumb in zip(videos,thumbs):
         cm = []
-        url = BASE+thumb.find(attrs={'class' : 'playOverlay'})['href'].split('?')[0]
+        url = BASE+thumb.find(attrs={'class' : 'playOverlay video-link'})['href'].split('?')[0]
         thumbnail = thumb.img['src'].split('?')[0]
         tags = re.compile(r'<.*?>')
         spaces = re.compile(r'\s+')

@@ -44,16 +44,16 @@ def rootlist():
 def shows(catid = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
+    data = re.compile('<!-- SHOWS LIST -->(.*?)<!-- END SHOWS LIST -->',re.DOTALL).findall(data)[0]  
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'id' : 'videoContent'})
-    categories=menu.findAll('div', attrs={'id' : True}, recursive=False)
+    categories=tree.findAll('div', attrs={'id' : True}, recursive=False)
     for item in categories:
         if item['id'] == catid:
             shows = item.findAll(attrs={'id' : 'show_block_interior'})
             for show in shows:
                 name = show.find('img')['alt'].encode('utf-8')
                 thumbnail = BASE_URL + show.find('img')['src']
-                url = BASE + show.find('a')['href']
+                url = show.find('a')['href']
                 if 'MacGyver' in name:
                     url += '?vs=Full%20Episodes'
                 common.addDirectory(name, 'cbs', 'showcats', url, thumb=thumbnail)

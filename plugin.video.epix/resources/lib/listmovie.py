@@ -64,7 +64,9 @@ def LIST_ALPHA_FILTERED():
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for movie in jsondata['content']:
-        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'].replace('thumbs/',''))
+        try: thumb = movie['movie_playerposter'].replace('thumbs/','')
+        except: thumb = ''
+        common.addVideo(movie['movie_title'],movie['movie_url'],thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
         
 def LIST_GENRE():
@@ -81,7 +83,9 @@ def LIST_GENRE_FILTERED():
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for movie in jsondata['content']:
-        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'].replace('thumbs/',''))
+        try: thumb = movie['movie_playerposter'].replace('thumbs/','')
+        except: thumb = ''
+        common.addVideo(movie['movie_title'],movie['movie_url'],thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
 
         

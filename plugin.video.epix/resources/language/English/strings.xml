@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+	<string id="30011">General</string>
+	<string id="30000">E-Mail</string>
+	<string id="30001">Password</string>
+	<string id="30004">Bit-rate</string>
+	<string id="30005">Ask</string>
+	<string id="30006">3000kbps</string>
+	<string id="30007">2200kbps</string>
+	<string id="30008">1700kbps</string>
+	<string id="30009">1200kbps</string>
+	<string id="30010">900kbps</string>
+	<string id="30011">500kbps</string>
+</strings>

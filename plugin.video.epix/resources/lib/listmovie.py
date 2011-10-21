@@ -29,7 +29,7 @@ def LIST_POP():
         print item
         url = item['href']+'/'
         name = item['href'].replace('/','').replace('-',' ').title()
-        thumb = item.find('img')['src']
+        thumb = item.find('img')['src'].replace('thumbs/','')
         common.addVideo(name,url,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
     
@@ -64,7 +64,7 @@ def LIST_ALPHA_FILTERED():
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for movie in jsondata['content']:
-        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'])
+        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'].replace('thumbs/',''))
     xbmcplugin.endOfDirectory(pluginhandle)
         
 def LIST_GENRE():
@@ -81,7 +81,7 @@ def LIST_GENRE_FILTERED():
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for movie in jsondata['content']:
-        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'])
+        common.addVideo(movie['movie_title'],movie['movie_url'],movie['movie_playerposter'].replace('thumbs/',''))
     xbmcplugin.endOfDirectory(pluginhandle)
 
         

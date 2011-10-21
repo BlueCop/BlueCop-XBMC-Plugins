@@ -72,6 +72,7 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     u += '&sitemode="PLAYVIDEO"'
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)
+    liz.setProperty('fanart_image',poster)
     liz.setProperty('IsPlayable', 'true')
     if cm:
         liz.addContextMenuItems( cm , replaceItems=True )

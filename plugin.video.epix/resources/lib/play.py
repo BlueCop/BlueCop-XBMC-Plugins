@@ -13,6 +13,7 @@ import resources.lib.common as common
 pluginhandle = common.pluginhandle
 
 def PLAYVIDEO():
+    common.login()
     #orgin = 'http://dish.epixhd.com/epx/ajax/user/originstatus/'
     #print common.getURL(orgin,useCookie=True)
     #pageurl = 'http://www.epixhd.com/epx/ajax/theater/soloplayer'+common.args.url

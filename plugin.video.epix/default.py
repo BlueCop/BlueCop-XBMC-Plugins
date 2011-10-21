@@ -25,7 +25,7 @@ print "\n\n\n\n\n\n\n====================EPIX START====================\n\n\n\n\
 
 def modes( ):
     if sys.argv[2]=='':
-        common.login()
+        #common.login()
         common.addDir('Alphabetical','listmovie','LIST_ALPHA')
         common.addDir('Genre','listmovie','LIST_GENRE')
         xbmcplugin.endOfDirectory(pluginhandle)

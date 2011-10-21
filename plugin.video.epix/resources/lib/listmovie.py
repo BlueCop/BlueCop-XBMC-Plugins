@@ -8,6 +8,7 @@ import sys
 import urllib
 import string
 import demjson
+from BeautifulSoup import BeautifulSoup
 import resources.lib.common as common
 
 pluginhandle = common.pluginhandle
@@ -20,13 +21,42 @@ alphaURL = 'http://www.epixhd.com/ajax/psr-landing/letter/'
 BASE = 'http://www.epixhd.com'
 
 ################################ Movie listing
+def LIST_POP():
+    url = 'http://www.epixhd.com/all-movies/'
+    data = common.getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    for item in tree.find('div',attrs={'id':'am-top-posters'}).findAll('a'):
+        print item
+        url = item['href']+'/'
+        name = item['href'].replace('/','').replace('-',' ').title()
+        thumb = item.find('img')['src']
+        common.addVideo(name,url,thumb)
+    xbmcplugin.endOfDirectory(pluginhandle)
+    
+def LIST_POP2():
+    url = 'http://www.epixhd.com/ajax/getstuntlimited/?stunt_id=63&limit=36'
+    data = common.getURL(url)
+    jsondata = demjson.decode(data)
+    for movie in jsondata['rs']:
+        movie = jsondata['rs'][movie]
+        common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIST_RECENT():    
+    url = 'http://www.epixhd.com/ajax/getstuntlimited/?stunt_id=55&limit=36'
+    data = common.getURL(url)
+    jsondata = demjson.decode(data)
+    for movie in jsondata['rs']:
+        movie = jsondata['rs'][movie]
+        common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
+    xbmcplugin.endOfDirectory(pluginhandle)  
+
 def LIST_ALPHA():
     url = alphaURL + '1/1/1/'
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for url,name in jsondata['all_items'].iteritems():
         common.addDir(name,'listmovie','LIST_ALPHA_FILTERED',url)
-    #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle)
     
 def LIST_ALPHA_FILTERED():

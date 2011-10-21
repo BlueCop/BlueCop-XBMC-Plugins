@@ -18,7 +18,7 @@ pluginhandle = common.pluginhandle
 __plugin__ = "EPIX"
 __authors__ = "BlueCop"
 __credits__ = ""
-__version__ = "0.0.1"
+__version__ = "0.0.3"
 
 
 print "\n\n\n\n\n\n\n====================EPIX START====================\n\n\n\n\n\n"
@@ -26,6 +26,9 @@ print "\n\n\n\n\n\n\n====================EPIX START====================\n\n\n\n\
 def modes( ):
     if sys.argv[2]=='':
         #common.login()
+        common.addDir('Most Popular','listmovie','LIST_POP')
+        #common.addDir('Most Popular','listmovie','LIST_POP2')
+        common.addDir('Recently Added','listmovie','LIST_RECENT')
         common.addDir('Alphabetical','listmovie','LIST_ALPHA')
         common.addDir('Genre','listmovie','LIST_GENRE')
         xbmcplugin.endOfDirectory(pluginhandle)

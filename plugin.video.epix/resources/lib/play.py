@@ -20,7 +20,10 @@ class ResumePlayer( xbmc.Player ) :
     def onPlayBackStarted(self):
         print 'EPIX --> onPlayBackStarted'
         if self.player_playing:
-            self.seekPlayback()
+            try: self.seekPlayback()
+            except: 
+                try: self.seekPlayback()
+                except: print 'EPIX --> failed to seek'
         self.player_playing = True
         while self.player_playing:
             try:
@@ -32,16 +35,21 @@ class ResumePlayer( xbmc.Player ) :
     def onPlayBackStopped(self):
         print "EPIX --> onPlayBackStopped "+str(self.stoptime)
         self.player_playing = False
+        url = 'http://www.epixhd.com/epx/ajax/user/session_shift/?event=set_session_shift&movie='+common.args.asset_id+'&t='+str(self.stoptime)
+        print common.getURL(url,useCookie=True)
 
     def onPlayBackEnded(self):
         print "EPIX --> onPlayBackEnded"
         self.player_playing = False
+        url = 'http://www.epixhd.com/epx/ajax/user/session_shift/?event=set_session_shift&movie='+common.args.asset_id+'&t=0'
+        print common.getURL(url,useCookie=True)
 
     def seekPlayback(self):
-        try:
-            'EPIX --> resuming position: '+str(position)
-            self.seekTime(position)
-        except: print 'EPIX --> failed to seek'
+        positionurl = 'http://www.epixhd.com/epx/ajax/theater/soloplayer'+common.args.url+'?event=resume'
+        data = common.getURL(positionurl,useCookie=True)
+        position = float(re.compile("position:.*?'(.*?)'").findall(data)[0])
+        print 'EPIX --> resuming position: '+str(position)
+        self.seekTime(position)
 
 def buildrtmp(rtmpdata,auth):
     rtmpsplit = rtmpdata.split('?')
@@ -85,6 +93,7 @@ def PLAYVIDEO():
     mbitrate = 0
     streams = []
     movie_name = tree.find('mbrstream')['ma:asset_name']
+    common.args.asset_id = tree.find('mbrstream')['ma:asset_id']
     for item in tree.find('mbrstream').findAll('video'):
         url = item['src']
         bitrate = int(item['system-bitrate'])
@@ -101,13 +110,13 @@ def PLAYVIDEO():
             return
 
     stackedUrl += buildrtmp(rtmpdata,auth).replace(',',',,')    
-    #p=ResumePlayer()
+    p=ResumePlayer()
     
     item = xbmcgui.ListItem(path=stackedUrl)
     item.setInfo( type="Video", infoLabels={"Title": movie_name})
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     
-    #while not p.isPlaying():
-    #    print 'EPIX --> Not Playing'
-    #    xbmc.sleep(100)
-    #self.p.onPlayBackStarted()    
+    while not p.isPlaying():
+        print 'EPIX --> Not Playing'
+        xbmc.sleep(100)
+    p.onPlayBackStarted()    

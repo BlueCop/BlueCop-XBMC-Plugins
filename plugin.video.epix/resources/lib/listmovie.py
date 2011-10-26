@@ -72,6 +72,7 @@ def LIST_STUNT(id=common.args.url):
     jsondata = demjson.decode(data)
     for movie in jsondata['rs']:
         movie = jsondata['rs'][movie]
+        print movie
         common.addDir(movie['title'],'movie','MOVIE_VIDEOS','/'+movie['short_name']+'/')
         #common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
     xbmcplugin.endOfDirectory(pluginhandle)  
@@ -116,4 +117,16 @@ def LIST_GENRE_FILTERED():
         except: thumb = ''
         common.addDir(movie['movie_title'],'movie','MOVIE_VIDEOS',movie['movie_url'],thumb,thumb)
         #common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
+    xbmcplugin.endOfDirectory(pluginhandle)
+    
+def LIST_QUEUE():
+    url = 'http://www.epixhd.com/epx/ajax/myqueue/'
+    data = common.getURL(url,useCookie=True)
+    jsondata = demjson.decode(data)
+    for movie in jsondata['queue']:
+        try: poster = movie['poster'].replace('thumbs/','')
+        except: poster = ''
+        try: fanart = movie['playerposter'].replace('thumbs/','')
+        except: fanart = ''
+        common.addDir(movie['title'],'movie','MOVIE_VIDEOS','/'+movie['short_name']+'/',poster,fanart)
     xbmcplugin.endOfDirectory(pluginhandle)

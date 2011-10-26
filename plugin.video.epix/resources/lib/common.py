@@ -35,7 +35,7 @@ class _Info:
 exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"',"\"")) , )
 
 def getURL( url , useCookie=False):
-    print 'getURL: '+url
+    print 'getURL: '+url.split('?')[0]
     if useCookie and os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -93,6 +93,7 @@ def login():
         epixlogin()
     else:
         cablelogin(logintype)
+    print getURL( 'http://www.epixhd.com/epx/ajax/user/originstatus/' , useCookie=True)
 
 def cablelogin(selected):
     if os.path.isfile(COOKIEFILE):

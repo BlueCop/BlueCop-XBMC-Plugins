@@ -27,6 +27,7 @@ def modes( ):
     if sys.argv[2]=='':
         common.login()
         #common.addDir('List Stunts','listmovie','LIST_STUNTS')
+        common.addDir('My Queue','listmovie','LIST_QUEUE')
         common.addDir('Featured','listmovie','LIST_FEATURE')
         common.addDir('Most Popular','listmovie','LIST_POP')
         #common.addDir('Most Popular2','listmovie','LIST_POP2')

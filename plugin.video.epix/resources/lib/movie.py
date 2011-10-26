@@ -21,6 +21,7 @@ BASE = 'http://www.epixhd.com'
 
 ################################ Movie and Extras listing
 def MOVIE_VIDEOS():
+    xbmcplugin.setContent(pluginhandle, 'Movies')
     url = BASE + common.args.url
     data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -28,33 +29,47 @@ def MOVIE_VIDEOS():
     except:
         try:fanart = re.compile("\('(.*?)'\)").findall(tree.find('div',attrs={'id':'playerposter'})['style'])[0]
         except:fanart = ''
-    data = common.getURL('http://www.epixhd.com/epx/ajax/theater/soloplayer'+common.args.url)
-    if 'This movie is not currently playing on EPIX' not in data and 'outofwindow' not in data:
+    checkdata = common.getURL('http://www.epixhd.com/epx/ajax/theater/soloplayer'+common.args.url)
+    if 'This movie is not currently playing on EPIX' not in data and 'outofwindow' not in checkdata:
+        movie_id = re.compile('csa_movie_id = "movie_(.*?)";').findall(data)[0]
+        inqueue = CHECK_QUEUE(movie_id)
         movietitle = tree.find('h1',attrs={'class':'movie_title'}).string
         plot = tree.find('div',attrs={'class':'synP'}).renderContents()
         tags = re.compile(r'<.*?>')
         plot = tags.sub('', plot).strip()
         mpaa = tree.find('span',attrs={'id':'rating'})['class']
-        genre = tree.find('span',attrs={'class':'genres'}).findAll('span',recursive=False)
-        if len(genre) == 3:
+        metadata = tree.find('span',attrs={'class':'genres'}).findAll('span',recursive=False)
+        genredata = tree.find('span',attrs={'class':'genres'}).findAll('a')
+        genre = ''
+        for item in genredata:
+            genre +=item.string+','
+        genre = genre[:-1]
+        
+        if len(metadata) == 3:
             year = int(tree.find('span',attrs={'class':'genres'}).contents[0].strip())
-            runtime = genre[1].string.replace('mins','').strip()
+            runtime = metadata[1].string.replace('mins','').strip()
         else:
-            year = int(genre[0].string)
-            runtime = genre[2].string.replace('mins','').strip()
-        for item in genre:
-            print item
+            year = int(metadata[0].string)
+            runtime = metadata[2].string.replace('mins','').strip()
+        
         poster = tree.find('div',attrs={'class':'more-images posters'}).find('img')['src'].replace('thumbs/','') 
         infoLabels={ "Title": movietitle,
                     'plot':plot,
                     'mpaa':mpaa,
                     'duration':runtime,
-                    'year':year}
-        common.addVideo('Play Movie: '+movietitle,common.args.url,poster,fanart,infoLabels=infoLabels)    
+                    'year':year,
+                    'genre':genre}
+        common.addVideo('Play Movie: '+movietitle,common.args.url,poster,fanart,infoLabels=infoLabels)
+        if inqueue:
+            common.addDir('Remove from Queue','movie','REMOVE_QUEUE',movie_id,poster,fanart,infoLabels=infoLabels)
+        else:
+            common.addDir('Add to Queue','movie','ADD_QUEUE',movie_id,poster,fanart,infoLabels=infoLabels)
     for item in tree.findAll('div',attrs={'class':re.compile('more-videos ')}):
         name = item.find('h5').string
         thumb = item.find('img')['src'].replace('thumbs/','')
         common.addDir(name,'movie','MOVIE_EXTRAS',url,thumb,fanart)
+    #view=int(common.addon.getSetting("movieview"))
+    xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[3])+")")
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def MOVIE_EXTRAS():
@@ -74,3 +89,19 @@ def MOVIE_EXTRAS():
                 thumb = re.compile('"src", "(.*?)"\)').findall(extra['onmouseover'])[0].replace('thumbs/','') 
                 common.addVideo(extra.string.strip(),BASE+extra['href'],thumb,fanart,extra=True)
     xbmcplugin.endOfDirectory(pluginhandle)
+
+def ADD_QUEUE(movieid=common.args.url):
+    url = 'http://www.epixhd.com/epx/ajax/myqueue/add/?movie_id='+common.args.url
+    print common.getURL(url,useCookie=True)
+    xbmc.executebuiltin("Container.Refresh()")
+
+def REMOVE_QUEUE(movieid=common.args.url):
+    url = 'http://www.epixhd.com/epx/ajax/myqueue/remove/?movie_id='+common.args.url
+    print common.getURL(url,useCookie=True)
+    xbmc.executebuiltin("Container.Refresh()")
+
+def CHECK_QUEUE(movieid=common.args.url):
+    url = 'http://www.epixhd.com/epx/ajax/myqueue/check/?movie_id='+movieid
+    data = common.getURL(url,useCookie=True)
+    jsondata = demjson.decode(data)
+    return jsondata['inqueue']

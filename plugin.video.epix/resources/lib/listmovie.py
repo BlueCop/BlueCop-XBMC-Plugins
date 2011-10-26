@@ -31,7 +31,8 @@ def LIST_FEATURE():
         url = item.find('moviepage').string
         name = item.find('title').string
         thumb = item.find('poster').string
-        common.addVideo(name,url,thumb)
+        common.addDir(name,'movie','MOVIE_VIDEOS',url,thumb)
+        #common.addVideo(name,url,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIST_POP():
@@ -42,7 +43,13 @@ def LIST_POP():
         url = item['href']+'/'
         name = item['href'].replace('/','').replace('-',' ').title()
         thumb = item.find('img')['src'].replace('thumbs/','')
-        common.addVideo(name,url,thumb,thumb)
+        common.addDir(name,'movie','MOVIE_VIDEOS',url,thumb,thumb)
+        #common.addVideo(name,url,thumb,thumb)
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIST_STUNTS():
+    for i in range(1,350):
+        common.addDir(str(i),'listmovie','LIST_STUNT',str(i))
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIST_COLLECTIONS():
@@ -50,10 +57,7 @@ def LIST_COLLECTIONS():
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     for item in tree.findAll('a',attrs={'class':'showhomepagestunt'}):
         name = item.string
-        if name == 'Coming Soon':
-            pass
-        else:
-            common.addDir(name,'listmovie','LIST_STUNT',item['stunt_id'])
+        common.addDir(name,'listmovie','LIST_STUNT',item['stunt_id'])
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIST_POP2():
@@ -68,7 +72,8 @@ def LIST_STUNT(id=common.args.url):
     jsondata = demjson.decode(data)
     for movie in jsondata['rs']:
         movie = jsondata['rs'][movie]
-        common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
+        common.addDir(movie['title'],'movie','MOVIE_VIDEOS','/'+movie['short_name']+'/')
+        #common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
     xbmcplugin.endOfDirectory(pluginhandle)  
 
 def LIST_ALPHA():
@@ -86,7 +91,8 @@ def LIST_ALPHA_FILTERED():
     for movie in jsondata['content']:
         try: thumb = movie['movie_playerposter'].replace('thumbs/','')
         except: thumb = ''
-        common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
+        common.addDir(movie['movie_title'],'movie','MOVIE_VIDEOS',movie['movie_url'],thumb,thumb)
+        #common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
         
 def LIST_GENRE():
@@ -105,12 +111,6 @@ def LIST_GENRE_FILTERED():
     for movie in jsondata['content']:
         try: thumb = movie['movie_playerposter'].replace('thumbs/','')
         except: thumb = ''
-        common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
+        common.addDir(movie['movie_title'],'movie','MOVIE_VIDEOS',movie['movie_url'],thumb,thumb)
+        #common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
-
-        
-      
-
-        
-
-

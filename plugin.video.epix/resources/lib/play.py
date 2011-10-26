@@ -53,6 +53,17 @@ def buildrtmp(rtmpdata,auth):
     finalUrl += ' swfurl=http://www.epixhd.com/Epix.v2.0.37.1.swf swfvfy=true'
     return finalUrl
 
+def PLAYEXTRA():
+    data = common.getURL(common.args.url)
+    print data
+    smilurl = re.compile("playlist:.*?'(.*?)',").findall(data)[0]
+    data = common.getURL(smilurl)
+    tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    print tree.prettify()
+    videourl = tree.find('video')['src']
+    item = xbmcgui.ListItem(path=videourl)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+
 def PLAYVIDEO():
     #common.login()
     #orgin = 'http://dish.epixhd.com/epx/ajax/user/originstatus/'
@@ -73,6 +84,7 @@ def PLAYVIDEO():
     lbitrate = quality[int(common.addon.getSetting("bitrate"))]
     mbitrate = 0
     streams = []
+    movie_name = tree.find('mbrstream')['ma:asset_name']
     for item in tree.find('mbrstream').findAll('video'):
         url = item['src']
         bitrate = int(item['system-bitrate'])
@@ -88,21 +100,11 @@ def PLAYVIDEO():
         else:
             return
 
-    stackedUrl += buildrtmp(rtmpdata,auth).replace(',',',,')
-
-    #rtmpsplit = rtmpdata.split('?')
-    #parameters = rtmpsplit[1]+'&auth='+auth
-    #filename = 'mp4:'+rtmpsplit[0].split('mp4:')[1]
-    #rtmpbase = rtmpdata.split(filename)[0]
-        
-    #finalUrl = rtmpbase+'?'+parameters
-    #finalUrl += ' playpath='+filename
-    #finalUrl += ' swfurl=http://www.epixhd.com/Epix.v2.0.37.1.swf swfvfy=true'
-    
-    
+    stackedUrl += buildrtmp(rtmpdata,auth).replace(',',',,')    
     #p=ResumePlayer()
     
     item = xbmcgui.ListItem(path=stackedUrl)
+    item.setInfo( type="Video", infoLabels={"Title": movie_name})
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     
     #while not p.isPlaying():

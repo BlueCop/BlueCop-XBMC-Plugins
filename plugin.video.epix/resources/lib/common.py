@@ -61,14 +61,17 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     item.setInfo( type="Video", infoLabels=infoLabels)
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True,totalItems=totalItems)
 
-def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False,traileronly=False):
+def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False,extra=False):
     if not infoLabels:
         infoLabels={ "Title": name}
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="play"'
     u += '&name="'+urllib.quote_plus(name)+'"'
-    u += '&sitemode="PLAYVIDEO"'
+    if extra:
+        u += '&sitemode="PLAYEXTRA"'
+    else:
+        u += '&sitemode="PLAYVIDEO"'
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)
     liz.setProperty('fanart_image',fanart)

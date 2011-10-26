@@ -31,8 +31,26 @@ def MOVIE_VIDEOS():
     data = common.getURL('http://www.epixhd.com/epx/ajax/theater/soloplayer'+common.args.url)
     if 'This movie is not currently playing on EPIX' not in data and 'outofwindow' not in data:
         movietitle = tree.find('h1',attrs={'class':'movie_title'}).string
-        poster = tree.find('div',attrs={'class':'more-images posters'}).find('img')['src'].replace('thumbs/','')        
-        common.addVideo('Play Movie: '+movietitle,common.args.url,poster,fanart)    
+        plot = tree.find('div',attrs={'class':'synP'}).renderContents()
+        tags = re.compile(r'<.*?>')
+        plot = tags.sub('', plot).strip()
+        mpaa = tree.find('span',attrs={'id':'rating'})['class']
+        genre = tree.find('span',attrs={'class':'genres'}).findAll('span',recursive=False)
+        if len(genre) == 3:
+            year = int(tree.find('span',attrs={'class':'genres'}).contents[0].strip())
+            runtime = genre[1].string.replace('mins','').strip()
+        else:
+            year = int(genre[0].string)
+            runtime = genre[2].string.replace('mins','').strip()
+        for item in genre:
+            print item
+        poster = tree.find('div',attrs={'class':'more-images posters'}).find('img')['src'].replace('thumbs/','') 
+        infoLabels={ "Title": movietitle,
+                    'plot':plot,
+                    'mpaa':mpaa,
+                    'duration':runtime,
+                    'year':year}
+        common.addVideo('Play Movie: '+movietitle,common.args.url,poster,fanart,infoLabels=infoLabels)    
     for item in tree.findAll('div',attrs={'class':re.compile('more-videos ')}):
         name = item.find('h5').string
         thumb = item.find('img')['src'].replace('thumbs/','')
@@ -42,6 +60,10 @@ def MOVIE_VIDEOS():
 def MOVIE_EXTRAS():
     data = common.getURL(common.args.url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    try:fanart = tree.find('div',attrs={'class':'more-images wallpapers'}).find('img')['src'].replace('thumbs/','')
+    except:
+        try:fanart = re.compile("\('(.*?)'\)").findall(tree.find('div',attrs={'id':'playerposter'})['style'])[0]
+        except:fanart = ''
     for item in tree.findAll('div',attrs={'class':re.compile('more-videos ')}):
         name = item.find('h5').string
         if name == common.args.name:
@@ -50,5 +72,5 @@ def MOVIE_EXTRAS():
                 if extra.string == None or extra.string == 'more' or extra.string == 'less':
                     continue
                 thumb = re.compile('"src", "(.*?)"\)').findall(extra['onmouseover'])[0].replace('thumbs/','') 
-                common.addVideo(extra.string.strip(),BASE+extra['href'],thumb,extra=True)
+                common.addVideo(extra.string.strip(),BASE+extra['href'],thumb,fanart,extra=True)
     xbmcplugin.endOfDirectory(pluginhandle)

@@ -81,7 +81,10 @@ def LIST_ALPHA():
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for url,name in jsondata['all_items'].iteritems():
+        if name == 'ALL':
+            name = '(ALL)'
         common.addDir(name,'listmovie','LIST_ALPHA_FILTERED',url)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle)
     
 def LIST_ALPHA_FILTERED():

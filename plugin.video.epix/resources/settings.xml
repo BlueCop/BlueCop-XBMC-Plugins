@@ -4,8 +4,12 @@
 		<setting type="sep" />
 		<setting id="login_name" type="text" label="30000" default=""/>
 		<setting id="login_pass" type="text" label="30001" enable="!eq(-1,)" option="hidden" default=""/>
+		<setting id="zipcode" type="text" label="30012" default=""/>
+		<setting id="logintype" type="enum" lvalues="30019|30013|30014|30015|30016|30017|30018" label="30020" default="0"/>
+		<setting id="clearcookies" type="bool" label="30022" default="true"/>
 		<setting type="sep" />
 		<setting id="bitrate" type="enum" lvalues="30005|30006|30007|30008|30009|30010|30011" label="30004" default="1"/>
+		<setting id="enablepreroll" type="bool" label="30021" default="false"/>
 		<setting type="sep" />
 	</category>
 </settings>

@@ -11,4 +11,15 @@
 	<string id="30009">1200kbps</string>
 	<string id="30010">900kbps</string>
 	<string id="30011">500kbps</string>
+	<string id="30012">Zip Code (Charter Only)</string>
+	<string id="30013">Charter Communications</string>
+	<string id="30014">Cox Communications</string>
+	<string id="30015">DISH Network</string>
+	<string id="30016">Mediacom</string>
+	<string id="30017">Suddenlink</string>
+	<string id="30018">Verizon FiOS</string>
+	<string id="30019">Epix.com Account</string>
+	<string id="30020">Account Type</string>
+	<string id="30021">Enable Preroll Videos</string>
+	<string id="30022">Clear Cookies</string>
 </strings>

@@ -34,13 +34,12 @@ class _Info:
 
 exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"',"\"")) , )
 
-def getURL( url , host='www.amazon.com',useCookie=False):
+def getURL( url , useCookie=False):
     print 'getURL: '+url
     if useCookie and os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17'),
-                         ('Host', host)]
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]
     usock = opener.open(url)
     response = usock.read()
     usock.close()
@@ -72,15 +71,85 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     u += '&sitemode="PLAYVIDEO"'
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)
-    liz.setProperty('fanart_image',poster)
+    liz.setProperty('fanart_image',fanart)
     liz.setProperty('IsPlayable', 'true')
     if cm:
         liz.addContextMenuItems( cm , replaceItems=True )
-    xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
-
+    xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)
+    
 def login():
+    providers = { '8':'Charter Communications',
+                  '7':'Cox Communications',
+                  '10':'DISH Network',
+                  '9':'Mediacom',
+                  '14':'Suddenlink',
+                  '1':'Verizon FiOS'}
+    types = ['Epix','8','7','10','9','14','1']
+    logintype = types[int(addon.getSetting("logintype"))]
+    if logintype == 'Epix':
+        epixlogin()
+    else:
+        cablelogin(logintype)
+
+def cablelogin(selected):
     if os.path.isfile(COOKIEFILE):
-        os.remove(COOKIEFILE)
+        if addon.getSetting("clearcookies") == 'true':
+            os.remove(COOKIEFILE)
+        else:
+            return
+    data = getURL('http://www.epixhd.com/epx/ajax/chooseMSO/?mso_id='+selected)
+    jsondata = demjson.decode(data)
+    tree = BeautifulStoneSoup(jsondata['content'], convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    try:
+        signinUrl = tree.find('iframe')['src']
+        provider =  tree.find('iframe')['class']
+    except:
+        signinUrl = re.compile('<script language="javascript">self.parent.location="(.*?)";').findall(jsondata['content'])[0]
+        provider = 'cox'
+    br = mechanize.Browser()  
+    br.set_handle_robots(False)
+    br.set_cookiejar(cj)
+    br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
+    sign_in = br.open(signinUrl)
+    if provider == 'charter':
+        br.select_form(name="f")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+        br["zipcode"] = addon.getSetting("zipcode")
+    elif provider == 'cox':
+        br.select_form(name="LoginPage")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+    elif provider == 'dish':
+        br.select_form(name="f")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+    elif provider == 'mediacom':
+        br.select_form(name="f")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+    elif provider == 'suddenlink':
+        br.select_form(name="f")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+    elif provider == 'verizon':
+        br.select_form(name="loginpage")
+        br["IDToken1"] = addon.getSetting("login_name")
+        br["IDToken2"] = addon.getSetting("login_pass")
+    br.submit()
+    br.select_form(nr=0)
+    response = br.submit()
+    data = response.read()
+    redirect = 'http://www.epixhd.com' + re.compile('self.parent.location="(.*?)"').findall(data)[0]
+    print getURL(redirect) 
+    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+
+def epixlogin():
+    if os.path.isfile(COOKIEFILE):
+        if addon.getSetting("clearcookies") == 'true':
+            os.remove(COOKIEFILE)
+        else:
+            return
     loginurl = 'https://secure.epixhd.com/epx/ajax/user/login/'
     loginurl += '?jsoncallback=jQuery00000000000000000000_0000000000000'
     loginurl += '&user_email='+addon.getSetting("login_name")

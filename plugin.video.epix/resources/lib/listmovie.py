@@ -8,6 +8,7 @@ import sys
 import urllib
 import string
 import demjson
+import re
 from BeautifulSoup import BeautifulSoup
 import resources.lib.common as common
 
@@ -21,29 +22,48 @@ alphaURL = 'http://www.epixhd.com/ajax/psr-landing/letter/'
 BASE = 'http://www.epixhd.com'
 
 ################################ Movie listing
+def LIST_FEATURE():
+    data = common.getURL(BASE)
+    url =  BASE + re.compile('flashvars.xmlPath = "(.*?)";').findall(data)[0]
+    data = common.getURL(url)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    for item in tree.findAll('movie'):
+        url = item.find('moviepage').string
+        name = item.find('title').string
+        thumb = item.find('poster').string
+        common.addVideo(name,url,thumb)
+    xbmcplugin.endOfDirectory(pluginhandle)
+
 def LIST_POP():
     url = 'http://www.epixhd.com/all-movies/'
     data = common.getURL(url)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     for item in tree.find('div',attrs={'id':'am-top-posters'}).findAll('a'):
-        print item
         url = item['href']+'/'
         name = item['href'].replace('/','').replace('-',' ').title()
         thumb = item.find('img')['src'].replace('thumbs/','')
-        common.addVideo(name,url,thumb)
-    xbmcplugin.endOfDirectory(pluginhandle)
-    
-def LIST_POP2():
-    url = 'http://www.epixhd.com/ajax/getstuntlimited/?stunt_id=63&limit=36'
-    data = common.getURL(url)
-    jsondata = demjson.decode(data)
-    for movie in jsondata['rs']:
-        movie = jsondata['rs'][movie]
-        common.addVideo(movie['title'],'/'+movie['short_name']+'/')    
+        common.addVideo(name,url,thumb,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def LIST_RECENT():    
-    url = 'http://www.epixhd.com/ajax/getstuntlimited/?stunt_id=55&limit=36'
+def LIST_COLLECTIONS():
+    data = common.getURL(BASE)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    for item in tree.findAll('a',attrs={'class':'showhomepagestunt'}):
+        name = item.string
+        if name == 'Coming Soon':
+            pass
+        else:
+            common.addDir(name,'listmovie','LIST_STUNT',item['stunt_id'])
+    xbmcplugin.endOfDirectory(pluginhandle)
+
+def LIST_POP2():
+    LIST_STUNT('63')
+
+def LIST_RECENT():
+    LIST_STUNT('55')
+    
+def LIST_STUNT(id=common.args.url):
+    url = 'http://www.epixhd.com/ajax/getstuntlimited/?stunt_id='+id+'&limit=72'
     data = common.getURL(url)
     jsondata = demjson.decode(data)
     for movie in jsondata['rs']:
@@ -66,7 +86,7 @@ def LIST_ALPHA_FILTERED():
     for movie in jsondata['content']:
         try: thumb = movie['movie_playerposter'].replace('thumbs/','')
         except: thumb = ''
-        common.addVideo(movie['movie_title'],movie['movie_url'],thumb)
+        common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
         
 def LIST_GENRE():
@@ -85,7 +105,7 @@ def LIST_GENRE_FILTERED():
     for movie in jsondata['content']:
         try: thumb = movie['movie_playerposter'].replace('thumbs/','')
         except: thumb = ''
-        common.addVideo(movie['movie_title'],movie['movie_url'],thumb)
+        common.addVideo(movie['movie_title'],movie['movie_url'],thumb,thumb)
     xbmcplugin.endOfDirectory(pluginhandle)
 
         

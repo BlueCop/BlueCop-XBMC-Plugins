@@ -25,12 +25,14 @@ print "\n\n\n\n\n\n\n====================EPIX START====================\n\n\n\n\
 
 def modes( ):
     if sys.argv[2]=='':
-        #common.login()
+        common.login()
+        common.addDir('Featured','listmovie','LIST_FEATURE')
         common.addDir('Most Popular','listmovie','LIST_POP')
-        #common.addDir('Most Popular','listmovie','LIST_POP2')
+        #common.addDir('Most Popular2','listmovie','LIST_POP2')
         common.addDir('Recently Added','listmovie','LIST_RECENT')
-        common.addDir('Alphabetical','listmovie','LIST_ALPHA')
+        common.addDir('Collections','listmovie','LIST_COLLECTIONS')
         common.addDir('Genre','listmovie','LIST_GENRE')
+        common.addDir('Alphabetical','listmovie','LIST_ALPHA')
         xbmcplugin.endOfDirectory(pluginhandle)
     else:
         exec 'import resources.lib.%s as sitemodule' % common.args.mode

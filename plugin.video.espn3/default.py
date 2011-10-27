@@ -20,11 +20,12 @@ if cbrowser is '' or cbrowser is None:
     cbrowser = "Firefox"
 usexbmc = selfAddon.getSetting('watchinxbmc')
 defaultimage = 'special://home/addons/plugin.video.espn3/icon.png'
+defaultfanart = 'special://home/addons/plugin.video.espn3/fanart.jpg'
 if usexbmc is '' or usexbmc is None:
     usexbmc = True
 
 pluginpath = selfAddon.getAddonInfo('path')
-COOKIEFILE = os.path.join(xbmc.translatePath(pluginpath),'resources','cache','cookies.lwp')
+COOKIEFILE = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.espn3/'),'cookies.lwp')
 cj = cookielib.LWPCookieJar()
 
 def CATEGORIES():
@@ -356,32 +357,21 @@ def login():
     br.select_form(nr=0)
     response = br.submit()
     print response.read()
-    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    cj.save(COOKIEFILE, ignore_discard=False, ignore_expires=False)
 
 def get_html( url , useCookie=False):
-    print 'ESPN3:  get_html: '+url
-    if useCookie and os.path.isfile(COOKIEFILE):
-        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]
-    usock = opener.open(url)
-    response = usock.read()
-    usock.close()
-    #cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    return response
-
-def get_htmlold(url):
-    req = urllib2.Request(url)
-    req.add_header('User-Agent',
-                   'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
     try:
-        response = urllib2.urlopen(req)
-        html = response.read()
-        response.close()
-    except urllib2.HTTPError:
-        response = False
-        html = False
-    return html
+        print 'ESPN3:  get_html: '+url
+        if useCookie and os.path.isfile(COOKIEFILE):
+            cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]
+        usock = opener.open(url)
+        response = usock.read()
+        usock.close()
+        #cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+        return response
+    except: return False
 
 def get_params():
     param = []
@@ -408,6 +398,7 @@ def addLink(name, url, mode, iconimage):
     liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
     liz.setInfo(type="Video", infoLabels={"Title": name})
     liz.setProperty('IsPlayable', 'true')
+    liz.setProperty('fanart_image',defaultfanart)
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)
     return ok
 
@@ -417,6 +408,7 @@ def addDir(name, url, mode, iconimage):
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo(type="Video", infoLabels={"Title": name})
+    liz.setProperty('fanart_image',defaultfanart)
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 

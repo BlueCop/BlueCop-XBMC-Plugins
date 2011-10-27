@@ -5,6 +5,8 @@
 # Released under GPL(v2)
 
 import urllib, urllib2, xbmcplugin, xbmcaddon, xbmcgui, string, htmllib, os, platform, random, calendar, re
+import cookielib
+import mechanize
 from datetime import date, timedelta
 from BeautifulSoup import BeautifulStoneSoup as Soup
 
@@ -20,6 +22,10 @@ usexbmc = selfAddon.getSetting('watchinxbmc')
 defaultimage = 'special://home/addons/plugin.video.espn3/icon.png'
 if usexbmc is '' or usexbmc is None:
     usexbmc = True
+
+pluginpath = selfAddon.getAddonInfo('path')
+COOKIEFILE = os.path.join(xbmc.translatePath(pluginpath),'resources','cache','cookies.lwp')
+cj = cookielib.LWPCookieJar()
 
 def CATEGORIES():
     mode = 1
@@ -170,16 +176,18 @@ def REPLAYBYSPORT(url):
             name = name.title()
             mode = 1
             addDir(name,realurl, mode, defaultimage)
-    
-            
 
 
 def PLAY(url):
     #Make startupevent url from page url
     print url
     startUrl = 'http://espn.go.com/espn3/feeds/startupEvent?'+url.split('?')[1]+'&gameId=null&sportCode=null'
+    if selfAddon.getSetting("enablelogin") == 'true':
+        useCookie=True
+    else:
+        useCookie=False
     #Get eventid, bamContentId, and bamEventId from starturl data
-    html = get_html(startUrl)
+    html = get_html(startUrl,useCookie=useCookie)
     if html == False:
         dialog = xbmcgui.Dialog()
         dialog.ok("Failure to Launch URL", "Unable to launch video feed most likely", "because you already requested this feed.", "Please wait a while and try again.")
@@ -189,10 +197,9 @@ def PLAY(url):
         bamContentId = event['bamcontentid']
         bamEventId = event['bameventid']
 
-
         #Make identityPointId from userdata
         userdata = 'http://broadband.espn.go.com/espn3/auth/userData'
-        html = get_html(userdata)
+        html = get_html(userdata,useCookie=useCookie)
         soup = Soup(html)
         affiliateid = soup('name')[0].string
         swid = soup('personalization')[0]['swid']
@@ -209,20 +216,21 @@ def PLAY(url):
         authurl += '&partnerContentId='+eventid
         authurl += '&identityPointId='+identityPointId
         authurl += '&playerId=domestic'
-        html = get_html(authurl)
+        html = get_html(authurl,useCookie=useCookie)
         smilurl = Soup(html).findAll('url')[0].string
         auth = smilurl.split('?')[1]
 
         #Grab smil url to get rtmp url and playpath
-        html = get_html(smilurl)
+        html = get_html(smilurl,useCookie=useCookie)
         soup = Soup(html)
         print soup.prettify()
         rtmp = soup.findAll('meta')[0]['base']
-        #live selects stream quality
-        #200000,400000,800000,1200000,1800000
+        # Live Qualities
         #     0,     1,     2,      3,      4
-        #     Lowest, Low,   Medium,  High, Highest
-        #Change the [4] to 0-4 to change the bitrate
+        # Replay Qualities
+        #            0,     1,      2,      3
+        # Lowest, Low,  Medium, High,  Highest
+        # 200000,400000,800000,1200000,1800000
         if 'ondemand' in rtmp:
             replayquality = selfAddon.getSetting('replayquality')
             playpath = soup.findAll('video')[int(replayquality)]['src']
@@ -259,9 +267,110 @@ def PLAYBROWSER(url):
     os.system(cmd)
 
 #	subprocess.call(['open -a /Applications/Firefox.app'])
+    
+def login():
+    if os.path.isfile(COOKIEFILE):
+        if selfAddon.getSetting("clearcookies") == 'true':
+            os.remove(COOKIEFILE)
+        else:
+            return
+    types = ['comcast','att','verizon','twc','bhn','insight','cox']
+    logintype = types[int(selfAddon.getSetting("logintype"))]
+    url = 'http://a.espncdn.com/combiner/c?v=201110050400&js=/espn/espn360/watchespn/format/design11/shell/js/auth'
+    data = get_html(url)
+    p_AUTH = 'http://broadband.espn.go.com/espn3/auth'
 
+    br = mechanize.Browser()  
+    br.set_handle_robots(False)
+    br.set_cookiejar(cj)
+    br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
 
-def get_html(url):
+    if logintype == 'comcast':
+        comcastLogin = re.compile('function comcastLogin\(\){(.*?)}').findall(data)[0]
+        Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(comcastLogin)[0]
+        LoginUrl = re.compile('var A="(.*?)";').findall(comcastLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(nr=0)
+        response = br.submit()
+        print response.read()
+        br.select_form(name='signin')
+        br["user"] = selfAddon.getSetting("login_name")
+        br["password"] = selfAddon.getSetting("login_pass")
+    elif logintype == 'att':
+        attLogin = re.compile('function attLogin\(\){(.*?)}').findall(data)[0]
+        Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(attLogin)
+        LoginUrl = re.compile('var A="(.*?)";').findall(attLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(nr=0)
+        response = br.submit()
+        print response.read()
+        br.select_form(name='LoginForm')
+        br["userid"] = selfAddon.getSetting("login_name")
+        br["password"] = selfAddon.getSetting("login_pass")
+    elif logintype == 'twc':    
+        twcLogin = re.compile('function twcLogin\(\){(.*?)}').findall(data)[0]
+        LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(twcLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(nr=0)
+        response = br.submit()
+        print response.read()
+        br.select_form(name='IDPLogin')
+        br["Ecom_User_ID"] = selfAddon.getSetting("login_name")
+        br["Ecom_Password"] = selfAddon.getSetting("login_pass")
+    elif logintype == 'bhn':    
+        bhnLogin = re.compile('function bhnLogin\(\){(.*?)}').findall(data)[0]
+        LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(bhnLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(nr=0)
+        response = br.submit()
+        print response.read()
+        br.select_form(name='IDPLogin')
+        br["j_username"] = selfAddon.getSetting("login_name")
+        br["j_password"] = selfAddon.getSetting("login_pass")
+    elif logintype == 'insight':
+        insightLogin = re.compile('function insightLogin\(\){(.*?)}').findall(data)[0]
+        LoginUrl = re.compile('open\("(.*?)","').findall(insightLogin)[0]
+        LoginUrl = 'http://www.insightbb.com/Auth/Login.aspx?ContentType=ESPN360'
+        sign_in = br.open(LoginUrl)
+        br.select_form(name="aspnetForm")
+        br["ctl00$ContentPlaceHolder1$UL_login1$txtUserID"] = selfAddon.getSetting("login_name")
+        br["ctl00$ContentPlaceHolder1$UL_login1$txtpwd"] = selfAddon.getSetting("login_pass")
+        #ctl00$ContentPlaceHolder1$UL_login1$chkrememberme
+    elif logintype == 'verizon':
+        verizonLogin = re.compile('function verizonLogin\(A\){(.*?)}').findall(data)[0]
+        LoginUrl = re.compile('open\("(.*?)","').findall(verizonLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(name="loginpage")
+        br["IDToken1"] = selfAddon.getSetting("login_name")
+        br["IDToken2"] = selfAddon.getSetting("login_pass")
+    elif logintype == 'cox':
+        coxLogin = re.compile('function coxLogin\(\){(.*?)}').findall(data)[0]
+        Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(coxLogin)[0]
+        LoginUrl = re.compile('var A="(.*?)";').findall(coxLogin)[0]
+        sign_in = br.open(LoginUrl)
+        br.select_form(name="LoginPage")  
+        br["username"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+    response = br.submit()
+    print response.read()
+    br.select_form(nr=0)
+    response = br.submit()
+    print response.read()
+    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+
+def get_html( url , useCookie=False):
+    print 'ESPN3:  get_html: '+url
+    if useCookie and os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]
+    usock = opener.open(url)
+    response = usock.read()
+    usock.close()
+    #cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    return response
+
+def get_htmlold(url):
     req = urllib2.Request(url)
     req.add_header('User-Agent',
                    'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
@@ -351,6 +460,8 @@ print "URL: " + str(url)
 print "Name: " + str(name)
 
 if mode == None or url == None or len(url) < 1:
+    if selfAddon.getSetting("enablelogin") == 'true':
+        login()
     print "Generate Main Menu"
     CATEGORIES()
 elif mode == 1:
@@ -376,7 +487,5 @@ elif mode == 4:
 #else:
 #    print ""+url
 #   INDEX(url)
-
-
 
 xbmcplugin.endOfDirectory(int(sys.argv[1]))

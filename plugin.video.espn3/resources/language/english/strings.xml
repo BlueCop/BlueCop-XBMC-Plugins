@@ -3,5 +3,21 @@
     <string id="30001">Quality of Recorded Stream</string>
     <string id="30002">Default Browser</string>
     <string id="30003">Quality of Live Stream</string>
-
+    <string id="30004">200k</string>
+    <string id="30005">400k</string>
+    <string id="30006">800k</string>
+    <string id="30007">1200k</string>
+    <string id="30008">1800k</string>
+    <string id="30009">Comcast</string>
+    <string id="30010">AT&T</string>
+    <string id="30011">Verizon</string>
+    <string id="30012">Time Warner Cable</string>
+    <string id="30013">Bright House Networks</string>
+    <string id="30014">Insight</string>
+    <string id="30015">Cox</string>
+    <string id="30016">Cable Provider</string>
+    <string id="30017">Username</string>
+    <string id="30018">Password</string>
+    <string id="30019">Clear Cookies</string>
+    <string id="30020">Enable Login</string>
 </strings>

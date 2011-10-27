@@ -1,6 +1,19 @@
 <settings>
-    <setting id="watchinxbmc" type="bool" label="30000" default="true"/>
-    <setting id="replayquality" type="enum" label="30001" values="Low|Medium|High|Highest" default="Highest"/>
-    <setting id="browser" type="enum" label="30002" values="Firefox|Chrome" default="Firefox"/>
-    <setting id="livequality" type="enum" label="30003" values="Lowest|Low|Medium|High|Highest" default="Highest"/>
+	<category label="Playback">
+ 		<setting type="sep" />
+    	<setting id="watchinxbmc" type="bool" label="30000" default="true"/>
+    	<setting id="replayquality" type="enum" label="30001" lvalues="30005|30006|30007|30008" default="3"/>
+    	<setting id="browser" type="enum" label="30002" values="Firefox|Chrome" default="Firefox"/>
+    	<setting id="livequality" type="enum" label="30003" lvalues="30004|30005|30006|30007|30008" default="4"/>
+  		<setting type="sep" />
+	</category> 
+	<category label="Login">   
+ 		<setting type="sep" />
+		<setting id="login_name" type="text" label="30017" default=""/>
+		<setting id="login_pass" type="text" label="30018" enable="!eq(-1,)" option="hidden" default=""/>
+		<setting id="logintype" type="enum" lvalues="30009|30010|30011|30012|30013|30014|30015" label="30016" default="0"/>
+		<setting id="enablelogin" type="bool" label="30020" default="false"/>
+		<setting id="clearcookies" type="bool" label="30019" default="true"/>
+		<setting type="sep" />
+	</category>		
 </settings>

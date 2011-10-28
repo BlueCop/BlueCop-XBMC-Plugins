@@ -46,10 +46,10 @@
 
 <addon id="plugin.video.espn3"
        name="ESPN3"
-       version="0.8.7"
+       version="0.8.8"
        provider-name="Ksosez">
     <requires>
-        <import addon="xbmc.python" version="1.0"/>
+        <import addon="xbmc.pyton" version="1.0"/>
 		<import addon="script.module.beautifulsoup" version="3.0.8"/>
     	<import addon="script.module.mechanize" version="0.2.5"/>
     </requires>

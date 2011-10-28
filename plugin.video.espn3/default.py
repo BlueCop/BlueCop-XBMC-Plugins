@@ -351,6 +351,8 @@ def login():
         print response.read()
         saveUserdata()
         cj.save(COOKIEFILE, ignore_discard=False, ignore_expires=False)
+        checkrights = 'http://broadband.espn.go.com/espn3/auth/espnnetworks/user'
+        print get_html(checkrights,useCookie=True)
 
 def get_html( url , useCookie=False):
     try:

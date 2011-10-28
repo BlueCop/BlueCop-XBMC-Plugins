@@ -204,8 +204,8 @@ def PLAY(url,videonetwork):
     else:
         useCookie=False
     config = 'http://espn.go.com/watchespn/player/config'
-    if selfAddon.getSetting("enablelogin") == 'true':
-        config += '?eanUser=true'
+    #if selfAddon.getSetting("enablelogin") == 'true':
+    #    config += '?eanUser=true'
     data = get_html(config,useCookie=useCookie)
     networks = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).find('networks').findAll('network')
     for network in networks:

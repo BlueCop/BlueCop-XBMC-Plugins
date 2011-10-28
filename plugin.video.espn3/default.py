@@ -32,6 +32,11 @@ USERFILE = os.path.join(ADDONDATA,'userdata.xml')
 
 cj = cookielib.LWPCookieJar()
 confluence_views = [500,501,502,503,504,508]
+networkmap = {'n360':'ESPN3',
+              'n501':'ESPN',
+              'n502':'ESPN2',
+              'n599':'ESPNU',
+              'nal':'Goal Line'}
 
 channels = '&channel='
 if selfAddon.getSetting('espn1') == 'true':
@@ -48,11 +53,11 @@ channels = channels[:-1]
 
 def CATEGORIES():
     curdate = datetime.now()
-    enddate = '&endDate='+ curdate.strftime("%Y%m%d")
     upcoming = int(selfAddon.getSetting('upcoming'))+1
     days = (curdate+timedelta(days=upcoming)).strftime("%Y%m%d")
     addDir('Live', 'http://espn.go.com/watchespn/feeds/startup?action=live'+channels, 1, defaultimage)
     addDir('Upcoming', 'http://espn.go.com/watchespn/feeds/startup?action=upcoming'+channels+'&endDate='+days+'&startDate='+curdate.strftime("%Y%m%d"), 2,defaultimage)
+    enddate = '&endDate='+ curdate.strftime("%Y%m%d")
     replays1 = [5,10,15,20,25]
     replays1 = replays1[int(selfAddon.getSetting('replays1'))]
     start1 = (curdate-timedelta(days=replays1)).strftime("%Y%m%d")
@@ -120,23 +125,30 @@ def INDEX(url,name,bysport=False):
                 sport += ' ('+sport2+')'
             league = event.find('league').string
             location = event.find('site').string
+            networkid = event.find('networkid').string
+            if networkid is not None:
+                network = networkmap[networkid]
             thumb = event.find('large').string
             starttime = int(event.find('starttimegmtms').string)/1000
             endtime = int(event.find('endtimegmtms').string)/1000
             start = time.strftime("%m/%d/%Y %I:%M %p",time.localtime(starttime))
             length = str((endtime - starttime)/60)
-            try: plot = event.find('caption').string+'\n\n'
+            try: end = event.find('caption').string+''
             except:
-                try: plot = event.find('summary').string+'\n\n'
-                except: plot = ''
+                try: end = event.find('summary').string+''
+                except: end = ''
+            plot = ''
+            if network:
+                plot += 'Network: '+network+'\n'
             if sport is not None:
                 plot += 'Sport: '+sport+'\n'
             else:
                 sport = ''
-            if league is not None:
+            if league is not None or league is not "":
                 plot += 'League: '+league+'\n'
             if location is not None:
                 plot += 'Location: '+location+'\n'
+            plot += end
             infoLabels = {'title':ename,
                           'tvshowtitle':sport,
                           'plot':plot,
@@ -148,80 +160,100 @@ def INDEX(url,name,bysport=False):
                 if league is not None:
                     authurl += "&league=%s" % urllib.quote(league)
             if 'action=upcoming' in url:
-                addDir(ename, authurl, 5, thumb, thumb, infoLabels=infoLabels)
-            else:
-                addLink(ename, authurl, 4, thumb, thumb, infoLabels=infoLabels)
+                mode = 5
+            elif networkid == 'n360':
+                mode = 4
+            elif networkid == 'n501':
+                mode = 6
+            elif networkid == 'n502':
+                mode = 7   
+            elif networkid == 'n599':
+                mode = 8
+            elif networkid == 'nal':
+                mode = 9
+            addLink(ename, authurl, mode, thumb, thumb, infoLabels=infoLabels)
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[3])+")")
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-def PLAY(url):
-    #Make startupevent url from page url
-    #startUrl = 'http://espn.go.com/espn3/feeds/startupEvent?'+url.split('?')[1]+'&gameId=null&sportCode=null'
-    #Get eventid, bamContentId, and bamEventId from starturl data
-    #html = get_html(startUrl,useCookie=useCookie)
-    #if html == False:
-    #    dialog = xbmcgui.Dialog()
-    #    dialog.ok("Failure to Launch URL", "Unable to launch video feed most likely", "because you already requested this feed.", "Please wait a while and try again.")
-    #else:
-    #event = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)('event')[1]
-    #eventid = event['id']
-    #bamContentId = event['bamcontentid']
-    #bamEventId = event['bameventid']
-    
-    #Make identityPointId from userdata
-    #userdata = 'http://broadband.espn.go.com/espn3/auth/userData'
-    #html = get_html(userdata,useCookie=useCookie)
+def PLAYESPN1(url):
+    PLAY(url,'n501')
 
-    if selfAddon.getSetting("enablelogin") == 'true':
-        useCookie=True
-    else:
-        useCookie=False
+def PLAYESPN2(url):
+    PLAY(url,'n502')
+
+def PLAYESPN3(url):
+    PLAY(url,'n360')
+    
+def PLAYESPNU(url):
+    PLAY(url,'n599')
+
+def PLAYESPNGL(url):
+    PLAY(url,'nal')
+    
+def PLAY(url,videonetwork):
     data = ReadFile('userdata.xml', ADDONDATA)
     soup = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     print soup.prettify()
     affiliateid = soup('name')[0].string
     swid = soup('personalization')[0]['swid']
     identityPointId = affiliateid+':'+swid
-
-    #Use eventid, bamContentId, bamEventId, and identityPointId to get smil url and auth data
-    authurl = 'https://espn-ws.bamnetworks.com/pubajaxws/bamrest/MediaService2_0/op-findUserVerifiedEvent/v-2.1'
-    authurl += '?platform=WEB_MEDIAPLAYER'
-    authurl += '&playbackScenario=FMS_CLOUD'
-    authurl += url
-    #authurl += '&eventId='+bamEventId
-    #authurl += '&contentId='+bamContentId
-    #authurl += '&partnerContentId='+eventid
-    authurl += '&rand='+str(random.random())+'0000'
-    authurl += '&cdnName=PRIMARY_AKAMAI'
-    authurl += '&identityPointId='+identityPointId
-    authurl += '&playerId=domestic'
-    html = get_html(authurl,useCookie=useCookie)
-    print html
-    smilurl = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('url')[0].string
-    auth = smilurl.split('?')[1]
-
-    #Grab smil url to get rtmp url and playpath
-    html = get_html(smilurl,useCookie=useCookie)
-    soup = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    print soup.prettify()
-    rtmp = soup.findAll('meta')[0]['base']
-    # Live Qualities
-    #     0,     1,     2,      3,      4
-    # Replay Qualities
-    #            0,     1,      2,      3
-    # Lowest, Low,  Medium, High,  Highest
-    # 200000,400000,800000,1200000,1800000
-    if 'ondemand' in rtmp:
-        replayquality = selfAddon.getSetting('replayquality')
-        playpath = soup.findAll('video')[int(replayquality)]['src']
-        finalurl = rtmp+'/?'+auth+' playpath='+playpath
-    elif 'live' in rtmp:
-        livequality = selfAddon.getSetting('livequality')
-        playpath = soup.findAll('video')[int(livequality)]['src']
-        finalurl = rtmp+' live=1 playlist=1 subscribe='+playpath+' playpath='+playpath+'?'+auth
-    item = xbmcgui.ListItem(path=finalurl)
-    return xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+    
+    if selfAddon.getSetting("enablelogin") == 'true':
+        useCookie=True
+    else:
+        useCookie=False
+    config = 'http://espn.go.com/watchespn/player/config'
+    if selfAddon.getSetting("enablelogin") == 'true':
+        config += '?eanUser=true'
+    data = get_html(config,useCookie=useCookie)
+    networks = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).find('networks').findAll('network')
+    for network in networks:
+        if videonetwork == network['id']:
+            mediaFramework = network.find('mediaframework')
+            playedId = mediaFramework['playerid']
+            cdnName = mediaFramework['cdn']
+            channel = network['name']
+            networkurl = network.find('url').string
+            authurl = networkurl
+            if '?' not in authurl:
+                authurl +='?'
+            else:
+                authurl +='&'
+            authurl += 'playbackScenario=FMS_CLOUD'
+            authurl += '&channel='+channel
+            authurl += url
+            authurl += '&rand='+str(random.random())+'0000'
+            authurl += '&cdnName='+cdnName
+            authurl += '&identityPointId='+identityPointId
+            authurl += '&playerId='+playedId
+            html = get_html(authurl,useCookie=useCookie)
+            tree = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            print tree.prettify()
+            smilurl = tree.find('url').string
+            auth = smilurl.split('?')[1]
+        
+            #Grab smil url to get rtmp url and playpath
+            html = get_html(smilurl,useCookie=useCookie)
+            soup = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            print soup.prettify()
+            rtmp = soup.findAll('meta')[0]['base']
+            # Live Qualities
+            #     0,     1,     2,      3,      4
+            # Replay Qualities
+            #            0,     1,      2,      3
+            # Lowest, Low,  Medium, High,  Highest
+            # 200000,400000,800000,1200000,1800000
+            if 'ondemand' in rtmp:
+                replayquality = selfAddon.getSetting('replayquality')
+                playpath = soup.findAll('video')[int(replayquality)]['src']
+                finalurl = rtmp+'/?'+auth+' playpath='+playpath
+            elif 'live' in rtmp:
+                livequality = selfAddon.getSetting('livequality')
+                playpath = soup.findAll('video')[int(livequality)]['src']
+                finalurl = rtmp+' live=1 playlist=1 subscribe='+playpath+' playpath='+playpath+'?'+auth
+            item = xbmcgui.ListItem(path=finalurl)
+            return xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
 def PLAYBROWSER(url):
     print "Play URL:%s" % url
@@ -249,10 +281,13 @@ def PLAYBROWSER(url):
 
 #	subprocess.call(['open -a /Applications/Firefox.app'])
 def saveUserdata(useCookie=False):
-    userdata = 'http://broadband.espn.go.com/espn3/auth/userData'
-    data = get_html(userdata,useCookie=useCookie)
-    SaveFile('userdata.xml', data, ADDONDATA)
-    soup = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    userdata1 = 'http://broadband.espn.go.com/espn3/auth/userData?format=xml'
+    #userdata2 = 'http://broadband.espn.go.com/espn3/auth/espnnetworks/userData?format=xml'
+    data1 = get_html(userdata1,useCookie=useCookie)
+    #data2 = get_html(userdata1,useCookie=useCookie)
+    SaveFile('userdata.xml', data1, ADDONDATA)
+    #SaveFile('userdata2.xml', data2, ADDONDATA)
+    soup = BeautifulStoneSoup(data1, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     print soup.prettify()
     
 def login():
@@ -349,8 +384,8 @@ def login():
         br.select_form(nr=0)
         response = br.submit()
         print response.read()
-        saveUserdata()
         cj.save(COOKIEFILE, ignore_discard=False, ignore_expires=False)
+        saveUserdata(useCookie=True)
         checkrights = 'http://broadband.espn.go.com/espn3/auth/espnnetworks/user'
         print get_html(checkrights,useCookie=True)
 
@@ -465,9 +500,17 @@ elif mode == 5:
     print "Upcoming"
     dialog = xbmcgui.Dialog()
     dialog.ok("Upcoming Event", "Event has not started.")
+elif mode == 6:
+    PLAYESPN1(url)
+elif mode == 7:
+    PLAYESPN2(url)
+elif mode == 8:
+    PLAYESPNU(url)
+elif mode == 9:
+    PLAYESPNGL(url)
 elif mode == 4:
     print "Play Video"
     if usexbmc == True or usexbmc == "true":
-        PLAY(url)
+        PLAYESPN3(url)
     else:
         PLAYBROWSER(url)

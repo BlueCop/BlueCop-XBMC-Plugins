@@ -49,16 +49,26 @@ channels = channels[:-1]
 def CATEGORIES():
     curdate = datetime.now()
     enddate = '&endDate='+ curdate.strftime("%Y%m%d")
-    start10 = (curdate-timedelta(days=10)).strftime("%Y%m%d")
-    start30 = (curdate-timedelta(days=30)).strftime("%Y%m%d")
-    start60 = (curdate-timedelta(days=60)).strftime("%Y%m%d")
-    start120 = (curdate-timedelta(days=120)).strftime("%Y%m%d")
+    upcoming = int(selfAddon.getSetting('upcoming'))+1
+    days = (curdate+timedelta(days=upcoming)).strftime("%Y%m%d")
     addDir('Live', 'http://espn.go.com/watchespn/feeds/startup?action=live'+channels, 1, defaultimage)
-    addDir('Upcoming', 'http://espn.go.com/watchespn/feeds/startup?action=upcoming'+channels, 2,defaultimage)
-    addDir('Replay 10 Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start10, 2, defaultimage)
-    addDir('Replay 30 Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start30, 2, defaultimage)
-    addDir('Replay 60 Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start60, 2, defaultimage)
-    addDir('Replay 60-120 Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+'&endDate='+start60+'&startDate='+start120, 2, defaultimage)
+    addDir('Upcoming', 'http://espn.go.com/watchespn/feeds/startup?action=upcoming'+channels+'&endDate='+days+'&startDate='+curdate.strftime("%Y%m%d"), 2,defaultimage)
+    replays1 = [5,10,15,20,25]
+    replays1 = replays1[int(selfAddon.getSetting('replays1'))]
+    start1 = (curdate-timedelta(days=replays1)).strftime("%Y%m%d")
+    replays2 = [10,20,30,40,50]
+    replays2 = replays2[int(selfAddon.getSetting('replays2'))]
+    start2 = (curdate-timedelta(days=replays2)).strftime("%Y%m%d")
+    replays3 = [30,60,90,120]
+    replays3 = replays3[int(selfAddon.getSetting('replays3'))]
+    start3 = (curdate-timedelta(days=replays3)).strftime("%Y%m%d")
+    replays4 = [60,90,120,240]
+    replays4 = replays4[int(selfAddon.getSetting('replays4'))]
+    start4 = (curdate-timedelta(days=replays4)).strftime("%Y%m%d")
+    addDir('Replay '+str(replays1)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start1, 2, defaultimage)
+    addDir('Replay '+str(replays2)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start4, 2, defaultimage)
+    addDir('Replay '+str(replays3)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start3, 2, defaultimage)
+    addDir('Replay '+str(replays3)+'-'+str(replays4)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+'&endDate='+start3+'&startDate='+start4, 2, defaultimage)
     addDir('Replay All', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels, 2, defaultimage)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -68,17 +78,18 @@ def LISTSPORTS(url,name):
     else:
         useCookie=False
     data = get_html(url,useCookie=useCookie)
-    addDir('(All)', url, 1, defaultimage)
     SaveFile('videocache.xml', data, ADDONDATA)
-    tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    #tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    addDir('(All)', url, 1, defaultimage)
     sports = []
-    for event in tree.findAll('sportdisplayvalue'):
+    for event in BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('sportdisplayvalue'):
         sport = event.string.title().encode('utf-8')
         if sport not in sports:
             sports.append(sport)
     for sport in sports:
         addDir(sport, url, 3, defaultimage)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 def INDEXBYSPORT(url,name):
     INDEX(url,name,bysport=True)
@@ -92,16 +103,11 @@ def INDEX(url,name,bysport=False):
         data = get_html(url,useCookie=useCookie)
     else:
         data = ReadFile('videocache.xml', ADDONDATA)
-    tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    for event in tree.findAll('event'):
+    for event in BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('event'):
         sport = event.find('sportdisplayvalue').string.title().encode('utf-8')
         if name <> sport and bysport == True:
             continue
         else:
-            if 'action=upcoming' in url:
-                mode = 5
-            else:
-                mode = 4
             ename = event.find('name').string.encode('utf-8')
             eventid = event['id']
             bamContentId = event['bamcontentid']
@@ -119,9 +125,6 @@ def INDEX(url,name,bysport=False):
             endtime = int(event.find('endtimegmtms').string)/1000
             start = time.strftime("%m/%d/%Y %I:%M %p",time.localtime(starttime))
             length = str((endtime - starttime)/60)
-            rurl = "http://espn.go.com/espn3/player?id=%s" % eventid
-            if league is not None:
-                rurl += "&league=%s" % urllib.quote(league)
             try: plot = event.find('caption').string+'\n\n'
             except:
                 try: plot = event.find('summary').string+'\n\n'
@@ -140,9 +143,17 @@ def INDEX(url,name,bysport=False):
                           'aired':start,
                           'premiered':start,
                           'duration':length}
-            addLink(ename, authurl, mode, thumb,infoLabels=infoLabels)
+            if usexbmc == False or usexbmc == "false":
+                authurl = "http://espn.go.com/espn3/player?id=%s" % eventid
+                if league is not None:
+                    authurl += "&league=%s" % urllib.quote(league)
+            if 'action=upcoming' in url:
+                addDir(ename, authurl, 5, thumb, thumb, infoLabels=infoLabels)
+            else:
+                addLink(ename, authurl, 4, thumb, thumb, infoLabels=infoLabels)
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[3])+")")
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 def PLAY(url):
     #Make startupevent url from page url
@@ -186,6 +197,7 @@ def PLAY(url):
     authurl += '&identityPointId='+identityPointId
     authurl += '&playerId=domestic'
     html = get_html(authurl,useCookie=useCookie)
+    print html
     smilurl = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('url')[0].string
     auth = smilurl.split('?')[1]
 
@@ -383,7 +395,7 @@ def ReadFile(filename, dir):
     file = open(path,'r')
     return file.read()
 
-def addLink(name, url, mode, iconimage, infoLabels=False):
+def addLink(name, url, mode, iconimage, fanart=False, infoLabels=False):
     u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
@@ -391,17 +403,23 @@ def addLink(name, url, mode, iconimage, infoLabels=False):
         infoLabels={"Title": name}
     liz.setInfo(type="Video", infoLabels=infoLabels)
     liz.setProperty('IsPlayable', 'true')
-    liz.setProperty('fanart_image',defaultfanart)
+    if not fanart:
+        fanart=defaultfanart
+    liz.setProperty('fanart_image',fanart)
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz)
     return ok
 
 
-def addDir(name, url, mode, iconimage):
+def addDir(name, url, mode, iconimage, fanart=False, infoLabels=False):
     u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode) + "&name=" + urllib.quote_plus(name)
     ok = True
     liz = xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo(type="Video", infoLabels={"Title": name})
-    liz.setProperty('fanart_image',defaultfanart)
+    if not infoLabels:
+        infoLabels={"Title": name}
+    liz.setInfo(type="Video", infoLabels=infoLabels)
+    if not fanart:
+        fanart=defaultfanart
+    liz.setProperty('fanart_image',fanart)
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 
@@ -443,12 +461,11 @@ elif mode == 3:
     INDEXBYSPORT(url,name)
 elif mode == 5:
     print "Upcoming"
-
+    dialog = xbmcgui.Dialog()
+    dialog.ok("Upcoming Event", "Event has not started.")
 elif mode == 4:
     print "Play Video"
     if usexbmc == True or usexbmc == "true":
         PLAY(url)
     else:
         PLAYBROWSER(url)
-
-xbmcplugin.endOfDirectory(int(sys.argv[1]))

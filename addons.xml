@@ -45,8 +45,8 @@
 </addon>
 
 <addon id="plugin.video.espn3"
-       name="ESPN3"
-       version="0.9.1"
+       name="ESPN"
+       version="0.9.2"
        provider-name="Ksosez">
     <requires>
         <import addon="xbmc.python" version="1.0"/>
@@ -60,8 +60,8 @@
     <extension point="xbmc.addon.metadata">
         <platform>all</platform>
         <license>GPL 2.0</license>
-        <summary lang="en">ESPN3</summary>
-        <description lang="en">Watch full live streaming sporting events online on ESPN3, including football, baseball, cricket, soccer, and basketball events.</description>
+        <summary lang="en">ESPN</summary>
+        <description lang="en">Watch full live streaming sporting events online on ESPN, including football, baseball, cricket, soccer, and basketball events.</description>
     </extension>
 </addon>
 

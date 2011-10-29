@@ -4,7 +4,7 @@
     	<setting id="watchinxbmc" type="bool" label="30000" default="true"/>
     	<setting id="replayquality" type="enum" label="30001" lvalues="30005|30006|30007|30008" default="3"/>
     	<setting id="browser" type="enum" label="30002" values="Firefox|Chrome" default="Firefox"/>
-    	<setting id="livequality" type="enum" label="30003" lvalues="30004|30005|30006|30007|30008" default="4"/>
+    	<setting id="livequality" type="enum" label="30003" lvalues="30004|30005|30006|30007|30008|30026" default="5"/>
   		<setting type="sep" />
 	</category> 
 	<category label="Login">   

@@ -132,20 +132,24 @@ def INDEX(url,name,bysport=False):
             starttime = int(event.find('starttimegmtms').string)/1000
             endtime = int(event.find('endtimegmtms').string)/1000
             start = time.strftime("%m/%d/%Y %I:%M %p",time.localtime(starttime))
-            length = str((endtime - starttime)/60)
+            if 'action=live' in url:
+                length = str((endtime - time.time())/60)
+            else:
+                length = str((endtime - starttime)/60)
             try: end = event.find('caption').string+''
             except:
                 try: end = event.find('summary').string+''
                 except: end = ''
             plot = ''
-            if network:
-                plot += 'Network: '+network+'\n'
+            if network and ('action=live' in url or 'action=upcoming' in url):
+                plot += 'Network: '+network+' - '
             if sport is not None:
                 plot += 'Sport: '+sport+'\n'
             else:
                 sport = ''
-            if league is not None or league is not "":
-                plot += 'League: '+league+'\n'
+            if league is not None:
+                if league <> ' ':
+                    plot += 'League: '+league+'\n'
             if location is not None:
                 plot += 'Location: '+location+'\n'
             plot += end
@@ -159,6 +163,7 @@ def INDEX(url,name,bysport=False):
                 authurl = "http://espn.go.com/espn3/player?id=%s" % eventid
                 if league is not None:
                     authurl += "&league=%s" % urllib.quote(league)
+
             if 'action=upcoming' in url:
                 mode = 5
             elif networkid == 'n360':
@@ -204,8 +209,8 @@ def PLAY(url,videonetwork):
     else:
         useCookie=False
     config = 'http://espn.go.com/watchespn/player/config'
-    #if selfAddon.getSetting("enablelogin") == 'true':
-    #    config += '?eanUser=true'
+    if selfAddon.getSetting("enablelogin") == 'true':
+        config += '?eanUser=true'
     data = get_html(config,useCookie=useCookie)
     networks = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).find('networks').findAll('network')
     for network in networks:
@@ -216,14 +221,14 @@ def PLAY(url,videonetwork):
             channel = network['name']
             networkurl = network.find('url').string
             authurl = networkurl
-            if '?' not in authurl:
-                authurl +='?'
-            else:
+            if '?' in authurl:
                 authurl +='&'
+            else:
+                authurl +='?'
             authurl += 'playbackScenario=FMS_CLOUD'
             authurl += '&channel='+channel
             authurl += url
-            authurl += '&rand='+str(random.random())+'0000'
+            authurl += '&rand='+("%.16f" % random.random())
             authurl += '&cdnName='+cdnName
             authurl += '&identityPointId='+identityPointId
             authurl += '&playerId='+playedId
@@ -232,6 +237,7 @@ def PLAY(url,videonetwork):
             print tree.prettify()
             smilurl = tree.find('url').string
             auth = smilurl.split('?')[1]
+            smilurl += '&rand='+("%.16f" % random.random())
         
             #Grab smil url to get rtmp url and playpath
             html = get_html(smilurl,useCookie=useCookie)
@@ -245,12 +251,15 @@ def PLAY(url,videonetwork):
             # Lowest, Low,  Medium, High,  Highest
             # 200000,400000,800000,1200000,1800000
             if 'ondemand' in rtmp:
-                replayquality = selfAddon.getSetting('replayquality')
-                playpath = soup.findAll('video')[int(replayquality)]['src']
+                playpath = soup.findAll('video')[int(selfAddon.getSetting('replayquality'))]['src']
                 finalurl = rtmp+'/?'+auth+' playpath='+playpath
             elif 'live' in rtmp:
-                livequality = selfAddon.getSetting('livequality')
-                playpath = soup.findAll('video')[int(livequality)]['src']
+                select = int(selfAddon.getSetting('livequality'))
+                videos = soup.findAll('video')
+                videosLen = len(videos)-1
+                if select > videosLen:
+                    select = videosLen
+                playpath = videos[select]['src']
                 finalurl = rtmp+' live=1 playlist=1 subscribe='+playpath+' playpath='+playpath+'?'+auth
             item = xbmcgui.ListItem(path=finalurl)
             return xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)

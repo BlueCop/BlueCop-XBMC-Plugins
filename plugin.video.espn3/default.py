@@ -36,7 +36,7 @@ networkmap = {'n360':'ESPN3',
               'n501':'ESPN',
               'n502':'ESPN2',
               'n599':'ESPNU',
-              'nal':'Goal Line'}
+              'ngl':'Goal Line'}
 
 channels = '&channel='
 if selfAddon.getSetting('espn1') == 'true':
@@ -126,6 +126,7 @@ def INDEX(url,name,bysport=False):
             league = event.find('league').string
             location = event.find('site').string
             networkid = event.find('networkid').string
+            print networkid
             if networkid is not None:
                 network = networkmap[networkid]
             thumb = event.find('large').string
@@ -174,7 +175,7 @@ def INDEX(url,name,bysport=False):
                 mode = 7   
             elif networkid == 'n599':
                 mode = 8
-            elif networkid == 'nal':
+            elif networkid == 'ngl':
                 mode = 9
             addLink(ename, authurl, mode, thumb, thumb, infoLabels=infoLabels)
     xbmcplugin.setContent(pluginhandle, 'episodes')
@@ -194,7 +195,7 @@ def PLAYESPNU(url):
     PLAY(url,'n599')
 
 def PLAYESPNGL(url):
-    PLAY(url,'nal')
+    PLAY(url,'ngl')
     
 def PLAY(url,videonetwork):
     data = ReadFile('userdata.xml', ADDONDATA)
@@ -235,7 +236,24 @@ def PLAY(url,videonetwork):
             html = get_html(authurl,useCookie=useCookie)
             tree = BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
             print tree.prettify()
+            authstatus = tree.find('auth-status')
+            blackoutstatus = tree.find('blackout-status')
+            if not authstatus.find('successstatus'):
+                if not authstatus.find('notauthorizedstatus'):
+                    if authstatus.find('errormessage').string:
+                        dialog = xbmcgui.Dialog()
+                        import textwrap
+                        errormessage = authstatus.find('errormessage').string
+                        errormessage = textwrap.fill(errormessage, width=50).split('\n')
+                        dialog.ok("Error", errormessage[0],errormessage[1],errormessage[2])
+                        return
+                else:
+                    if not blackoutstatus.find('successstatus'):
+                        if blackoutstatus.find('blackout').string:
+                            dialog.ok("Blacked Out", blackoutstatus.find('blackout').string)
+                            return
             smilurl = tree.find('url').string
+            
             auth = smilurl.split('?')[1]
             smilurl += '&rand='+("%.16f" % random.random())
         

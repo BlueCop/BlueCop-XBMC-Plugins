@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 #
-# Written by Ksosez, with massive help from Bluecop
+# Written by Ksosez, BlueCop
 # Released under GPL(v2)
 
 import urllib, urllib2, xbmcplugin, xbmcaddon, xbmcgui, string, htmllib, os, platform, random, calendar, re
@@ -21,12 +21,23 @@ if cbrowser is '' or cbrowser is None:
 usexbmc = selfAddon.getSetting('watchinxbmc')
 defaultimage = 'special://home/addons/plugin.video.espn3/icon.png'
 defaultfanart = 'special://home/addons/plugin.video.espn3/fanart.jpg'
+defaultlive = 'special://home/addons/plugin.video.espn3/live.png'
+defaultreplay = 'special://home/addons/plugin.video.espn3/replay.png'
+defaultupcoming = 'special://home/addons/plugin.video.espn3/upcoming.png'
+
 if usexbmc is '' or usexbmc is None:
     usexbmc = True
 
 pluginpath = selfAddon.getAddonInfo('path')
 pluginhandle = int(sys.argv[1])
-ADDONDATA = xbmc.translatePath('special://profile/addon_data/plugin.video.espn3/')
+
+if selfAddon.getSetting('enablecustom') == 'true':
+    ADDONDATA = xbmc.translatePath('special://profile/addon_data/plugin.video.espn3/custom/')
+    ADDONDATAORG = xbmc.translatePath('special://profile/addon_data/plugin.video.espn3/')
+    COOKIEFILEORG = os.path.join(ADDONDATAORG,'cookies.lwp')
+    USERFILEORG = os.path.join(ADDONDATAORG,'userdata.xml')
+else:
+    ADDONDATA = xbmc.translatePath('special://profile/addon_data/plugin.video.espn3/')
 COOKIEFILE = os.path.join(ADDONDATA,'cookies.lwp')
 USERFILE = os.path.join(ADDONDATA,'userdata.xml')
 
@@ -55,8 +66,8 @@ def CATEGORIES():
     curdate = datetime.now()
     upcoming = int(selfAddon.getSetting('upcoming'))+1
     days = (curdate+timedelta(days=upcoming)).strftime("%Y%m%d")
-    addDir('Live', 'http://espn.go.com/watchespn/feeds/startup?action=live'+channels, 1, defaultimage)
-    addDir('Upcoming', 'http://espn.go.com/watchespn/feeds/startup?action=upcoming'+channels+'&endDate='+days+'&startDate='+curdate.strftime("%Y%m%d"), 2,defaultimage)
+    addDir('Live', 'http://espn.go.com/watchespn/feeds/startup?action=live'+channels, 1, defaultlive)
+    addDir('Upcoming', 'http://espn.go.com/watchespn/feeds/startup?action=upcoming'+channels+'&endDate='+days+'&startDate='+curdate.strftime("%Y%m%d"), 2,defaultupcoming)
     enddate = '&endDate='+ curdate.strftime("%Y%m%d")
     replays1 = [5,10,15,20,25]
     replays1 = replays1[int(selfAddon.getSetting('replays1'))]
@@ -70,29 +81,37 @@ def CATEGORIES():
     replays4 = [60,90,120,240]
     replays4 = replays4[int(selfAddon.getSetting('replays4'))]
     start4 = (curdate-timedelta(days=replays4)).strftime("%Y%m%d")
-    addDir('Replay '+str(replays1)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start1, 2, defaultimage)
-    addDir('Replay '+str(replays2)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start2, 2, defaultimage)
-    addDir('Replay '+str(replays3)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start3, 2, defaultimage)
-    addDir('Replay '+str(replays3)+'-'+str(replays4)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+'&endDate='+start3+'&startDate='+start4, 2, defaultimage)
-    addDir('Replay All', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels, 2, defaultimage)
+    addDir('Replay '+str(replays1)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start1, 2, defaultreplay)
+    addDir('Replay '+str(replays2)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start2, 2, defaultreplay)
+    addDir('Replay '+str(replays3)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start3, 2, defaultreplay)
+    addDir('Replay '+str(replays3)+'-'+str(replays4)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+'&endDate='+start3+'&startDate='+start4, 2, defaultreplay)
+    addDir('Replay All', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels, 2, defaultreplay)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
+def LISTNETWORKS(url,name):
+    pass
+
 def LISTSPORTS(url,name):
-    if selfAddon.getSetting("enablelogin") == 'true':
-        useCookie=True
-    else:
-        useCookie=False
+    #if selfAddon.getSetting("enablelogin") == 'true':
+    #    useCookie=True
+    #else:
+    useCookie=False
     data = get_html(url,useCookie=useCookie)
     SaveFile('videocache.xml', data, ADDONDATA)
-    #tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    addDir('(All)', url, 1, defaultimage)
+    if 'action=replay' in url:
+        image = defaultreplay
+    elif 'action=upcoming' in url:
+        image = defaultupcoming
+    else:
+        image = defaultimage
+    addDir('(All)', url, 1, image)
     sports = []
     for event in BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('sportdisplayvalue'):
         sport = event.string.title().encode('utf-8')
         if sport not in sports:
             sports.append(sport)
     for sport in sports:
-        addDir(sport, url, 3, defaultimage)
+        addDir(sport, url, 3, image)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -101,10 +120,10 @@ def INDEXBYSPORT(url,name):
     
 def INDEX(url,name,bysport=False):
     if 'action=live' in url:
-        if selfAddon.getSetting("enablelogin") == 'true':
-            useCookie=True
-        else:
-            useCookie=False
+        #if selfAddon.getSetting("enablelogin") == 'true':
+        #    useCookie=True
+        #else:
+        useCookie=False
         data = get_html(url,useCookie=useCookie)
     else:
         data = ReadFile('videocache.xml', ADDONDATA)
@@ -126,7 +145,6 @@ def INDEX(url,name,bysport=False):
             league = event.find('league').string
             location = event.find('site').string
             networkid = event.find('networkid').string
-            print networkid
             if networkid is not None:
                 network = networkmap[networkid]
             thumb = event.find('large').string
@@ -200,17 +218,17 @@ def PLAYESPNGL(url):
 def PLAY(url,videonetwork):
     data = ReadFile('userdata.xml', ADDONDATA)
     soup = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    print soup.prettify()
+    #print soup.prettify()
     affiliateid = soup('name')[0].string
     swid = soup('personalization')[0]['swid']
     identityPointId = affiliateid+':'+swid
-    
-    if selfAddon.getSetting("enablelogin") == 'true':
+
+    if selfAddon.getSetting("enablelogin") == 'true' or selfAddon.getSetting('enablecustom') == 'true':
         useCookie=True
     else:
         useCookie=False
     config = 'http://espn.go.com/watchespn/player/config'
-    if selfAddon.getSetting("enablelogin") == 'true':
+    if selfAddon.getSetting("eanuser") == 'true':
         config += '?eanUser=true'
     data = get_html(config,useCookie=useCookie)
     networks = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).find('networks').findAll('network')
@@ -244,8 +262,11 @@ def PLAY(url,videonetwork):
                         dialog = xbmcgui.Dialog()
                         import textwrap
                         errormessage = authstatus.find('errormessage').string
-                        errormessage = textwrap.fill(errormessage, width=50).split('\n')
-                        dialog.ok("Error", errormessage[0],errormessage[1],errormessage[2])
+                        try:
+                            errormessage = textwrap.fill(errormessage, width=50).split('\n')
+                            dialog.ok("Error", errormessage[0],errormessage[1],errormessage[2])
+                        except:
+                            dialog.ok("Error", errormessage[0])
                         return
                 else:
                     if not blackoutstatus.find('successstatus'):
@@ -268,16 +289,26 @@ def PLAY(url,videonetwork):
             #            0,     1,      2,      3
             # Lowest, Low,  Medium, High,  Highest
             # 200000,400000,800000,1200000,1800000
+            playpath=False
+            if selfAddon.getSetting("askquality") == 'true':
+                streams = soup.findAll('video')
+                quality=xbmcgui.Dialog().select('Select a quality level:', [str(int(stream['system-bitrate'])/1000)+'kbps' for stream in streams])
+                if quality!=-1:
+                    playpath = streams[quality]['src']
+                else:
+                    return
             if 'ondemand' in rtmp:
-                playpath = soup.findAll('video')[int(selfAddon.getSetting('replayquality'))]['src']
+                if not playpath:
+                    playpath = soup.findAll('video')[int(selfAddon.getSetting('replayquality'))]['src']
                 finalurl = rtmp+'/?'+auth+' playpath='+playpath
             elif 'live' in rtmp:
-                select = int(selfAddon.getSetting('livequality'))
-                videos = soup.findAll('video')
-                videosLen = len(videos)-1
-                if select > videosLen:
-                    select = videosLen
-                playpath = videos[select]['src']
+                if not playpath:
+                    select = int(selfAddon.getSetting('livequality'))
+                    videos = soup.findAll('video')
+                    videosLen = len(videos)-1
+                    if select > videosLen:
+                        select = videosLen
+                    playpath = videos[select]['src']
                 finalurl = rtmp+' live=1 playlist=1 subscribe='+playpath+' playpath='+playpath+'?'+auth
             item = xbmcgui.ListItem(path=finalurl)
             return xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
@@ -316,105 +347,116 @@ def saveUserdata(useCookie=False):
     #SaveFile('userdata2.xml', data2, ADDONDATA)
     soup = BeautifulStoneSoup(data1, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     print soup.prettify()
-    
+    checkrights = 'http://broadband.espn.go.com/espn3/auth/espnnetworks/user'
+    print get_html(checkrights,useCookie=useCookie)
+
+def checkcustom():
+    if not os.path.exists(ADDONDATA):
+        os.makedirs(ADDONDATA)
+        import shutil
+        if os.path.exists(USERFILEORG):
+            shutil.copyfile(COOKIEFILEORG, COOKIEFILE)
+        if os.path.exists(USERFILEORG):
+            shutil.copyfile(USERFILEORG, USERFILE)
+   
 def login():
-    if selfAddon.getSetting("enablelogin") == 'false':
-        if os.path.isfile(USERFILE):
-            if selfAddon.getSetting("clearcookies") == 'true':
-                saveUserdata()
-        else: saveUserdata()
-    elif selfAddon.getSetting("enablelogin") == 'true':
-        if os.path.isfile(COOKIEFILE):
-            if selfAddon.getSetting("clearcookies") == 'true':
-                os.remove(COOKIEFILE)
-            else:
-                return
-        types = ['comcast','att','verizon','twc','bhn','insight','cox']
-        logintype = types[int(selfAddon.getSetting("logintype"))]
-        url = 'http://a.espncdn.com/combiner/c?v=201110050400&js=/espn/espn360/watchespn/format/design11/shell/js/auth'
-        data = get_html(url)
-        p_AUTH = 'http://broadband.espn.go.com/espn3/auth'
-    
-        br = mechanize.Browser()  
-        br.set_handle_robots(False)
-        br.set_cookiejar(cj)
-        br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
-    
-        if logintype == 'comcast':
-            comcastLogin = re.compile('function comcastLogin\(\){(.*?)}').findall(data)[0]
-            Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(comcastLogin)[0]
-            LoginUrl = re.compile('var A="(.*?)";').findall(comcastLogin)[0]
-            sign_in = br.open(LoginUrl)
+    if selfAddon.getSetting('enablecustom') == 'true':
+        checkcustom()
+    elif selfAddon.getSetting('enablecustom') == 'false':
+        if selfAddon.getSetting("enablelogin") == 'false':
+            if os.path.isfile(USERFILE):
+                if selfAddon.getSetting("clearcookies") == 'true':
+                    saveUserdata()
+            else: saveUserdata()
+        elif selfAddon.getSetting("enablelogin") == 'true':
+            if os.path.isfile(COOKIEFILE):
+                if selfAddon.getSetting("clearcookies") == 'true':
+                    os.remove(COOKIEFILE)
+                else:
+                    return
+            types = ['comcast','att','verizon','twc','bhn','insight','cox']
+            logintype = types[int(selfAddon.getSetting("logintype"))]
+            url = 'http://a.espncdn.com/combiner/c?v=201110050400&js=/espn/espn360/watchespn/format/design11/shell/js/auth'
+            data = get_html(url)
+            p_AUTH = 'http://broadband.espn.go.com/espn3/auth'
+        
+            br = mechanize.Browser()  
+            br.set_handle_robots(False)
+            br.set_cookiejar(cj)
+            br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
+        
+            if logintype == 'comcast':
+                comcastLogin = re.compile('function comcastLogin\(\){(.*?)}').findall(data)[0]
+                Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(comcastLogin)[0]
+                LoginUrl = re.compile('var A="(.*?)";').findall(comcastLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(nr=0)
+                response = br.submit()
+                print response.read()
+                br.select_form(name='signin')
+                br["user"] = selfAddon.getSetting("login_name")
+                br["password"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'att':
+                attLogin = re.compile('function attLogin\(\){(.*?)}').findall(data)[0]
+                Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(attLogin)
+                LoginUrl = re.compile('var A="(.*?)";').findall(attLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(nr=0)
+                response = br.submit()
+                print response.read()
+                br.select_form(name='LoginForm')
+                br["userid"] = selfAddon.getSetting("login_name")
+                br["password"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'twc':    
+                twcLogin = re.compile('function twcLogin\(\){(.*?)}').findall(data)[0]
+                LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(twcLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(nr=0)
+                response = br.submit()
+                print response.read()
+                br.select_form(name='IDPLogin')
+                br["Ecom_User_ID"] = selfAddon.getSetting("login_name")
+                br["Ecom_Password"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'bhn':    
+                bhnLogin = re.compile('function bhnLogin\(\){(.*?)}').findall(data)[0]
+                LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(bhnLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(nr=0)
+                response = br.submit()
+                print response.read()
+                br.select_form(name='IDPLogin')
+                br["j_username"] = selfAddon.getSetting("login_name")
+                br["j_password"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'insight':
+                insightLogin = re.compile('function insightLogin\(\){(.*?)}').findall(data)[0]
+                LoginUrl = re.compile('open\("(.*?)","').findall(insightLogin)[0]
+                LoginUrl = 'http://www.insightbb.com/Auth/Login.aspx?ContentType=ESPN360'
+                sign_in = br.open(LoginUrl)
+                br.select_form(name="aspnetForm")
+                br["ctl00$ContentPlaceHolder1$UL_login1$txtUserID"] = selfAddon.getSetting("login_name")
+                br["ctl00$ContentPlaceHolder1$UL_login1$txtpwd"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'verizon':
+                verizonLogin = re.compile('function verizonLogin\(A\){(.*?)}').findall(data)[0]
+                LoginUrl = re.compile('open\("(.*?)","').findall(verizonLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(name="loginpage")
+                br["IDToken1"] = selfAddon.getSetting("login_name")
+                br["IDToken2"] = selfAddon.getSetting("login_pass")
+            elif logintype == 'cox':
+                coxLogin = re.compile('function coxLogin\(\){(.*?)}').findall(data)[0]
+                Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(coxLogin)[0]
+                LoginUrl = re.compile('var A="(.*?)";').findall(coxLogin)[0]
+                sign_in = br.open(LoginUrl)
+                br.select_form(name="LoginPage")  
+                br["username"] = selfAddon.getSetting("login_name")
+                br["password"] = selfAddon.getSetting("login_pass")
+            response = br.submit()
+            print response.read()
             br.select_form(nr=0)
             response = br.submit()
             print response.read()
-            br.select_form(name='signin')
-            br["user"] = selfAddon.getSetting("login_name")
-            br["password"] = selfAddon.getSetting("login_pass")
-        elif logintype == 'att':
-            attLogin = re.compile('function attLogin\(\){(.*?)}').findall(data)[0]
-            Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(attLogin)
-            LoginUrl = re.compile('var A="(.*?)";').findall(attLogin)[0]
-            sign_in = br.open(LoginUrl)
-            br.select_form(nr=0)
-            response = br.submit()
-            print response.read()
-            br.select_form(name='LoginForm')
-            br["userid"] = selfAddon.getSetting("login_name")
-            br["password"] = selfAddon.getSetting("login_pass")
-        elif logintype == 'twc':    
-            twcLogin = re.compile('function twcLogin\(\){(.*?)}').findall(data)[0]
-            LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(twcLogin)[0]
-            sign_in = br.open(LoginUrl)
-            br.select_form(nr=0)
-            response = br.submit()
-            print response.read()
-            br.select_form(name='IDPLogin')
-            br["Ecom_User_ID"] = selfAddon.getSetting("login_name")
-            br["Ecom_Password"] = selfAddon.getSetting("login_pass")
-        elif logintype == 'bhn':    
-            bhnLogin = re.compile('function bhnLogin\(\){(.*?)}').findall(data)[0]
-            LoginUrl = p_AUTH + re.compile('p_AUTH\+"(.*?)";').findall(bhnLogin)[0]
-            sign_in = br.open(LoginUrl)
-            br.select_form(nr=0)
-            response = br.submit()
-            print response.read()
-            br.select_form(name='IDPLogin')
-            br["j_username"] = selfAddon.getSetting("login_name")
-            br["j_password"] = selfAddon.getSetting("login_pass")
-        elif logintype == 'insight':
-            insightLogin = re.compile('function insightLogin\(\){(.*?)}').findall(data)[0]
-            LoginUrl = re.compile('open\("(.*?)","').findall(insightLogin)[0]
-            LoginUrl = 'http://www.insightbb.com/Auth/Login.aspx?ContentType=ESPN360'
-            sign_in = br.open(LoginUrl)
-            br.select_form(name="aspnetForm")
-            br["ctl00$ContentPlaceHolder1$UL_login1$txtUserID"] = selfAddon.getSetting("login_name")
-            br["ctl00$ContentPlaceHolder1$UL_login1$txtpwd"] = selfAddon.getSetting("login_pass")
-            #ctl00$ContentPlaceHolder1$UL_login1$chkrememberme
-        elif logintype == 'verizon':
-            verizonLogin = re.compile('function verizonLogin\(A\){(.*?)}').findall(data)[0]
-            LoginUrl = re.compile('open\("(.*?)","').findall(verizonLogin)[0]
-            sign_in = br.open(LoginUrl)
-            br.select_form(name="loginpage")
-            br["IDToken1"] = selfAddon.getSetting("login_name")
-            br["IDToken2"] = selfAddon.getSetting("login_pass")
-        elif logintype == 'cox':
-            coxLogin = re.compile('function coxLogin\(\){(.*?)}').findall(data)[0]
-            Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(coxLogin)[0]
-            LoginUrl = re.compile('var A="(.*?)";').findall(coxLogin)[0]
-            sign_in = br.open(LoginUrl)
-            br.select_form(name="LoginPage")  
-            br["username"] = addon.getSetting("login_name")
-            br["password"] = addon.getSetting("login_pass")
-        response = br.submit()
-        print response.read()
-        br.select_form(nr=0)
-        response = br.submit()
-        print response.read()
-        cj.save(COOKIEFILE, ignore_discard=False, ignore_expires=False)
-        saveUserdata(useCookie=True)
-        checkrights = 'http://broadband.espn.go.com/espn3/auth/espnnetworks/user'
-        print get_html(checkrights,useCookie=True)
+            cj.save(COOKIEFILE, ignore_discard=False, ignore_expires=False)
+            saveUserdata(useCookie=True)
 
 def get_html( url , useCookie=False):
     try:
@@ -426,7 +468,8 @@ def get_html( url , useCookie=False):
         usock = opener.open(url)
         response = usock.read()
         usock.close()
-        #cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+        #if useCookie and os.path.isfile(COOKIEFILE):
+        #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
         return response
     except: return False
 
@@ -523,6 +566,12 @@ elif mode == 2:
 elif mode == 3:
     print "Index by sport"
     INDEXBYSPORT(url,name)
+elif mode == 4:
+    print "Play Video"
+    if usexbmc == True or usexbmc == "true":
+        PLAYESPN3(url)
+    else:
+        PLAYBROWSER(url)
 elif mode == 5:
     print "Upcoming"
     dialog = xbmcgui.Dialog()
@@ -535,9 +584,4 @@ elif mode == 8:
     PLAYESPNU(url)
 elif mode == 9:
     PLAYESPNGL(url)
-elif mode == 4:
-    print "Play Video"
-    if usexbmc == True or usexbmc == "true":
-        PLAYESPN3(url)
-    else:
-        PLAYBROWSER(url)
+

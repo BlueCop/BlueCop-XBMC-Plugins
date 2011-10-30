@@ -46,8 +46,8 @@
 
 <addon id="plugin.video.espn3"
        name="ESPN"
-       version="0.9.3"
-       provider-name="Ksosez">
+       version="0.9.4"
+       provider-name="Ksosez,BlueCop">
     <requires>
         <import addon="xbmc.python" version="1.0"/>
 		<import addon="script.module.beautifulsoup" version="3.0.8"/>

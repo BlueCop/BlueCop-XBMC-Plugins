@@ -424,14 +424,23 @@ def relatedList():
         playlist.add(url=u, listitem=item)
 
 def playlistVideo():
-    item = xbmcgui.ListItem(path=getVideo(params['url']))
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
-    if addon.getSetting('unpause') == 'true':
-        import time
-        sleeptime = int(addon.getSetting('unpausetime'))+1
-        time.sleep(sleeptime)
-        xbmc.Player().pause()
-
+    try:
+        item = xbmcgui.ListItem(path=getVideo(params['url']))
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+        if addon.getSetting('unpause') == 'true':
+            import time
+            sleeptime = int(addon.getSetting('unpausetime'))+1
+            time.sleep(sleeptime)
+            xbmc.Player().pause()
+    except:
+        vevoID = params['url'].split('/')[-1]
+        url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % vevoID
+        data = getURL(url)
+        youtubeID = demjson.decode(data)['video']['videoVersions'][0]['id']
+        youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
+        item = xbmcgui.ListItem(path=youtubeurl)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        
 def getVideo(pageurl):
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
     select = int(addon.getSetting('bitrate'))

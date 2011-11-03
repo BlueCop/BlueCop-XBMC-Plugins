@@ -6,6 +6,7 @@ import xbmcgui
 import os.path
 import sys
 import urllib
+import string
 import resources.lib.common as common
 
 from BeautifulSoup import BeautifulStoneSoup
@@ -36,7 +37,11 @@ def CreateStreamFile(name, url, dir):
         file.close()
     except:
         print "Error while creating strm file for : " + name
-	
+
+def cleanfilename(name):    
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    return ''.join(c for c in name if c in valid_chars)	
+
 def createElement(tagname,contents):
     soup = BeautifulSoup()
     element = Tag(soup, tagname)
@@ -223,7 +228,7 @@ def LIST_EPISODES_DB(seriestitle,season,poster,HDonly=False,path=False,NFO=True)
             episodetitle = episodetitle.replace(seriestitle,'').strip().strip(',').strip('')
         if 'Season ' in episodetitle:
             episodetitle = episodetitle.replace('Season ','S')
-        filename = 'S%sE%s - %s' % (season,episode,episodetitle)
+        filename = 'S%sE%s - %s' % (season,episode,cleanfilename(episodetitle))
     	CreateStreamFile(filename, url, path)
         if NFO:
             soup = BeautifulStoneSoup()

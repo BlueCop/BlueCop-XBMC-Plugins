@@ -16,13 +16,22 @@ pluginhandle = int(sys.argv[1])
 addon = xbmcaddon.Addon('plugin.video.reddit')
 pluginpath = addon.getAddonInfo('path')
 
-BASE = 'http://www.reddit.com/r/video.json'
+BASE = 'http://www.reddit.com/r/videos'
 COOKIEFILE = os.path.join(pluginpath,'resources','reddit-cookies.lwp')
 
 confluence_views = [500,501,502,503,504,508]
 
 # Root listing
-def listCategories(url=BASE, updateListing=False):
+def listCategories():
+    addDir("What's Hot",        BASE+'.json',                'listVideos', '')
+    addDir("New",               BASE+'/new.json',            'listVideos', '')
+    addDir("Controversial",     BASE+'/controversial.json',  'listVideos', '')
+    addDir("Top",               BASE+'/top.json',            'listVideos', '')
+    xbmcplugin.endOfDirectory(pluginhandle)
+    
+def listVideos(url=False, updateListing=False):
+    if not url:
+        url = params["url"]
     data = getURL(url)
     videodata = demjson.decode(data)['data']
     after = videodata['after']
@@ -31,9 +40,9 @@ def listCategories(url=BASE, updateListing=False):
     print before
     print after
     if before and before is not None:
-        addDir('(Previous Page)', BASE+'?count=25&before='+before, 'listUpdate', '')
+        addDir('(Previous Page)', url.split('?')[0]+'?count=25&before='+before, 'listUpdate', '')
     if after:
-        addDir('(Next Page)', BASE+'?count=25&after='+after, 'listUpdate', '')
+        addDir('(Next Page)', url.split('?')[0]+'?count=25&after='+after, 'listUpdate', '')
     for video in videos:
         if video['data']['domain'] == 'youtube.com':
             postTitle = video['data']['title'].replace('/n','')
@@ -56,7 +65,7 @@ def listCategories(url=BASE, updateListing=False):
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=updateListing)
 
 def listUpdate():
-    listCategories(params["url"],updateListing=True)
+    listVideos(params["url"],updateListing=True)
  
 # Common
 def addLink(postTitle, videoTitle, url, mode, iconimage, fanart=False, infoLabels=False):

@@ -57,9 +57,12 @@ def listVideos(url=False, updateListing=False):
             except: plot = ''
             infoLabels={"Title": postTitle,
                         'plot': plot}
-            youtubeID = url.split('v=')[1].split('&')[0]
-            youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
-            addLink(postTitle, videoTitle, youtubeurl, mode, thumbnail, infoLabels=infoLabels)
+            try:
+                youtubeID = url.split('v=')[1].split('&')[0]
+                youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
+                addLink(postTitle, videoTitle, youtubeurl, mode, thumbnail, infoLabels=infoLabels)
+            except:
+                print url
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[3])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=updateListing)

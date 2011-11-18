@@ -106,7 +106,7 @@
   </extension>
 </addon>
 
-<addon id="plugin.video.reddit"
+<addon id="plugin.video.reddit.bc"
        name="Reddit Videos"
        version="0.0.3"
        provider-name="BlueCop">

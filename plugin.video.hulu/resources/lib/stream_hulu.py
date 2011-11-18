@@ -33,8 +33,9 @@ subdeckeys = [
              ]
 
 smildeckeys = [
-             ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
-             ]
+              ['d6dac049cc944519806ab9a1b5e29ccfe3e74dabb4fa42598a45c35d20abdd28', '27b9bedf75ccA2eC']
+             #['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
+              ]
 
 class ResumePlayer( xbmc.Player ) :            
     def __init__ ( self ):
@@ -312,7 +313,7 @@ class Main:
             import time
             epoch = int(time.mktime(time.gmtime()))
             parameters = {'video_id': video_id,
-                          'v'       : '850037518',
+                          'v'       : '888324234',
                           'ts'      : str(epoch),
                           'np'      : '1',
                           'vp'      : '1',

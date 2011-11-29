@@ -37,7 +37,7 @@
 	<!-- Advanced -->
 	<category label="30103">
 		<setting type="sep" />
-		<setting id="quality" type="enum" lvalues="30015|30023|30024|30025|30016|30017|30018|30020|30021|30022" label="30004" default="1"/>
+		<setting id="quality" type="enum" lvalues="30015|30023|30024|30020|30025|30016|30017|30018" label="30004" default="1"/>
 		<setting id="defaultcdn" type="enum" lvalues="30028|30029|30030" label="30027" default="1"/>
 		<setting id="swfverify" type ="bool" label="30031" default="true"/>
 		<setting type="sep" />		

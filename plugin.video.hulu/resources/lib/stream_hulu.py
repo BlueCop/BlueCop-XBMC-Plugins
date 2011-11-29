@@ -12,7 +12,10 @@ import os
 import hmac
 import operator
 from array import array
-from aes import AES
+#from aes import AES
+from crypto.cipher.cbc      import CBC
+from crypto.cipher.base     import noPadding
+from crypto.cipher.rijndael import Rijndael
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
 pluginhandle = int(sys.argv[1])
@@ -25,7 +28,8 @@ xmldeckeys = [
              ['1F0FF021B7A04B96B4AB84CCFD7480DFA7A972C120554A25970F49B6BADD2F4F', 'tqo8cxuvpqc7irjw'],
              ['3484509D6B0B4816A6CFACB117A7F3C842268DF89FCC414F821B291B84B0CA71', 'SUxSFjNUavzKIWSh'],
              ['B7F67F4B985240FAB70FF1911FCBB48170F2C86645C0491F9B45DACFC188113F', 'uBFEvpZ00HobdcEo'],
-             ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0']
+             ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0'],
+             ['d6dac049cc944519806ab9a1b5e29ccfe3e74dabb4fa42598a45c35d20abdd28', '27b9bedf75ccA2eC']
              ]
 
 subdeckeys = [
@@ -102,11 +106,17 @@ class Main:
         #self.pDialog.update(0 , self.text1, self.text2, self.text3)
         #select from avaliable streams, then play the file
         self.play()
+    
+    def AES(self,key):
+        return Rijndael(key, keySize=32, blockSize=16, padding=noPadding())
+
+    def AES_CBC(self,key):
+        return CBC(blockCipherInstance=self.AES(key))
         
     def decrypt_cid(self, p):
         cidkey = '48555bbbe9f41981df49895f44c83993a09334d02d17e7a76b237d04c084e342'
         v3 = binascii.unhexlify(p)
-        ecb = AES(binascii.unhexlify(cidkey))
+        ecb = self.AES(binascii.unhexlify(cidkey))
         return ecb.decrypt(v3).split("~")[0]
 
     def cid2eid(self, p):
@@ -116,6 +126,14 @@ class Main:
         m.update(str(xor_cid) + "MAZxpK3WwazfARjIpSXKQ9cmg9nPe5wIOOfKuBIfz7bNdat6gQKHj69ZWNWNVB1")
         value = m.digest()
         return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "")
+
+    def makeGUID(self):
+        import random
+        guid = ''
+        for i in range(8):
+            number = "%0.2X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
+            guid += number[2:]
+        return guid
 
     def decrypt_pid(self, p):
         cp_strings = [
@@ -130,11 +148,11 @@ class Main:
         v3a = binascii.unhexlify(v3[0])
         v3b = binascii.unhexlify(v3[1])
 
-        ecb = AES(v3b)
+        ecb = self.AES(v3b)
         tmp = ecb.decrypt(v3a)
 
         for v1 in cp_strings[:]:
-            ecb = AES(binascii.unhexlify(v1))
+            ecb = self.AES(binascii.unhexlify(v1))
             v2 = ecb.decrypt(tmp)
             if (re.match("[0-9A-Za-z_-]{32}", v2)):
                 return v2
@@ -155,60 +173,28 @@ class Main:
 
     def decrypt_SMIL(self, encsmil):
         encdata = binascii.unhexlify(encsmil)
-
+        expire_message = 'Your access to play this content has expired.'
         for key in smildeckeys[:]:
-            smil=""
-            out=[0,0,0,0]
-            ecb = AES(binascii.unhexlify(key[0]))
-            unaes = ecb.decrypt(encdata)
-
-            xorkey = array('i',key[1])
-
-            for i in range(0, len(encdata)/16):
-                x = unaes[i*16:i*16+16]
-                res = array('i',x)
-                for j in range(0,4):
-                    out[j] = res[j] ^ xorkey[j]
-                x = encdata[i*16:i*16+16]
-                xorkey = array('i',x)
-                a=array('i',out)
-                x=a.tostring()
-                smil = smil + x
-
-            expire_message = 'Your access to play this content has expired.'
-            if expire_message in smil:
-                pass
-                xbmcgui.Dialog().ok('Content Expired',expire_message)
-                return False
+            cbc = self.AES_CBC(binascii.unhexlify(key[0]))
+            smil = cbc.decrypt(encdata,key[1])
+            
+            print smil
             if (smil.find("<smil") == 0):
                 #print key
                 i = smil.rfind("</smil>")
                 smil = smil[0:i+7]
                 return smil
+            elif expire_message in smil:
+                xbmcgui.Dialog().ok('Content Expired',expire_message)
+                return False
 
     def decrypt_subs(self, encsubs):
         encdata = binascii.unhexlify(encsubs)
-
         for key in subdeckeys[:]:
-            subs=""
-            out=[0,0,0,0]
-            ecb = AES(binascii.unhexlify(key[0]))
-            unaes = ecb.decrypt(encdata)
-            xorkey = array('i',key[1])
-
-            for i in range(0, len(encdata)/16):
-                x = unaes[i*16:i*16+16]
-                res = array('i',x)
-                for j in range(0,4):
-                    out[j] = res[j] ^ xorkey[j]
-                x = encdata[i*16:i*16+16]
-                xorkey = array('i',x)
-                a=array('i',out)
-                x=a.tostring()
-                subs += x
-
+            cbc = self.AES_CBC(binascii.unhexlify(key[0]))
+            subs = cbc.decrypt(encdata,key[1])
+            
             substart = subs.find("<P")
-
             if (substart > -1):
                 #print key
                 i = subs.rfind("</P>")
@@ -317,31 +303,24 @@ class Main:
                           'ts'      : str(epoch),
                           'np'      : '1',
                           'vp'      : '1',
+                          'device_id' : self.makeGUID(),
                           'pp'      : 'Desktop',
                           'dp_id'   : 'Hulu',
                           'region'  : 'US',
+                          'ep'      : '1',
                           'language': 'en'
                           }
-            smilURL =  'http://s.hulu.com/select'
-            smilURL += '?video_id='+parameters['video_id']
-            smilURL += '&v='+parameters['v']
-            smilURL += '&ts='+parameters['ts']
-            smilURL += '&np='+parameters['np']
-            smilURL += '&vp='+parameters['vp']
-            smilURL += '&pp='+parameters['pp']
-            smilURL += '&dp_id='+parameters['dp_id']
             if common.settings['enable_login']=='true' and common.settings['enable_plus']=='true' and common.settings['usertoken']:
-                parameters['ep'] = '1'
                 parameters['token'] = common.settings['usertoken']
-                smilURL += '&token='+parameters['token']
-                smilURL += '&ep='+parameters['ep']
-            smilURL += '&region='+parameters['region']
-            smilURL += '&language='+parameters['language']
+            smilURL = False
+            for item1, item2 in parameters.iteritems():
+                if not smilURL:
+                    smilURL = 'http://s.hulu.com/select?'+item1+'='+item2
+                else:
+                    smilURL += '&'+item1+'='+item2
             smilURL += '&bcs='+self.content_sig(parameters)
             print 'HULU --> SMILURL: ' + smilURL
-            #self.update_dialog('Grabbing SMIL File')
             smilXML=common.getFEED(smilURL)
-            #self.update_dialog('Decrypting SMIL File')
             smilXML=self.decrypt_SMIL(smilXML)
             if smilXML:
                 smilSoup=BeautifulStoneSoup(smilXML, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -400,16 +379,16 @@ class Main:
             streams=[]
             selectedStream = None
             cdn = None
-            qtypes=['ask', 'p011', 'p010', 'p008', 'H264 Medium', 'H264 650K', 'H264 400K', 'High', 'Medium','Low']        
+            qtypes=['ask', 'p011', 'p010', 'p009', 'p008', 'H264 Medium', 'H264 650K', 'H264 400K', 'VP6 400K']        
             #label streams
             qt = int(common.settings['quality'])
-            if qt < 0 or qt > 9: qt = 0
-            while qt < 9:
+            if qt < 0 or qt > 8: qt = 0
+            while qt < 8:
                 qtext = qtypes[qt]
                 for vid in video:
                     #if qt == 0:
                     streams.append([vid['profile'],vid['cdn'],vid['server'],vid['stream'],vid['token']])
-                    if qt > 6 and 'H264' in vid['profile']: continue
+                    #if qt > 6 and 'H264' in vid['profile']: continue
                     if qtext in vid['profile']:
                         if vid['cdn'] == common.settings['defaultcdn']:
                             selectedStream = [vid['server'],vid['stream'],vid['token']]

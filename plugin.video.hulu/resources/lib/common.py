@@ -54,6 +54,9 @@ handle = int(sys.argv[1])
 
 #settings Advanced
 settings['quality'] = addoncompat.get_setting("quality")
+settings['adquality'] = int(addoncompat.get_setting("adquality"))
+settings['prerollads'] = int(addoncompat.get_setting("prerollads"))
+settings['totalads'] = int(addoncompat.get_setting("totalads"))
 settings['swfverify'] = addoncompat.get_setting("swfverify")
 cdns = ['level3','limelight','akamai']
 defualtcdn = int(addoncompat.get_setting("defaultcdn"))
@@ -126,7 +129,7 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
     liz.setInfo( type="Video", infoLabels={ "Title":name, "Plot":cleanNames(plot), "Genre":genre})
     liz.setProperty('fanart_image',fanart)
     if cm:
-        liz.addContextMenuItems( cm )
+        liz.addContextMenuItems( cm )#,replaceItems=True)
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
     return ok
 
@@ -149,15 +152,18 @@ def getHTML( url ):
     #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     return response
 
-def getFEED( url, max_age=0 ):
+def getFEED( url, max_age=0 , postdata=False):
     try:
         print 'HULU --> common :: getFEED :: url = '+url
         cj = cookielib.LWPCookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-        opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                             ('x-flash-version', '10,1,51,66'),
+        opener.addheaders = [('Referer', 'http://download.hulu.com/hulu10.html'),
+                             ('x-flash-version', '11,1,102,55'),
                              ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
-        usock=opener.open(url)
+        if postdata:
+            usock=opener.open(url,postdata)
+        else:
+            usock=opener.open(url)
         response=usock.read()
         usock.close()
         return response
@@ -168,7 +174,7 @@ def postSTOP( type,content_id,position ):
     print 'HULU --> common :: postSTOP :: content_id = '+content_id
     opener = urllib2.build_opener()
     opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                         ('x-flash-version', '10,1,51,66'),
+                         ('x-flash-version', '11,1,102,55'),
                          ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
     url = 'http://www.hulu.com/pt/position'
     strposition = "%.2f" % position
@@ -197,7 +203,7 @@ def cacheFEED( url, max_age=0,cache_dir=cachepath):
     
     opener = urllib2.build_opener(urllib2.HTTPHandler())
     opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                         ('x-flash-version', '10,1,51,66'),
+                         ('x-flash-version', '11,1,102,55'),
                          ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
     usock=opener.open(url)
     data=usock.read()

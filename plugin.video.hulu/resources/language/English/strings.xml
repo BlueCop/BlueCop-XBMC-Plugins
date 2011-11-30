@@ -5,7 +5,7 @@
 	<string id="30002">Hulu Password</string>
 	<string id="30003">Enable Login</string>
 
-	<string id="30004">Quality Selection</string>
+	<string id="30004">Quality</string>
 	<string id="30015">Ask</string>
 	<string id="30023">720p 3200K</string>
 	<string id="30024">720p 2500K</string>
@@ -33,8 +33,13 @@
 	<string id="30033">Library Folder stored in addon settings</string>
 	<string id="30034">Update Library when complete</string>
 	
-	<string id="30101">General</string>
-	<string id="30102">Hulu+ Login</string>
+	<string id="30035">Pre-Roll Ads</string>
+	<string id="30036">Total Ads</string>
+	<string id="30037">Ad Quality</string>
+
+	<string id="30101">Per Page</string>
+	<string id="30102">Hulu Login</string>
 	<string id="30103">Streaming</string>
 	<string id="30104">Library</string>
+	<string id="30105">Ads</string>
 </strings>

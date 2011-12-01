@@ -25,9 +25,11 @@ def modes( ):
     if sys.argv[2]=='':
         #Plug-in Root List
         if common.sqliteAvailable == True:
-            common.addDirectory(' All Shows','Masterlist')
+            pass
+            #common.addDirectory(' All Shows','Masterlist')
         for name , network in common.site_dict.iteritems():
             station_icon = os.path.join(common.imagepath,network+'.png')
+            print station_icon
             common.addDirectory(name, network, 'rootlist',thumb=station_icon)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )

@@ -145,57 +145,76 @@ def fullepisodes (url = common.args.url,trypages=True):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    if trypages == True:
-        try:
-            firstpage = tree.find(attrs={'class':'nbcu_pager_page nbcu_pager_active'})
-            pages = tree.findAll(attrs={'class':'nbcu_pager_page'})
-            pages.insert(0,firstpage)
-            for page in pages:
-                url = BASE + page['href']
-                fullepisodes(url,False)
-            return
-        except:
-            print 'Single Page'
-    items=tree.find(attrs={'id' : 'header-video-clips'})
-    items=items.findAll(attrs={'class' : 'list_full_detail_horiz'})
-    for item in items:
-        link = item.find('a')
-        url = BASE + link['href']
-        name = link['title']
-        thumb = link.find('img')['src']
-        description = item.find(attrs={'class' : 'list_full_des'}).contents[0].contents[0]
-        airDate = item.find(attrs={'class' : 'list_full_det_time'}).contents[0].contents[1].strip()
-        try:
-            seasonepisode = item.find(attrs={'class' : 'list_full_det_title'})('a')[0].string.split(':')[0].split('. ')[1]
-            if 3 == len(seasonepisode):
-                season = int(seasonepisode[:1])
-                episode = int(seasonepisode[-2:])
-            elif 4 == len(seasonepisode):
-                season = int(seasonepisode[:2])
-                episode = int(seasonepisode[-2:])
-            if season <> 0 or episode <> 0:
-                displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        except:
-            print 'season/episode metadata failed'
-            season = 0
-            episode = 0
-            displayname = name
-
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="nbc"'
-        u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 #"Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+    try:
+        if trypages == True:
+            try:
+                firstpage = tree.find(attrs={'class':'nbcu_pager_page nbcu_pager_active'})
+                pages = tree.findAll(attrs={'class':'nbcu_pager_page'})
+                pages.insert(0,firstpage)
+                for page in pages:
+                    url = BASE + page['href']
+                    fullepisodes(url,False)
+                return
+            except:
+                print 'Single Page'
+        items=tree.find(attrs={'id' : 'header-video-clips'})
+        items=items.findAll(attrs={'class' : 'list_full_detail_horiz'})
+        for item in items:
+            link = item.find('a')
+            url = BASE + link['href']
+            name = link['title']
+            thumb = link.find('img')['src']
+            description = item.find(attrs={'class' : 'list_full_des'}).contents[0].contents[0]
+            airDate = item.find(attrs={'class' : 'list_full_det_time'}).contents[0].contents[1].strip()
+            try:
+                seasonepisode = item.find(attrs={'class' : 'list_full_det_title'})('a')[0].string.split(':')[0].split('. ')[1]
+                if 3 == len(seasonepisode):
+                    season = int(seasonepisode[:1])
+                    episode = int(seasonepisode[-2:])
+                elif 4 == len(seasonepisode):
+                    season = int(seasonepisode[:2])
+                    episode = int(seasonepisode[-2:])
+                if season <> 0 or episode <> 0:
+                    displayname = '%sx%s - %s' % (str(season),str(episode),name)
+            except:
+                print 'season/episode metadata failed'
+                season = 0
+                episode = 0
+                displayname = name
+    
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="nbc"'
+            u += '&sitemode="play"'
+            item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
+            item.setInfo( type="Video", infoLabels={ "Title":name,
+                                                     "Season":season,
+                                                     "Episode":episode,
+                                                     "Plot":description,
+                                                     "premiered":airDate,
+                                                     #"Duration":duration,
+                                                     "TVShowTitle":common.args.name
+                                                     })
+            item.setProperty('IsPlayable', 'true')
+            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+    except:
+        items=tree.findAll(attrs={'class' : 'thumb-block '})
+        for item in items:
+            url = BASE + item.find('a')['href']
+            name = item.find(attrs={'class' : 'title'}).string
+            thumb = item.find('img')['src']
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="nbc"'
+            u += '&sitemode="play"'
+            item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
+            item.setInfo( type="Video", infoLabels={ "Title":name
+                                                     #"premiered":airDate,
+                                                     #"Duration":duration,
+                                                     #"TVShowTitle":common.args.name
+                                                     })
+            item.setProperty('IsPlayable', 'true')
+            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)            
 
 #Get SMIL url and play video
 def play():

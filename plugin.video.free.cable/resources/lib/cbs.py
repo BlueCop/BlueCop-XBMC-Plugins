@@ -7,6 +7,7 @@ import sys
 import os
 import re
 
+import demjson
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import MinimalSoup
 import resources.lib._common as common
@@ -158,53 +159,29 @@ def stprocessvideos(purl):
 def showcats(url = common.args.url):
     data = common.getURL(url)
     try:
-        carousel = re.compile('var myCarousel\s+=\s+{(.*?)};',re.DOTALL).findall(data)[1].split(',')
-        carouselDicts = []
-        carouselDict = {}
-        for car in carousel:
-            itemsplit = car.replace('"','').split(':')
-            carouselDict[itemsplit[0]] = itemsplit[1]
-        carouselDicts.append(carouselDict) 
-        carousel1 = re.compile('var myCarousel_1\s+=\s+{(.*?)\s+}',re.DOTALL).findall(data)[0].replace('}]','').split('[{')[1].split('},{')
-        for car in carousel1:
-            newdict = {}
-            carsplit = car.split(',')
-            for sub in carsplit:
-                itemsplit = sub.replace('"','').split(':')
-                newdict[itemsplit[0]] = itemsplit[1]
-            carouselDicts.append(newdict)  
-        for item in carouselDicts:
-            url = 'http://www.cbs.com/carousel/initialize_carousel.php'
-            url += '?jsObjName='+item['obj']#t_0
-            url += '&xz='+item['xz']
-            url += '&section='+item['section']
-            url += '&k='+item['key']
-            url += '&i='+item['i']
-            url += '&begin=0'
-            url += '&size=500'
-            url += '&itemCount=12'
-            common.addDirectory(item['title'], 'cbs', 'newvideos', url)
+        carousels = re.compile("loadUpCarousel\('(.*?)','(.*?)', '(.*?)', (.*?), true, stored").findall(data)
+        carousels[0][0]
+        for name,dir1,dir2,dir3 in carousels:
+            url = 'http://www.cbs.com/carousels/'+dir3+'/video/'+dir1+'/'+dir2+'/0/400/'
+            common.addDirectory(name, 'cbs', 'newvideos', url)
     except:
         print 'CBS: Carousel Failed'
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        try:
-            options = tree.find(attrs={'id' : 'secondary-show-nav-wrapper'})
-            options = options.findAll('a')
-            for option in options:
-                name = option.string.encode('utf-8')
-                url = BASE + option['href']
-                common.addDirectory(name, 'cbs', 'videos', url)
-        except:
-            print 'CBS: secondary-show-nav-wrapper failed'
-            print 'CBS: trying vid_module'
-            try:
-                options = tree.findAll(attrs={'class' : 'vid_module'})
-                for option in options:
-                    moduleid = option['id']
-                    name = option.find(attrs={'class' : 'hdr'}).string
-                    common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
-            except:
-                print 'CBS: vid_module failed'
+    #try:
+        options = tree.find(attrs={'id' : 'secondary-show-nav-wrapper'})
+        options = options.findAll('a')
+        for option in options:
+            name = option.string.encode('utf-8')
+            url = BASE + option['href']
+            common.addDirectory(name, 'cbs', 'videos', url)
+    #except:
+        #print 'CBS: secondary-show-nav-wrapper failed'
+        print 'CBS: trying vid_module'
+        options = tree.findAll(attrs={'class' : 'vid_module'})
+        for option in options:
+            moduleid = option['id']
+            name = option.find(attrs={'class' : 'hdr'}).string
+            common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
 
 def showsubcats(url = common.args.url):
     moduleid = url.split('<moduleid>')[1]
@@ -233,48 +210,39 @@ def videos(url = common.args.url):
         PAGES(tree)
  
 def newvideos(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    videos = tree.findAll(attrs={'class' : 'cbs-video-item'})
-    for video in videos:
-        thumb = video.find('img')['src']
-        displayname = video.find(attrs={'class' : 'cbs-video-thumbnail-link'})['title'].encode('utf-8')
-        url = BASE+video.find('a')['href']
-        try:
-            title = displayname.split(' - ')[1].strip()
-            series = displayname.split(' - ')[0].strip()
-        except:
-            print 'title/series metadata failure'
-            title = displayname
-            series = ''
-        try:
-            seasonepisode = thumb.split('/')[-1].split('_')[2]
-            if 3 == len(seasonepisode):
-                season = int(seasonepisode[:1])
-                episode = int(seasonepisode[-2:])
-            elif 4 == len(seasonepisode):
-                season = int(seasonepisode[:2])
-                episode = int(seasonepisode[-2:])
-            if season <> 0 or episode <> 0:
-                displayname = '%sx%s - %s' % (str(season),str(episode),title)
-        except:
-            print 'season/episode metadata failed'
-            season = 0
-            episode = 0
+    itemList = demjson.decode(data)['itemList']
+    for video in itemList:
+        url = video['pid']
+        description = video['description']
+        thumb = video['thumbnail']
+        seriesTitle = video['seriesTitle']
+        title = video['label']
+        try:episodeNum = int(video['episodeNum'])
+        except:episodeNum = 0 
+        try:seasonNum = int(video['seasonNum'])
+        except:seasonNum = 0
+        duration = int(video['duration'])
+        airDate = video['_airDate']
+        rating = video['rating']
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="cbs"'
         u += '&sitemode="play"'
+        displayname = '%sx%s - %s' % (seasonNum,episodeNum,title)
         item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
         item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 #"premiered":aired,
-                                                 #"Duration":duration,
-                                                 "TVShowTitle":series
+                                                 "Plot":description,
+                                                 "Season":seasonNum,
+                                                 "Episode":episodeNum,
+                                                 "premiered":airDate,
+                                                 "Duration":duration,
+                                                 "mpaa":rating,
+                                                 "TVShowTitle":seriesTitle
                                                  }) 
         item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)        
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)  
         
 def PAGES( tree ):
     try:

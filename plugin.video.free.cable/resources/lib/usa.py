@@ -7,6 +7,7 @@ import sys
 import os
 import re
 
+import demjson
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 from pyamf.remoting.client import RemotingService
@@ -37,6 +38,47 @@ def rootlist(db=False):
         return db_shows
 
 def episodes(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+    data = common.getURL(url)
+    folderId = re.compile('feOsmfProp.show.folderId = "(.*?)";').findall(data)[0]
+    jsonurl = 'http://videoservices.nbcuni.com/player/feeds?networkName=usa&results=50&showHierarchy=true&profile=2&level='+folderId+'&output=json&callback=__osmf_fullep.getEpisodes' 
+    data = common.getURL(jsonurl).split('(')[1].strip(')')
+    itemList = demjson.decode(data)['channel']['item']
+    for video in itemList:
+        #video = video['content']
+        url = video['link']
+        description = video['description']
+        thumb = video['content']['thumbnail']['url']
+        seriesTitle = video['content']['subtitle']
+        titledata = video['title'].split(':')
+        try:title = titledata[1]
+        except:title = titledata[0]
+        try:episodeNum = int(titledata[0][:-2])
+        except:episodeNum = 0 
+        try:seasonNum = int(titledata[0][-2:])
+        except:seasonNum = 0
+        duration = int(float(video['content']['duration']))
+        #airDate = video['_airDate']
+        rating = video['content']['rating']['value']
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="usa"'
+        u += '&sitemode="play"'
+        displayname = '%sx%s - %s' % (seasonNum,episodeNum,title)
+        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
+        item.setInfo( type="Video", infoLabels={ "Title":title,
+                                                 "Plot":description,
+                                                 "Season":seasonNum,
+                                                 "Episode":episodeNum,
+                                                 #"premiered":airDate,
+                                                 "Duration":duration,
+                                                 "mpaa":rating,
+                                                 "TVShowTitle":seriesTitle
+                                                 }) 
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False) 
+
+def episodesOld(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     rssurl = re.compile('var _rssURL = "(.+?)";').findall(data)[0].replace('%26','&')

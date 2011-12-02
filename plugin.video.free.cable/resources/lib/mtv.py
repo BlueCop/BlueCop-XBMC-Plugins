@@ -22,11 +22,14 @@ def masterlist():
 
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find('ol',attrs={'class':'lst '}).findAll('a')
     db_shows = []
     multiseason = []
+    db_shows.append(('Beavis and Butthead','mtv','showsub','http://www.mtv.com/shows/beavis_and_butthead/series.jhtml'))
+    db_shows.append(('Real World: San Diego','mtv','showsub','http://www.mtv.com/shows/real_world/san_diego/series.jhtml'))
     for item in menu:
         name = item.contents[2]
         if ' (Season' in name:

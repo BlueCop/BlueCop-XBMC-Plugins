@@ -44,16 +44,21 @@ def show(showname=common.args.url):
     data = common.getURL(FULL_FEED)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
     items=tree.findAll('item')
+    print tree.prettify()
     names = []
     for item in items:
         sname = item.find('media:subtitle').string
         if sname == showname:
-            name = item.find('description').string.split('-')[1].strip()
+            name = item.find('description').string
+            try:name = name.split('-')[1].strip()
+            except: name = item.find('description').string
             videoid = item.find('link').string
             thumb = item.find('media:thumbnail').string
             seasonepisode = item.find('title').string.replace('Season','').split('Episode')
-            season = int(seasonepisode[0])
-            episode = int(seasonepisode[1])
+            try:season = int(seasonepisode[0])
+            except:season = 0
+            try:episode = int(seasonepisode[1])
+            except:episode = 0
             duration = item.find('media:content')['duration']
             airDate = item.find('pubdate').string.split(' ')[0]
             if season <> 0 or episode <> 0:

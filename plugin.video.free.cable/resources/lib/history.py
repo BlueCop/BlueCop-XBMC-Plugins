@@ -64,7 +64,9 @@ def videos(url=common.args.url):
     videos = tree.find(attrs={'class':'col col-7 col-last'}).find('ul').findAll('li',attrs={'style':True}, recursive=False)
     for video in videos:
         name = video.find('strong').string
-        url = BASE + video['style'].split('url(')[1].replace(')','')
+        url = video['style'].split('url(')[1].replace(')','')
+        if BASE not in url:
+            url = BASE + url
         thumb = url
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'

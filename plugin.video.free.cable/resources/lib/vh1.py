@@ -17,124 +17,93 @@ pluginhandle=int(sys.argv[1])
 BASE_URL = 'http://www.vh1.com/video/browse/shows.jhtml'
 BASE = 'http://www.vh1.com'
 
-whitelist = ['Awesome VH1 Moments',
-             'Big In 06',
-             #'Bonus Clips',
-             'Concert For Diana',
-             'Confessions of a Teen Idol',
-             #'Episode Sneak Peeks',
-             'Fab Life',
-             'Flavor Of Love',
-             'Freestyle59',
-             #'Full Episodes',
-             'Hip Hop Honors',
-             'Home Purchasing Club',
-             'I Love Money',
-             'I Love The',
-             'Music Videos',
-             'Pop Culture Dictionary',
-             'Rock Honors',
-             'Scream Queens',
-             #'Show Clips',
-             'Storytellers',
-             'The Bachelor',
-             "The Critics' Choice Awards",
-             'The Greatest',
-             'The Misadventures of Bob Paparazzo',
-             'The Pickup Artist',
-             'The White Rapper Show',
-             'VH1 News',
-             'VH1 Specials',
-             'Web Junk',
-             'World Series Of Pop Culture']
+blacklist = [   "14th Annual Critics' Choice Awards (2009)",
+                '2009 Hip Hop Honors',
+                '2010 Hip Hop Honors',
+                "Critics' Choice Movie Awards (2010)",
+                "Critics' Choice Movie Awards (2011)",
+                'DIVAS (2010)',
+                'Do Something Awards 2010',
+                'Do Something Awards 2011',
+                'Front Row',
+                'Movies That Rock!',
+                'Pop Up Video',
+                'Posted',
+                'Rock Honors: The Who',
+                'Stand Up To Cancer',
+                'VH1 Big In 2006 Awards',
+                'VH1 Divas (2009)',
+                'VH1 Divas Celebrates Soul',
+                'VH1 Pop Up Video'
+                ]
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    data = common.getURL(BASE_URL)
+    url = 'http://www.vh1.com/shows/all_vh1_shows.jhtml'
+    data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    sub=tree.find('div',attrs={'id':'video_channel_container'})
-    menu=sub.findAll(attrs={'class':'video_browse_container1'})
-    db_shows = []
-    for item in menu:
-        link = item.find(attrs={'class':'video_browse_link_head'}).find('a')
-        name = link.string
-        url = BASE + link['href']
-        if name in whitelist:
-            if db==True:
-                db_shows.append((name,'vh1','videos',url))
+    #print tree.prettify()
+    shows=tree.find('div',attrs={'id':'azshows'}).findAll('a')
+    goodshows = []
+    novideos = []
+    failedshows = []
+    for show in shows:
+        name = show.string
+        if name in blacklist:
+            continue
+        url = show['href']
+        if BASE not in url:
+            url = BASE + url
+        common.addDirectory(name,'vh1','showsubcats',url)
+
+def showsubcats(url=common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #print tree.prettify()
+    subs=tree.find(attrs={'class':'group-a'}).findAll('a')
+    for sub in subs:
+        name = sub.string
+        url = sub['href']
+        if BASE not in url:
+            url = BASE + url
+        if name == None:
+            name = sub.contents[-1]
+        if 'Episodes' in name or 'Clips' in name or 'Peeks' in name or 'Watch' in name or 'Video' in name:
+            if 'id=' in url:
+                u = sys.argv[0]
+                u += '?url="'+urllib.quote_plus(url)+'"'
+                u += '&mode="vh1"'
+                u += '&sitemode="play"'
+                item=xbmcgui.ListItem(name)
+                item.setInfo( type="Video", infoLabels={ "Title":name })
+                item.setProperty('IsPlayable', 'true')
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
             else:
                 common.addDirectory(name,'vh1','videos',url)
-
-    pagintation=sub.find('div',attrs={'style':True}).find('div',attrs={'style':True}).findAll('a',attrs={'class':'pagi_link'})
-    for page in pagintation:
-        if 'Next' in page.string:
-            continue
-        url = BASE_URL + page['href']
-        data = common.getURL(url)
-        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        sub=tree.find('div',attrs={'id':'video_channel_container'})
-        menu=sub.findAll(attrs={'class':'video_browse_container1'})
-        for item in menu:
-            link = item.find(attrs={'class':'video_browse_link_head'}).find('a')
-            name = link.string
-            url = BASE + link['href']
-            if name in whitelist:
-                if db==True:
-                    db_shows.append((name,'vh1','videos',url))
-                else:
-                    common.addDirectory(name,'vh1','videos',url)
-    if db==False:
-        common.addDirectory('Basketball Wives','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=basketball_wives')
-        common.addDirectory('Behind the Music','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=6759')
-        common.addDirectory('Celebrity Rehab','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=celebrity_rehab_with_dr_drew')
-        common.addDirectory('Mob Wives','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=36088')
-        common.addDirectory('Single Ladies','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=34960')
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
-    elif db==True:
-        db_shows.append(('Basketball Wives','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=basketball_wives'))
-        db_shows.append(('Behind the Music','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=6759'))
-        db_shows.append(('Celebrity Rehab','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=celebrity_rehab_with_dr_drew'))
-        db_shows.append(('Mob Wives','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=36088'))
-        db_shows.append(('Single Ladies','vh1','videos','http://www.vh1.com/video/browse/index.jhtml?id=34960'))
-        return db_shows
 
 def videos(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    sub=tree.find('div',attrs={'id':'video_channel_container'})
-    videoset=sub.findAll(attrs={'class':'video_browse_container'})
-    addvideos(videoset)
-    pagintation=sub.find('div',attrs={'style':True}).find('div',attrs={'style':True}).findAll('a',attrs={'class':'pagi_link'})
-    for page in pagintation:
-        if 'Next' in page.string:
-            purl = url.split('?')[0] + page['href']
-            videos(purl)
-
-    
-def addvideos(videoset):    
-    for video in videoset:
-        thumb = video.find('img')['src']
-        link = video.find(attrs={'class':'video_browse_link_head'}).find('a')
-        name = link.string
-        url = BASE + link['href']
-        #airDate = video['mainposted']
-        #description = video['maincontent']
+    #print tree.prettify()
+    subs=tree.find(attrs={'class':'group-b'})
+    try:finalsubs = subs.find(attrs={'class':'video-list'}).findAll('tr',attrs={'class':True})
+    except:finalsubs = subs.find(attrs={'id':"vid_mod_1"}).findAll(attrs={'itemscope':True})
+    for sub in finalsubs:
+        print sub
+        sub = sub.find('a')
+        name = sub.string
+        url = sub['href']
+        if BASE not in url:
+            url = BASE + url
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="vh1"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 #"Plot":description,
-                                                 #"premiered":airDate
-                                                 #"Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
+        item=xbmcgui.ListItem(name)
+        item.setInfo( type="Video", infoLabels={ "Title":name })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 

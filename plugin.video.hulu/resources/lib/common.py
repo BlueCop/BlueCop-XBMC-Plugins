@@ -41,6 +41,8 @@ pluginpath = addoncompat.get_path()
 
 COOKIEFILE = os.path.join(pluginpath,'resources','cache','hulu-cookies.lwp')
 QUEUETOKEN = os.path.join(pluginpath,'resources','cache','token.xml')
+ADCACHE = os.path.join(pluginpath,'resources','cache','ad.xml')
+SMILCACHE = os.path.join(pluginpath,'resources','cache','smil.xml')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
@@ -56,7 +58,9 @@ handle = int(sys.argv[1])
 settings['quality'] = addoncompat.get_setting("quality")
 settings['adquality'] = int(addoncompat.get_setting("adquality"))
 settings['prerollads'] = int(addoncompat.get_setting("prerollads"))
-settings['totalads'] = int(addoncompat.get_setting("totalads"))
+settings['trailads'] = int(addoncompat.get_setting("trailads"))
+settings['adbreaks'] = int(addoncompat.get_setting("adbreaks"))
+settings['segmentvideos'] = addoncompat.get_setting("segmentvideos")
 settings['swfverify'] = addoncompat.get_setting("swfverify")
 cdns = ['level3','limelight','akamai']
 defualtcdn = int(addoncompat.get_setting("defaultcdn"))
@@ -216,6 +220,17 @@ def cacheFEED( url, max_age=0,cache_dir=cachepath):
     os.rename(temppath, filepath)
     print 'Returned from web'
     return data       
+
+def SaveFile(path, data):
+    file = open(path,'w')
+    file.write(data)
+    file.close()
+
+def OpenFile(path):
+    file = open(path, 'r')
+    contents=file.read()
+    file.close()
+    return contents
 
 
 """

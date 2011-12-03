@@ -34,8 +34,10 @@
 	<string id="30034">Update Library when complete</string>
 	
 	<string id="30035">Pre-Roll Ads</string>
-	<string id="30036">Total Ads</string>
+	<string id="30036">Trailing Ads</string>
 	<string id="30037">Ad Quality</string>
+	<string id="30038">Enabled Commercial Breaks</string>
+	<string id="30039">Commercials per Break</string>
 
 	<string id="30101">Per Page</string>
 	<string id="30102">Hulu Login</string>

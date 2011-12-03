@@ -110,35 +110,69 @@ class ResumePlayer( xbmc.Player ) :
 class Main:
 
     def __init__( self ):
-        self.GUID = self.makeGUID()
         video_id=common.args.url
-        queue=False
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        #PREROLL
-        preroll = common.settings['prerollads']
-        if preroll > 0:
-            for i in range(0,preroll):
-                try:
-                    self.playAD(video_id,str(i),queue=queue)
-                    queue=True
-                except: break 
-                #xbmc.sleep(1000)    
-
-        self.play(video_id,queue=queue)
-
-        #POSTROLL
-        postroll = common.settings['totalads']
-        if postroll > 0:
-            for i in range(preroll,postroll):
-                try: self.playAD(video_id,str(i),queue=queue)
-                except: break
-                #xbmc.sleep(1000)
+        self.queue=False
+        if common.args.mode == 'TV_play':
+            if os.path.isfile(common.ADCACHE):
+                os.remove(common.ADCACHE)
+            if os.path.isfile(common.SMILCACHE):
+                os.remove(common.SMILCACHE)
+            self.GUID = self.makeGUID()
+            playlistmode = common.settings['segmentvideos']
+            if playlistmode == 'true':
+                preroll = common.settings['prerollads']
+                addcount=0
+                if preroll > 0:
+                    self.playAD(video_id,addcount,queue=self.queue)
+                    addcount += 1
+                    if preroll > 1:
+                        self.queueAD(video_id,preroll,addcount)
+                        addcount += preroll - 1
+                segments = self.play(video_id,queue=self.queue,segmented=0)
+                if segments:
+                    adbreaks = common.settings['adbreaks']
+                    for i in range(1,len(segments)+1):
+                        self.queueAD(video_id,adbreaks+addcount,addcount)
+                        addcount += adbreaks
+                        self.queueVideo(video_id,segmented=i)
+                postroll = common.settings['trailads']
+                if postroll > 0:
+                    self.queueAD(video_id,addcount+postroll,addcount)
+            else:
+                #PREROLL
+                preroll = common.settings['prerollads']
+                if preroll > 0:
+                    self.playAD(video_id,0,queue=self.queue)
+                    if preroll > 1:
+                        self.queueAD(video_id,2,1)
+                self.play(video_id,queue=self.queue)
+                #POSTROLL
+                postroll = common.settings['trailads']
+                if postroll > 0:
+                    self.queueAD(video_id,preroll+postroll,preroll)
+        elif common.args.mode == 'AD_play':
+            self.GUID = common.args.guid
+            #self.ustate = common.args.ustate
+            #self.sstate = common.args.sstate
+            pod = int(common.args.pod)
+            self.playAD(video_id,pod,queue=self.queue)
+        elif common.args.mode == 'SEGMENT_play':
+            self.GUID = common.args.guid
+            self.play(video_id,queue=self.queue,segmented=int(common.args.segmented))
 
     def AES(self,key):
         return Rijndael(key, keySize=32, blockSize=16, padding=noPadding())
 
     def AES_CBC(self,key):
         return CBC(blockCipherInstance=self.AES(key))
+
+    def makeGUID(self):
+        guid = ''
+        for i in range(8):
+            number = "%0.2X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
+            guid += number[1:]
+        return guid
         
     def decrypt_cid(self, p):
         cidkey = '48555bbbe9f41981df49895f44c83993a09334d02d17e7a76b237d04c084e342'
@@ -153,13 +187,6 @@ class Main:
         m.update(str(xor_cid) + "MAZxpK3WwazfARjIpSXKQ9cmg9nPe5wIOOfKuBIfz7bNdat6gQKHj69ZWNWNVB1")
         value = m.digest()
         return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "")
-
-    def makeGUID(self):
-        guid = ''
-        for i in range(8):
-            number = "%0.2X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
-            guid += number[2:]
-        return guid
 
     def decrypt_pid(self, p):
         cp_strings = [
@@ -188,18 +215,10 @@ class Main:
         m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
         return m.hexdigest()
 
-    def content_sig(self, parameters):
-        hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'
-        sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
-        data = ''
-        for item1, item2 in sorted_parameters:
-            data += item1 + item2
-        sig = hmac.new(hmac_key, data)
-        return sig.hexdigest()
-
     def decrypt_SMIL(self, encsmil):
         encdata = binascii.unhexlify(encsmil)
         expire_message = 'Your access to play this content has expired.'
+        plus_message = 'please close any Hulu Plus videos you may be watching on other devices'
         for key in smildeckeys[:]:
             cbc = self.AES_CBC(binascii.unhexlify(key[0]))
             smil = cbc.decrypt(encdata,key[1])
@@ -213,7 +232,10 @@ class Main:
             elif expire_message in smil:
                 xbmcgui.Dialog().ok('Content Expired',expire_message)
                 return False
-
+            elif plus_message in smil:
+                xbmcgui.Dialog().ok('Too many connections',plus_message)
+                return False
+            
     def decrypt_subs(self, encsubs):
         encdata = binascii.unhexlify(encsubs)
         for key in subdeckeys[:]:
@@ -319,7 +341,16 @@ class Main:
             print "HULU --> No subtitles available."
             #self.update_dialog('No Subtitles Available')
 
-    def getSMIL(self, video_id):
+    def content_sig(self, parameters):
+        hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'
+        sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
+        data = ''
+        for item1, item2 in sorted_parameters:
+            data += item1 + item2
+        sig = hmac.new(hmac_key, data)
+        return sig.hexdigest()
+
+    def getSMIL(self, video_id,retry=0):
         try:
             epoch = int(time.mktime(time.gmtime()))
             parameters = {'video_id': video_id,
@@ -334,6 +365,8 @@ class Main:
                           'ep'      : '1',
                           'language': 'en'
                           }
+            if retry > 0:
+                parameters['retry']=str(retry)
             if common.settings['enable_login']=='true' and common.settings['enable_plus']=='true' and common.settings['usertoken']:
                 parameters['token'] = common.settings['usertoken']
             smilURL = False
@@ -366,77 +399,135 @@ class Main:
         encdata = cbc.encrypt(data,base64.decodestring(iv))
         return base64.encodestring(encdata).replace('\n','')
 
-    def ADdecrypt(self, data, iv):
+    def ADdecrypt(self, data):
         key = '9d489e6c3adfb6a00a23eb7afc8944affd180546c719db5393e2d4177e40c77d'
         bindata = base64.decodestring(data)
         bindata = bindata[1:]
         cbc = self.AES_CBC(binascii.unhexlify(key))
-        return cbc.decrypt(bindata,base64.decodestring(iv))[16:]
+        return cbc.decrypt(bindata)
   
     def MakeIV(self):
-        data = self.makeGUID()+self.makeGUID()[:8]
+        data = self.makeGUID()
         data = binascii.unhexlify(data)
         return base64.encodestring(data)
-        
-    def playAD(self, video_id,pod,queue=False):
-        try:
-            session=self.sstate
-            state=self.ustate
-        except:
-            session=''
-            state=''
-        epoch = str(int(time.mktime(time.gmtime())))
-        xmlbase='''
-<AdRequest Pod="'''+pod+'''" SessionState="'''+session+'''" ResponseType="VAST" Timestamp="'''+epoch+'''">
-  <Distributor Name="Hulu" Platform="Desktop"/>
-  <Visitor IPV4Address="" BT_RSSegments="null" UserId="-1" MiniCount="" MiniDuration="" ComputerGuid="'''+self.GUID+'''" AdFeedback="null" PlanId="0" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
-  <KeyValues>
-    <KeyValue Key="env" Value="prod"/>
-    <KeyValue Key="version" Value="Voltron"/>
-  </KeyValues>
-  <SiteLocation>
-    <VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
-      <VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
-    </VideoPlayer>
-  </SiteLocation>
-  <Diagnostics/>
-</AdRequest>'''
-        #print xmlbase
-        IV = self.MakeIV()
-        encdata = self.ADencrypt(xmlbase,IV)
-        url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)
-        encplaylist = common.getFEED(url,postdata=encdata)
-        playlist = self.ADdecrypt(encplaylist, IV)
-        playlistSoup=BeautifulStoneSoup(playlist, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        print playlistSoup.prettify()
-        self.sstate = playlistSoup.find('sessionstate')['value']                                       
-        self.ustate = playlistSoup.find('userstate')['value']
-        mediafiles = playlistSoup.findAll('mediafile')
-        if common.settings['adquality'] <= len(mediafiles):
-            mediaUrl = mediafiles[common.settings['adquality']].string
-        else:
-            mediaUrl = mediafiles[0].string
-        adtitle = playlistSoup.find('adtitle').string
-        item = xbmcgui.ListItem(adtitle, path=mediaUrl)
-        item.setInfo( type="Video", infoLabels={ "Title":adtitle})
-        if queue:
+
+    def queueAD(self, video_id,stop,start=0):
+        for pod in range(start,stop):
+            mode='AD_play'
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(video_id)+'"'
+            u += '&mode="'+urllib.quote_plus(mode)+'"'
+            u += '&videoid="'+urllib.quote_plus(common.args.videoid)+'"'
+            u += '&pod="'+urllib.quote_plus(str(pod))+'"'
+            #u += '&sstate="'+urllib.quote_plus(self.sstate)+'"'
+            #u += '&ustate="'+urllib.quote_plus(self.ustate)+'"'
+            u += '&guid="'+urllib.quote_plus(self.GUID)+'"'
+            item=xbmcgui.ListItem("AD "+str(pod))
             item.setProperty('IsPlayable', 'true')
-            self.playlist.add(url=mediafiles[0].string, listitem=item)
-        else:
-            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-        for item in playlistSoup.findAll('tracking'):
-            common.getFEED(item.string)
+            self.playlist.add(url=u, listitem=item)
+       
+    def playAD(self, video_id, pod,queue=False):
+        try:
+            if os.path.isfile(common.ADCACHE):
+                data=common.OpenFile(common.ADCACHE)
+                playlistSoup=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                self.sstate = playlistSoup.find('sessionstate')['value']                                       
+                self.ustate = playlistSoup.find('userstate')['value']
+                del playlistSoup
+                session=self.sstate
+                state=self.ustate
+            else:
+                session=''
+                state=''
+            epoch = str(int(time.mktime(time.gmtime())))
+            xmlbase='''
+    <AdRequest Pod="'''+str(pod)+'''" SessionState="'''+session+'''" ResponseType="VAST" Timestamp="'''+epoch+'''">
+      <Distributor Name="Hulu" Platform="Desktop"/>
+      <Visitor IPV4Address="" BT_RSSegments="null" UserId="-1" MiniCount="" MiniDuration="" ComputerGuid="'''+self.GUID+'''" AdFeedback="null" PlanId="0" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
+      <KeyValues>
+        <KeyValue Key="env" Value="prod"/>
+        <KeyValue Key="version" Value="Voltron"/>
+      </KeyValues>
+      <SiteLocation>
+        <VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
+          <VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
+        </VideoPlayer>
+      </SiteLocation>
+      <Diagnostics/>
+    </AdRequest>'''
+            #print xmlbase
+            IV = self.MakeIV()
+            encdata = self.ADencrypt(xmlbase,IV)
+            url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)
+            encplaylist = common.getFEED(url,postdata=encdata)
+            playlist = self.ADdecrypt(encplaylist)
+            common.SaveFile(common.ADCACHE, playlist)
+            playlistSoup=BeautifulStoneSoup(playlist, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            #print playlistSoup.prettify()
+            self.sstate = playlistSoup.find('sessionstate')['value']                                       
+            self.ustate = playlistSoup.find('userstate')['value']
+            mediafiles = playlistSoup.findAll('mediafile')
+            if common.settings['adquality'] <= len(mediafiles):
+                mediaUrl = mediafiles[common.settings['adquality']].string
+            else:
+                mediaUrl = mediafiles[0].string
+            adtitle = playlistSoup.find('adtitle').string
+            item = xbmcgui.ListItem(adtitle, path=mediaUrl)
+            item.setInfo( type="Video", infoLabels={ "Title":adtitle})
+            if queue:
+                item.setProperty('IsPlayable', 'true')
+                self.playlist.add(url=mediafiles[0].string, listitem=item)
+            else:
+                self.queue = True
+                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            for item in playlistSoup.findAll('tracking'):
+                common.getFEED(item.string)
+        except: pass
+
+    def queueVideo( self, video_id, segmented=False):
+        mode='SEGMENT_play'
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(video_id)+'"'
+        u += '&mode="'+urllib.quote_plus(mode)+'"'
+        u += '&videoid="'+urllib.quote_plus(common.args.videoid)+'"'
+        u += '&segmented="'+urllib.quote_plus(str(segmented))+'"'
+        u += '&guid="'+urllib.quote_plus(self.GUID)+'"'
+        item=xbmcgui.ListItem(self.displayname)
+        item.setInfo( type="Video", infoLabels=self.infoLabels)
+        item.setProperty('IsPlayable', 'true')
+        self.playlist.add(url=u, listitem=item)
     
-    def play( self, video_id, queue ):
+    def play( self, video_id, queue , segmented=False):
         print 'Video ID: '+video_id
-        if (common.settings['enable_captions'] == 'true'):
+        if (common.settings['enable_captions'] == 'true') and not segmented:
             self.checkCaptions(video_id)
         #getSMIL
-        smilSoup = self.getSMIL(video_id)
+        if segmented is False:
+            smilSoup = self.getSMIL(video_id)
+        else:
+            smilSoup = self.getSMIL(video_id,retry=1)
         if smilSoup:
             ref = smilSoup.findAll('ref')[1]
             title = ref['title']
             series_title = ref['tp:series_title']
+            plot = ref['abstract']
+            try:
+                segments = ref['tp:segments']
+                credits = ref['tp:endcreditstime']
+                if segments == '':
+                    if credits <> '00:00:00;00':
+                        segments = []
+                        segments.append(credits.replace('T:',''))
+                    else:
+                        segments = False
+                else:
+                    segments = segments.replace('T:','').split(',')
+                    if credits <> '00:00:00;00':
+                        segments.append(credits.replace('T:',''))
+            except:segments = False
+            print segments
+            try:duration = int(ref['dur'].replace('ms',''))
+            except:duration = 0
             try:season = int(ref['tp:season_number'])
             except:season = -1
             try:episode = int(ref['tp:episode_number'])
@@ -516,23 +607,56 @@ class Main:
                 newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
                 if (common.settings['swfverify'] == 'true'):
                     newUrl += " swfvfy=true"
-                
-                item = xbmcgui.ListItem(title,path=newUrl)
-                item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                         "TVShowTitle":series_title,
-                                                         "Season":season,
-                                                         "Episode":episode})
-                if queue:
-                    item.setProperty('IsPlayable', 'true')
-                    self.playlist.add(url=newUrl, listitem=item)
+                    
+                self.displayname = series_title+' - '+str(season)+'x'+str(episode)+' - '+title
+                self.infoLabels={"Title":title,
+                                 "TVShowTitle":series_title,
+                                 "Plot":plot,
+                                 "Season":season,
+                                 "Episode":episode}
+                previousSeg = False
+                pod = 0
+                if segmented is not False and segments:
+                    if segments:
+                        fnewUrl = newUrl
+                        if segmented > 0:
+                            startsegment = segments[segmented-1]
+                            hour,minute,seconds = startsegment.split(';')[0].split(':')
+                            frame = int((float(startsegment.split(';')[1])/24)*1000)
+                            startseconds = (((int(hour)*60*60)+(int(minute)*60)+int(seconds))*1000)+frame
+                            fnewUrl += " start="+str(startseconds)
+                        if len(segments) > segmented:
+                            stopsegment = segments[segmented]   
+                            hour,minute,seconds = stopsegment.split(';')[0].split(':')
+                            frame = int((float(stopsegment.split(';')[1])/24)*1000)
+                            stopseconds = (((int(hour)*60*60)+(int(minute)*60)+int(seconds))*1000)+frame
+                            fnewUrl += " stop="+str(stopseconds)
+                        item = xbmcgui.ListItem(self.displayname,path=fnewUrl)
+                        item.setInfo( type="Video", infoLabels=self.infoLabels)
+                        if queue:
+                            item.setProperty('IsPlayable', 'true')
+                            self.playlist.add(url=fnewUrl, listitem=item)
+                        else:
+                            self.queue = True
+                            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                        return segments
                 else:
-                    self.p=ResumePlayer()
-                    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-                    while not self.p.isPlaying():
-                        print 'HULU --> Not Playing'
-                        xbmc.sleep(100)
-                    #Enable Subtitles
-                    subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
-                    if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
-                        print "HULU --> Setting subtitles"
-                        self.p.setSubtitles(subtitles)
+                    item = xbmcgui.ListItem(series_title+' - '+str(season)+'x'+str(episode)+' - '+title,path=newUrl)
+                    item.setInfo( type="Video", infoLabels=self.infoLabels)
+                    if queue:
+                        item.setProperty('IsPlayable', 'true')
+                        self.playlist.add(url=newUrl, listitem=item)
+                    else:
+                        self.queue = True
+                        self.p=ResumePlayer()
+                        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                        while not self.p.isPlaying():
+                            print 'HULU --> Not Playing'
+                            xbmc.sleep(100)
+                        #Enable Subtitles
+                        subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
+                        if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
+                            print "HULU --> Setting subtitles"
+                            self.p.setSubtitles(subtitles)
+                        #self.p.onPlayBackStarted()
+                    return False

@@ -42,6 +42,7 @@ def modes( ):
         #updatetv.append( ('Fix Genres',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixGenres")' % ( sys.argv[0] ) ) )
         #updatetv.append( ('Fix Years',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixYears")' % ( sys.argv[0] ) ) )
         common.addDir('Television','listtv','LIST_TV_ROOT', cm=updatetv)
+        common.addDir('Search Prime','searchprime','SEARCH_PRIME','http://www.amazon.com/s?ie=UTF8&field-is_prime_benefit=1&rh=n%3A2858778011%2Ck%3A')
         if common.addon.getSetting('enablelibrary') == 'true':
             common.addDir('My Library','library','LIBRARY_ROOT')
         xbmcplugin.endOfDirectory(pluginhandle)

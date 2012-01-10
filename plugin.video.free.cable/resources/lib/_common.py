@@ -46,25 +46,25 @@ site_dict = {'ABC': 'abc',
              'NBC': 'nbc',
              'USA': 'usa',
              'SyFy': 'syfy',
-             #'FOX': 'fox',
              'The CW':'thecw',
-             'FX': 'fx',
-             #'TNT': 'tnt',
-             #'TBS': 'tbs',
              'Spike':'spike',
-             'TV Land':'tvland',
              'A&E':'aetv',
-             #'The Hub':'hub',
-             #'Comedy Central':'comedy',
              'MTV Shows':'mtv',
              'VH1 Shows':'vh1',
-             #'Adult Swim':'adultswim',
-             #'Cartoon Network':'cartoon',
+             'TNT': 'tnt',
+             'TBS': 'tbs',
              'History Channel':'history',
              'Lifetime':'lifetime',
              'Bravo':'bravo',
              'Oxygen':'oxygen',
-             'Food Network':'food'
+             'Food Network':'food',
+             'TV Land':'tvland'
+             #'Comedy Central':'comedy',
+             #'Adult Swim':'adultswim',
+             #'Cartoon Network':'cartoon'
+             #'FOX': 'fox',
+             #'FX': 'fx',
+             #'The Hub':'hub',          
              }
 
 addoncompat.get_revision()
@@ -84,7 +84,7 @@ quality = ['200', '400', '600', '800', '1000', '1200', '1400', '1600', '2000', '
 selectquality = int(addoncompat.get_setting('quality'))
 settings['quality'] = quality[selectquality]
 settings['enableproxy'] = addoncompat.get_setting('us_proxy_enable')
-
+settings['enablesubtitles'] = addoncompat.get_setting('enablesubtitles')
 
 def get_series_id(seriesid,seriesname):
     shows = BeautifulStoneSoup(seriesid, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('series')

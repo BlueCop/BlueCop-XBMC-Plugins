@@ -17,7 +17,8 @@ pluginhandle = int (sys.argv[1])
 BASE_URL = 'http://www.oxygen.com/full-episodes/'
 BASE = 'http://www.oxygen.com'
 
-SHOW_FEED = 'http://www.oxygen.com/full-episodes/media/full-episodes/oxygenShows.xml'
+#SHOW_FEED = 'http://www.oxygen.com/full-episodes/media/full-episodes/oxygenShows.xml'
+SHOW_FEED = 'http://www.oxygen.com/full-episodes/xml/showConfig.xml'
 
 def masterlist():
     return rootlist(db=True)

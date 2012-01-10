@@ -6,11 +6,16 @@ import urllib2
 import sys
 import os
 import re
+import cookielib
+import datetime
+import time
+
 
 import demjson
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import MinimalSoup
 import resources.lib._common as common
+from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
 pluginhandle = int (sys.argv[1])
 
@@ -106,6 +111,7 @@ def stvideos(url = common.args.url):
             stprocessvideos(titleUrl)
 
 def stprocessvideos(purl):
+    print "enter stprocessvideos"
     stbase = 'http://www.startrek.com'
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(purl)
@@ -159,6 +165,7 @@ def stprocessvideos(purl):
 def showcats(url = common.args.url):
     data = common.getURL(url)
     try:
+        print 'CBS: Trying New Carousel'
         carousels = re.compile("loadUpCarousel\('(.*?)','(.*?)', '(.*?)', (.*?), true, stored").findall(data)
         carousels[0][0]
         for name,dir1,dir2,dir3 in carousels:
@@ -167,21 +174,28 @@ def showcats(url = common.args.url):
     except:
         print 'CBS: Carousel Failed'
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #try:
-        options = tree.find(attrs={'id' : 'secondary-show-nav-wrapper'})
-        options = options.findAll('a')
-        for option in options:
-            name = option.string.encode('utf-8')
-            url = BASE + option['href']
-            common.addDirectory(name, 'cbs', 'videos', url)
-    #except:
-        #print 'CBS: secondary-show-nav-wrapper failed'
-        print 'CBS: trying vid_module'
-        options = tree.findAll(attrs={'class' : 'vid_module'})
-        for option in options:
-            moduleid = option['id']
-            name = option.find(attrs={'class' : 'hdr'}).string
-            common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
+        try:
+            print 'CBS: trying secondary-show-nav-wrapper'
+            options = tree.find(attrs={'id' : 'secondary-show-nav-wrapper'})
+            options = options.findAll('a')
+            for option in options:
+                name = option.string.encode('utf-8')
+                url = BASE + option['href']
+                common.addDirectory(name, 'cbs', 'videos', url)
+            print 'CBS: trying vid_module'
+            options = tree.findAll(attrs={'class' : 'vid_module'})
+            for option in options:
+                moduleid = option['id']
+                name = option.find(attrs={'class' : 'hdr'}).string
+                common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid) 
+        except:
+            print 'CBS: secondary-show-nav-wrapper failed'
+            print 'CBS: trying vid_module secondary'
+            options = tree.findAll(attrs={'class' : 'vid_module'})
+            for option in options:
+                moduleid = option['id']
+                name = option.find(attrs={'class' : 'hdr'}).string
+                common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
 
 def showsubcats(url = common.args.url):
     moduleid = url.split('<moduleid>')[1]
@@ -275,6 +289,7 @@ def PAGES( tree ):
         print 'Pages Failed'
 
 def VIDEOLINKS( data ):
+    print "Entering VIDEOLINKS function"
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     vidfeed=tree.find(attrs={'class' : 'vids_feed'})
     videos = vidfeed.findAll(attrs={'class' : 'floatLeft','style' : True})
@@ -331,7 +346,82 @@ def VIDEOLINKS( data ):
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
 
+        
+def getHTML( url ):
+    print 'HULU --> common :: getHTML :: url = '+url
+    cj = cookielib.LWPCookieJar()
+    #if os.path.isfile(COOKIEFILE):
+    #    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer', 'http://hulu.com'),
+                         ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')]
+    usock=opener.open(url)
+    response=usock.read()
+    usock.close()
+    #if os.path.isfile(COOKIEFILE):
+    #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    return response
+
+  
+def clean_subs(data):
+        br = re.compile(r'<br.*?>')
+        br_2 = re.compile(r'\n')
+        tag = re.compile(r'<.*?>')
+        space = re.compile(r'\s\s\s+')
+        sub = br.sub('\n', data)
+        sub = tag.sub(' ', sub)
+        sub = br_2.sub('<br/>', sub)
+        sub = space.sub(' ', sub)
+        return sub
+    
+        
+def convert_subtitles(subtitles, output):
+    subtitle_data = subtitles
+    subtitle_data = subtitle_data.replace("\n","").replace("\r","")
+    subtitle_data = BeautifulStoneSoup(subtitle_data)
+    subtitle_array = []
+    srt_output = ''
+
+    print "CBS: --> Converting subtitles to SRT"
+    #self.update_dialog('Converting Subtitles to SRT')
+    lines = subtitle_data.findAll('p') #split the file into lines
+    for line in lines:
+        if line is not None:
+            #print "LINE: " + str(line)
+            #print "LINE BEGIN: " + str(line['begin'])
+            
+            sub=str(clean_subs(str(line)))
+            try:
+                newsub=sub
+                sub = BeautifulStoneSoup(sub, convertEntities=BeautifulStoneSoup.ALL_ENTITIES)
+            except:
+                sub=newsub
+            #print "CURRENT SUB: " + str(sub)
+            begin_time = line['begin']
+            end_time = line['end']
+            start_split =begin_time.split(".")                        
+            end_split =end_time.split(".")                        
+            timestamp = "%s,%s" % (start_split[0], start_split[1])
+            end_timestamp = "%s,%s" % (end_split[0], end_split[1])
+            #print "TIMESTAMP " + str(timestamp) + " " + str(end_timestamp)
+   
+            temp_dict = {'start':timestamp, 'end':end_timestamp, 'text':sub}
+            subtitle_array.append(temp_dict)
+                
+    for i, subtitle in enumerate(subtitle_array):
+        line = str(i+1)+"\n"+str(subtitle['start'])+" --> "+str(subtitle['end'])+"\n"+str(subtitle['text'])+"\n\n"
+        srt_output += line
+                    
+    file = open(os.path.join(common.pluginpath,'resources','cache',output+'.srt'), 'w')
+    file.write(srt_output)
+    file.close()
+    print "CBS: --> Successfully converted subtitles to SRT"
+    #self.update_dialog('Conversion Complete')
+    return True
+    
 def playST(url = common.args.url):
+    print "Entering playST function"
+
     if 'watch_episode' in url:
         pid=url.split('/')[-1]
         play(pid)
@@ -342,6 +432,8 @@ def playST(url = common.args.url):
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)   
 
 def play(url = common.args.url):
+    print "DEBUG Entering play function"
+
     if 'http://' in url:
         data=common.getURL(url)
         try:
@@ -357,10 +449,33 @@ def play(url = common.args.url):
         proxy = False
     data=common.getURL(url,proxy=proxy)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #print "DEBUG TREEE "+str(tree)
+    
+    if (common.settings['enablesubtitles'] == 'true'):
+        refs = tree.findAll('ref',attrs={'tp:closedcaptionurl': True})
+        closedcaption = None
+        for item in refs:
+            try:
+                closedcaption = item['tp:closedcaptionurl']
+                guid = item['guid']
+                print "closed caption: " + closedcaption + " GUID: " +str(guid)
+            except:
+                print "no key"
+                
+        if (closedcaption is not None):
+            xml_closedcaption = getHTML(closedcaption)
+            convert_subtitles(xml_closedcaption,guid)
+
+    #print "DEBUG refs:" + str(refs)
+        
     videos = tree.findAll('video',attrs={'profile': True})
+    print "DEBUG videos:" + str(videos)
     rtmps=[]
     https=[]
+    cccount=0
     for item in videos:
+        print "VIDEO NUMBER " +str(cccount) + " " + str(item) + "      ENDDDD"
+        cccount=cccount+1
         url = item['src']
         if 'rtmp' in url:
             rtmps.append(item)
@@ -370,6 +485,7 @@ def play(url = common.args.url):
     sbitrate = int(common.settings['quality']) * 1024
     for item in rtmps:
         bitrate = int(item['system-bitrate'])
+        
         if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             url = item['src'].split('<break>')
@@ -391,3 +507,12 @@ def play(url = common.args.url):
     '''
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    if (common.settings['enablesubtitles'] == 'true') and (closedcaption is not None):
+        while not xbmc.Player().isPlaying():
+            print 'CBS--> Not Playing'
+            xbmc.sleep(100)
+    
+        subtitles = os.path.join(common.pluginpath,'resources','cache',guid+'.srt')
+        print "HULU --> Setting subtitles"
+        xbmc.Player().setSubtitles(subtitles)
+

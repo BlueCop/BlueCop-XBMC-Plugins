@@ -37,17 +37,19 @@ def episodes(url=common.args.url):
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #try:
+    seeall=tree.find('a', attrs={'class' : 'see_all'})
+    categories=tree.findAll('a',attrs={'class' : 'read_full'})
+    categories.append(seeall)
     try:
-        seeall=tree.find('a', attrs={'class' : 'see_all'})
-        categories=tree.findAll('a',attrs={'class' : 'read_full'})
-        categories.append(seeall)
         for category in categories:
-            url = category['href']
-            name = category.string.replace('See all ','')
-            if name == 'Video Clips':
-                common.addDirectory(name, 'spike', 'videos', url)
-            elif name == 'Full Episodes':
-                common.addDirectory(name, 'spike', 'fullepisodes', url)
+            if category is not None:
+                url = category['href']
+                name = category.string.replace('See all ','')
+                if name == 'Video Clips':
+                    common.addDirectory(name, 'spike', 'videos', url)
+                elif name == 'Full Episodes':
+                    common.addDirectory(name, 'spike', 'fullepisodes', url)
     except:
         video=tree.find(attrs={'class' : 'see_all_videos clearfix'}).find('a')
         url = video['href']

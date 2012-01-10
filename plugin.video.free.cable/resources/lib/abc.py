@@ -28,18 +28,30 @@ def rootlist(db=False):
         url = item('link')[0].string
         thumb = item('image')[0].string
         if db==True:
-            db_shows.append((name,'abc','episodes',url))
+            db_shows.append((name,'abc','seasons',url))
         else:
-            common.addDirectory(name, 'abc', 'episodes', url , thumb)
+            common.addDirectory(name, 'abc', 'seasons', url , thumb)
     if db==True:
         return db_shows
+    
+def seasons(url=common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    video_rss = menu=tree.find(attrs={'type' : 'application/rss+xml'})['href']
+    showid=url.split('?')[0].split('/')[-1]
+    url='http://abc.go.com/vp2/s/carousel?service=seasons&parser=VP2_Data_Parser_Seasons&showid='+showid+'&view=season&bust=07000001_3'
+    data = common.getURL(url)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    seasons=tree.findAll('a')
+    for season in seasons:
+        seasonid=season['seasonid']
+        name=season.string.strip()
+        url=video_rss.replace('-1/-1/-1',seasonid+'/-1/-1')
+        common.addDirectory(name, 'abc', 'episodes', url )
 
 def episodes(url=common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    video_rss = menu=tree.find(attrs={'type' : 'application/rss+xml'})['href']
-    data = common.getURL(video_rss)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     menu=tree.findAll('item')
     for item in menu:

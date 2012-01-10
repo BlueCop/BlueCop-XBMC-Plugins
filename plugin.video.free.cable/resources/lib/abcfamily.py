@@ -21,16 +21,19 @@ def masterlist():
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    menu=tree.findAll('ul',attrs={'class':'show_listing_item'})
+    tree=BeautifulSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    menu=tree.find(attrs={'class':'networkGroup'}).findAll('div',recursive=False)
     db_shows = []
     for item in menu:
-        name = item.find(attrs={'class':'show_listing_title'}).string
-        url = item.find(attrs={'class':'show_listing_url'}).string
+        link = item.find('a')
+        name = link['title']
+        url = link['page']
+        description = link['desc']
+        thumb = item.find('img')['src']
         if db==True:
             db_shows.append((name,'abcfamily','showcats',url))
         else:
-            common.addDirectory(name, 'abcfamily', 'showcats', url)
+            common.addDirectory(name, 'abcfamily', 'showcats', url, thumb, thumb, description)
     if db==True:
         return db_shows
 

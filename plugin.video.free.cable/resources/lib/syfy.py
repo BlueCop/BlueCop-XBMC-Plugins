@@ -58,6 +58,9 @@ def episodes(url = common.args.url):
             elif 4 == len(seasonepisode):
                 season = int(seasonepisode[:2])
                 episode = int(seasonepisode[-2:])
+            elif 2 == len(seasonepisode) or 1 == len(seasonepisode):
+                season = 0
+                episode = int(seasonepisode)
             if season <> 0 or episode <> 0:
                 displayname = '%sx%s - %s' % (str(season),str(episode),name)
         except:

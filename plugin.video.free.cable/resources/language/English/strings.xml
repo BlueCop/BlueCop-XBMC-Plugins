@@ -13,9 +13,10 @@
 	<string id="30011">2500kbps</string>
 	<string id="30012">3000kbps</string>
 	<string id="30013">Max</string>
+	
+	<string id="30014">Enable Subtitles(CBS Only)</string>
 
 	<string id="30041">U.S. Proxy port</string>
 	<string id="30040">U.S. Proxy IP</string>
 	<string id="30039">Enable Proxy</string>
-
 </strings>

@@ -82,12 +82,16 @@ def hic_episodes():
     epoch = str(int(time.mktime(time.gmtime())*1000))
     s1url = 'http://www.tvland.com/fragments/search_results/related_episodes_seasons?_='+epoch+'&showId=25573&seasonId=41909&episodeId=43520'
     s2url = 'http://www.tvland.com/fragments/search_results/related_episodes_seasons?_='+epoch+'&showId=25573&seasonId=27283&episodeId=43520'
+    s3url = 'http://www.tvland.com/fragments/search_results/related_episodes_seasons?_='+epoch+'&showId=25573&seasonId=44996&episodeId=46849'
     episodes(s1url)
     episodes(s2url)
+    episodes(s3url)
     
 def playuri(uri = common.args.url):
-    configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:cms:episode:tvland.com:/config.xml'
-    configurl += '?uri=%s&type=network&ref=www.tvland.com&geo=US&group=entertainment&site=tvland.com' % uri
+    #configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:cms:episode:tvland.com:/config.xml'
+    #configurl += '?uri=%s&type=network&ref=www.tvland.com&geo=US&group=entertainment&site=tvland.com' % uri
+    configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:cms:episode:tvland.com:/context3/config.xml'
+    configurl += '?uri=%s&type=network&ref=www.tvland.com&geo=US&group=entertainment&nid=82125&site=tvland.com' % uri
     configxml = common.getURL(configurl)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&')
@@ -123,8 +127,9 @@ def playuri(uri = common.args.url):
 
 def playurl(url = common.args.url):
     data=common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES) 
-    uri = tree.find('param',attrs={'name':'movie'})['value'].split('://')[1].split('/')[1]
+    #tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #uri = tree.find('param',attrs={'name':'movie'})['value'].split('://')[1].split('/')[1]
+    uri = re.compile("contentUri: '(.*?)',",).findall(data)[0]
     playuri(uri)
 
 

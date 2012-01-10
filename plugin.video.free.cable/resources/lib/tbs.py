@@ -6,12 +6,12 @@ pluginhandle = int(sys.argv[1])
 
 #getCollections = 'http://www.tbs.com/video/navigation/getCollections.jsp'
 #getCollectionById = 'http://www.tbs.com/video/navigation/getCollectionById/'
-getCollections = 'http://www.tbs.com/video/pass-thru/tveGetCollections.jsp?site=true'
-getCollectionById = 'http://www.tbs.com/video/pass-thru/tveGetCollectionsById.jsp?site=true&offset=0&sort='
 
+getCollections = 'http://www.tbs.com/video/content/services/getCollections.do'
+getCollectionById = 'http://www.tbs.com/video/content/services/getCollectionByContentId.do?offset=0&sort=&cTest=2&limit=200'
 
 def masterlist():
-        url = getCollections + '&id=185669'
+        url = getCollections + '?id=185669'
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -22,7 +22,7 @@ def masterlist():
                         return shows(cid,db=True)
                         
 def rootlist(): # No mode - Root Listing
-        url = getCollections + '&id=185669'
+        url = getCollections + '?id=185669'
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -41,7 +41,7 @@ def shows(cid = common.args.url,db=False):
         else:
                 mode = 'show'
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        url = getCollections + '&id=' + cid
+        url = getCollections + '?id=' + cid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
@@ -59,7 +59,7 @@ def shows(cid = common.args.url,db=False):
 def show(cid = common.args.url): 
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        url = getCollections + '&id=' + cid
+        url = getCollections + '?id=' + cid
         html=common.getURL(url)
         if '<collections total_collections="0">' in html:
             episode(cid=cid)
@@ -139,7 +139,7 @@ def getAUTH(aifp,window,tokentype,vid,filename):
 
 def GET_RTMP(vid):
         #url = 'http://www.tbs.com/video/cvp/videoData.jsp?oid='+vid
-        url = 'http://www.tbs.com/tveverywhere/content/services/cvpXML.do?id='+vid
+        url = 'http://www.tbs.com/tveverywhere/content/services/cvpXML.do?titleId='+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         print tree.prettify()

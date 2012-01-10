@@ -4,11 +4,11 @@ import resources.lib._common as common
 from BeautifulSoup import BeautifulStoneSoup
 pluginhandle = int(sys.argv[1])
 
-
+BASE_URL = 'http://www.tnt.tv/video/content/services/getCollections.do?id=58127'
 
 def masterlist():
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
-        html=common.getURL(url)
+        html=common.getURL(BASE_URL)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         for collection in collections:
@@ -19,7 +19,7 @@ def masterlist():
 def rootlist():
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
-        html=common.getURL(url)
+        html=common.getURL(BASE_URL)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         for collection in collections:
@@ -38,7 +38,7 @@ def shows(cid = common.args.url,db=False):
         else:
             mode = 'show' #SHOW() Mode
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
-        html=common.getURL(url)
+        html=common.getURL(BASE_URL)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         db_shows = []
@@ -60,7 +60,7 @@ def show():
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
-        html=common.getURL(url)
+        html=common.getURL(BASE_URL)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         collections = tree.findAll('collection')
         for collection in collections:
@@ -79,7 +79,8 @@ def episode():
         xbmcplugin.setContent(pluginhandle, 'episodes')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         #url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
-        url = 'http://www.tnt.tv/content/services/getCollectionByContentId.do?site=true&offset=0&sort=&limit=200&id='+cid
+        #url = 'http://www.tnt.tv/content/services/getCollectionByContentId.do?site=true&offset=0&sort=&limit=200&id='+cid
+        url = 'http://www.tnt.tv/video/content/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         episodes = tree.findAll('episode')
@@ -134,6 +135,8 @@ def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',du
 
 def getAUTH(aifp,window,tokentype,vid,filename):
         authUrl = 'http://www.tnt.tv/processors/services/token.do'
+        authUrl = 'http://www.tbs.com/processors/cvp/token.jsp'
+        #authUrl = 'http://www.tnt.tv/tveverywhere/processors/services/token.do'
         parameters = {'aifp' : aifp,
                       'window' : window,
                       'authTokenType' : tokentype,
@@ -147,10 +150,13 @@ def getAUTH(aifp,window,tokentype,vid,filename):
         response = urllib2.urlopen(request)
         link = response.read(200000)
         response.close()
+        print link
         return re.compile('<token>(.+?)</token>').findall(link)[0]
 
 def GET_RTMP(vid):
-        url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
+        #url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
+        #http://www.tnt.tv/video/content/services/cvpXML.do?titleId=828441
+        url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId='+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         print tree.prettify()
@@ -174,6 +180,7 @@ def GET_RTMP(vid):
             tokentype = serverDetails.find('authtokentype').string
             window = serverDetails.find('window').string
             aifp = serverDetails.find('aifp').string
+            
             auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
             swfUrl = 'http://www.tnt.tv/dramavision/tnt_video.swf'
             rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename

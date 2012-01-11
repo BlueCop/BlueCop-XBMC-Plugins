@@ -40,7 +40,7 @@ def LIBRARY_LIST_MOVIES():
         #                   'studio':studio,'duration':runtime,'mpaa':mpaa,'cast':actors}
         #else:
         infoLabels = { 'Title':movietitle}
-        common.addVideo(name,url,thumb,fanart,infoLabels=infoLabels,totalItems=totalItems)
+        common.addVideo(movietitle,url,thumb,fanart,infoLabels=infoLabels,totalItems=totalItems)
     viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))

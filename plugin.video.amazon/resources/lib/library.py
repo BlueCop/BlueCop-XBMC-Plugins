@@ -39,7 +39,7 @@ def LIBRARY_LIST_MOVIES():
         #                   'rating':stars,'votes':votes,'Genre':genres,'director':director,
         #                   'studio':studio,'duration':runtime,'mpaa':mpaa,'cast':actors}
         #else:
-        infoLabels = { 'Title':name}
+        infoLabels = { 'Title':movietitle}
         common.addVideo(name,url,thumb,fanart,infoLabels=infoLabels,totalItems=totalItems)
     viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':

@@ -169,7 +169,7 @@ def sortWhenArtists():
 
 def listAZ():
     url = params['url']
-    #addDir('#', url+'&alpha='+urllib.quote_plus('#'), 'listVideos')
+    addDir('#', url+'&alpha='+urllib.quote_plus('#'), 'listVideos')
     alphabet=set(string.ascii_uppercase)
     for letter in alphabet:
         addDir(letter, url+'&alpha='+str(letter), 'listArtists')
@@ -249,11 +249,15 @@ def myPlaylists():
     userfile.close()
     userid = demjson.decode(userdata)['userId']
     url += str(userid)
-    listPlaylists(url)
-    
-def listPlaylists(url = False):
+    listPlaylists(url,alloptions=True)
+
+def listPlaylists(url = False,alloptions=False):
     if not url:
         url = params['url'].replace('/playlists','/playlists/playlistsbrowse')
+    if alloptions:
+        addDir('(Play All)', url, 'playAllPlaylists',folder=False)
+        addDir('(Queue All)', url, 'queueAllPlaylists',folder=False)
+        addDir('(Shuffle All)', url, 'shufflePlaylist',folder=False)
     data = getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     playlists = tree.findAll(attrs={'class' : 'listThumb'})
@@ -261,15 +265,62 @@ def listPlaylists(url = False):
         url = BASE+playlist.a['href']
         thumbnail = playlist.find('img')['src'].split('?')[0]
         title = playlist.find('img')['alt']
-        addDir(title, url, 'playPlaylist', iconimage=thumbnail,folder=False)
+        addDir(title, url, 'playlistRoot', iconimage=thumbnail)
     if 'Show More Playlists' in data:
         url2 = params['url'].replace('/playlists','/playlists/playlists')+'?page=2' 
         listPlaylists(url2)
     else:
-        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True) 
+        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
-def playPlaylist():
+def shufflePlaylist():
+    queueAllPlaylists()
+    playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+    playlist.shuffle()
+    xbmc.Player().play(playlist)
+
+def playAllPlaylists():
+    queueAllPlaylists(play=True)
+    
+def queueAllPlaylists(url = False,play=False):
+    if not url:
+        url = params['url']
+    if play:
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        playlist.clear()
+    data = getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    playlists = tree.findAll(attrs={'class' : 'listThumb'})
+    for playlist in playlists:
+        url = BASE+playlist.a['href']
+        handlePlaylist(url=url)
+    if 'Show More Playlists' in data:
+        url2 = params['url'].replace('/playlists','/playlists/playlists')+'?page=2' 
+        queueAllPlaylists(url=url2,play=play)
+    else:
+        if play:
+            playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+            xbmc.Player().play(playlist)
+
+
+def playlistRoot():
     url = params['url']
+    addDir('Play', url, 'playPlaylist',folder=False)
+    addDir('Queue', url, 'queuePlaylist',folder=False)
+    addDir('List', url, 'listPlaylist',folder=True)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    
+def playPlaylist():
+    handlePlaylist(play=True)
+    
+def queuePlaylist(url=False):
+    handlePlaylist()
+
+def listPlaylist():
+    handlePlaylist(list=True)
+
+def handlePlaylist(url=False,play=False,list=False):
+    if not url:
+        url = params['url']
     data = getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('meta',attrs={'property' : 'og:song','content':True})
@@ -281,7 +332,9 @@ def playPlaylist():
     data = getURL(infourl)
     playlistvideos = demjson.decode(data)
     playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-    playlist.clear()
+    if play:
+        playlist.clear()
+    total = len(videos)
     for video in videos:
         video = playlistvideos[video['content'].split('/')[-1]]
         artist = video['byline_text']
@@ -297,8 +350,14 @@ def playPlaylist():
                                                  #"Artist":artist
                                                  })
         item.setProperty('IsPlayable', 'true')
-        playlist.add(url=u, listitem=item)
-    xbmc.Player().play(playlist)
+        if list:
+            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
+        else:
+            playlist.add(url=u, listitem=item)
+    if play:
+        xbmc.Player().play(playlist)
+    elif list:
+        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Channel listings
 def rootChannels(url = False,playlist=True):

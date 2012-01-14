@@ -51,8 +51,8 @@ site_dict = {'ABC': 'abc',
              'A&E':'aetv',
              'MTV Shows':'mtv',
              'VH1 Shows':'vh1',
-             'TNT': 'tnt',
-             'TBS': 'tbs',
+             #'TNT': 'tnt',
+             #'TBS': 'tbs',
              'History Channel':'history',
              'Lifetime':'lifetime',
              'Bravo':'bravo',
@@ -64,7 +64,7 @@ site_dict = {'ABC': 'abc',
              #'Cartoon Network':'cartoon'
              #'FOX': 'fox',
              #'FX': 'fx',
-             #'The Hub':'hub',          
+             #'The Hub':'hub',        
              }
 
 addoncompat.get_revision()

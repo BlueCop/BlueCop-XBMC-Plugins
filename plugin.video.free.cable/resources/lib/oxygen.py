@@ -28,7 +28,7 @@ def rootlist(db=False):
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
     items=tree.findAll('show')
     for item in items:
-        name = item.find('showname').string
+        name = item.find('showname').string.replace('%26','&')
         url = item.find('rssurl').string
         thumb = item.find('thumbnail').string
         common.addDirectory(name, 'oxygen', 'show', url, thumb=thumb)

@@ -6,8 +6,11 @@ import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
 
-CONFIGURATION_URL = 'http://asfix.adultswim.com/staged/configuration.xml'
-getAllEpisodes = 'http://asfix.adultswim.com/asfix-svc/episodeSearch/getAllEpisodes'
+#CONFIGURATION_URL = 'http://asfix.adultswim.com/staged/configuration.xml'
+CONFIGURATION_URL = 'http://asfix.adultswim.com/staged/AS.configuration.xml?cacheID=1326242725288'
+#getAllEpisodes = 'http://asfix.adultswim.com/asfix-svc/episodeSearch/getAllEpisodes'
+getAllEpisodes = 'http://video.adultswim.com/adultswimdynamic/asfix-svc/episodeSearch/getAllEpisodes'
+
 
 def masterlist():
         data = common.getURL(CONFIGURATION_URL)
@@ -32,8 +35,6 @@ def rootlist():
                 description = category['description']
                 categoryid = category['categoryid']
                 common.addDirectory(name, 'adultswim', 'showbycat', categoryid)                
-                
-        
 
 def showbycat(categoryid=common.args.url):
         xbmcplugin.setContent(pluginhandle, 'shows')
@@ -53,13 +54,11 @@ def showbycat(categoryid=common.args.url):
 def showroot(showid=common.args.url):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         common.addDirectory('Clips', 'adultswim', 'showclips', showid)
-        listVideos(showid,'PRE,EPI')
-
+        listVideos(showid,'TVE,PRE,EPI')
 
 def showclips(showid=common.args.url):
         xbmcplugin.setContent(pluginhandle, 'episodes')
         listVideos(showid,'CLI','0','500')
-
 
 def cleanxml(data):
         return unicode(BeautifulStoneSoup(data,convertEntities=BeautifulStoneSoup.XML_ENTITIES).contents[0]).encode( "utf-8" )
@@ -95,6 +94,7 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                 expirationDate = episode['expirationdate'].replace(' 12:00 AM','')
                 description = cleanxml(episode.find('description').contents[1].strip())
                 segids = episode.find('value').string
+                videoid = episode['id']
                 if seasonNum == 0 or episodeNum == 0:
                         name = title
                         if episodeType == 'CLI':
@@ -114,9 +114,13 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                 for segment in segments:
                         duration += float(segment['duration'])
                 u = sys.argv[0]
-                u += '?url="'+urllib.quote_plus(segids)+'"'
-                u += '&mode="adultswim"'
-                u += '&sitemode="play"'
+                if segids is not None:
+                    u += '?url="'+urllib.quote_plus(segids)+'"'
+                    u += '&sitemode="playold"'
+                else:
+                    u += '?url="'+urllib.quote_plus(videoid)+'"'
+                    u += '&sitemode="play"'
+                u += '&mode="adultswim"'                 
                 item=xbmcgui.ListItem(name, iconImage=thumbnailUrl, thumbnailImage=thumbnailUrl)
                 item.setInfo( type="Video", infoLabels={ "Title": title,
                                                          "TVShowTitle":showtitle,
@@ -124,16 +128,20 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                                                          "Episode":episodeNum,
                                                          "Plot": description,
                                                          "Genre":genre,
-                                                         "Rating":float(ranking),
+                                                         #"Rating":float(ranking),
                                                          "Mpaa":rating,
                                                          "Premiered":expirationDate,
                                                          "Duration":str(int(duration/60))
                                                          })
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item)
-                
 
-def play(segids=common.args.url):
+def play(titleid=common.args.url):
+        url = GET_RTMP(titleid)
+        item = xbmcgui.ListItem(path=url)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)             
+
+def playold(segids=common.args.url):
         segids= segids.split('#')
         stacked_url = 'stack://'
         for segid in segids:
@@ -151,11 +159,11 @@ def getPlaylist(pid):
                 stime = getServerTime()
                 url = getVideoPlaylist + '?id=' + pid + '&r=' + stime
                 print 'Adult Swim --> getplaylist :: url = '+url
-                token = stime + '-' + md5.new(stime + pid + '-22rE=w@k4raNA').hexdigest()
+                #token = stime + '-' + md5.new(stime + pid + '-22rE=w@k4raNA').hexdigest()
                 headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
                            'Host': 'asfix.adultswim.com',
-                           'Referer':'http://www.adultswim.com/video/ASFix.swf',
-                           'x-prefect-token': token
+                           'Referer':'http://www.adultswim.com/video/ASFix.swf'
+                           #'x-prefect-token': token
                            }
                 req = urllib2.Request(url,'',headers)    
                 response = urllib2.urlopen(req)
@@ -177,5 +185,53 @@ def getServerTime():
         data = common.getURL( SERVER_TIME_URL )
         tree = BeautifulStoneSoup(data)
         return tree.find('time').string
+
+def getAUTH(aifp,window,tokentype,vid,filename):
+        authUrl = 'http://www.tbs.com/processors/cvp/token.jsp'
+        #authUrl = 'http://www.adultswim.com/astv/mvpd/processors/services/token_embed.do'
+        parameters = {'aifp' : aifp,
+                      'window' : window,
+                      'authTokenType' : tokentype,
+                      'videoId' : vid,
+                      'profile' : 'adultswim',
+                      'path' : filename
+                      }
+        data = urllib.urlencode(parameters)
+        request = urllib2.Request(authUrl, data)
+        request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1')
+        response = urllib2.urlopen(request)
+        link = response.read(200000)
+        response.close()
+        return re.compile('<token>(.+?)</token>').findall(link)[0]
+
+def GET_RTMP(vid):
+        url = 'http://www.adultswim.com/astv/mvpd/services/cvpXML.do?id='+vid
+        html=common.getURL(url)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        print tree.prettify()
+        sbitrate = int(common.settings['quality'])
+        hbitrate = -1
+        files = tree.findAll('file')
+        for filenames in files:
+                try: bitrate = int(filenames['bitrate'])
+                except: bitrate = 1
+                if bitrate > hbitrate and bitrate <= sbitrate:
+                        hbitrate = bitrate
+                        filename = filenames.string
+        if 'http://' in filename:
+            filename = filename
+            return filename
+        else:
+            filename = filename[1:len(filename)-4]
+            serverDetails = tree.find('akamai')
+            server = serverDetails.find('src').string.split('://')[1]
+            #get auth
+            tokentype = serverDetails.find('authtokentype').string
+            window = serverDetails.find('window').string
+            aifp = serverDetails.find('aifp').string
+            auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
+            #swfUrl = 'http://www.tbs.com/cvp/tbs_video.swf swfvfy=true'
+            rtmp = 'rtmpe://'+server+'?'+auth+' playpath='+filename#+" swfurl="+swfUrl
+            return rtmp
 
 

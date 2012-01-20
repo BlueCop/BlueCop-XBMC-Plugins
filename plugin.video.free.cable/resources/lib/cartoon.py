@@ -6,171 +6,157 @@ import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
 
-CONFIGURATION_URL = 'http://www.cartoonnetwork.com/video/staged/CN2.configuration.xml'
-getAllEpisodes = 'http://cnvideosvc2.cartoonnetwork.com/svc/episodeSearch/getAllEpisodes'
+#CONFIGURATION_URL = 'http://www.cartoonnetwork.com/video/staged/CN2.configuration.xml'
+#getAllEpisodes = 'http://cnvideosvc2.cartoonnetwork.com/svc/episodeSearch/getAllEpisodes'
+getCollectionsFull = 'http://www.cartoonnetwork.com/cntv/mvpd/services/getCollectionsFull.do?id=49766'
+getAllEpisodes = 'http://www.cartoonnetwork.com/cntv/mvpd/services/getAllEpisodes.do'
+getCollectionByContentId = 'http://www.cartoonnetwork.com/cntv/mvpd/services/getCollectionByContentId.do'
+cvpXML = 'http://www.cartoonnetwork.com/cntv/mvpd/services/cvpXML.do?id='
+tokenurl = 'http://www.cartoonnetwork.com/cntv/mvpd/processors/services/token.do'
+
+
 
 def masterlist():
-        data = common.getURL(CONFIGURATION_URL)
-        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
-        categories = tree.find('logiccategories').findAll('category')
-        db_shows = []
-        for category in categories:
-                if 'Shows' in category['name']:
-                        shows = category.findAll('collection')
-                        for show in shows:
-                                showid = show['id']
-                                showname = show['name']
-                                db_shows.append((showname, 'cartoon', 'showroot', showid))
-        return db_shows
-
-def rootlist():
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
-        data = common.getURL(CONFIGURATION_URL)
-        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        categories = tree.find('logiccategories').findAll('category')
-        for category in categories:
-                name = category['name']
-                description = category['description']
-                categoryid = category['categoryid']
-                common.addDirectory(name, 'cartoon', 'showbycat', categoryid)
-
+        return rootlist(db=True)
                 
-def showbycat(categoryid=common.args.url):
+def rootlist(db=False):
         xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        data = common.getURL(CONFIGURATION_URL)
-        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        categories = tree.find('logiccategories').findAll('category')
-        for category in categories:
-                if categoryid == category['categoryid']:
-                        shows = category.findAll('collection')
-                        for show in shows:
-                                showid = show['id']
-                                showname = show['name']
-                                common.addDirectory(showname, 'cartoon', 'showroot', showid)
-             
-def showroot(showid=common.args.url):
+        html=common.getURL(getCollectionsFull)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        collections = tree.findAll('collection')
+        db_shows = []
+        for collection in collections:
+                subcollections = collection.findAll('subcollection')
+                for subcollection in subcollections:
+                        scid = subcollection['id']
+                        name = subcollection.find('name').string.replace('- Full Episodes','')
+                        if db==True:
+                                db_shows.append((name,'cartoon', 'episodes',scid))
+                        else:
+                                common.addDirectory(name, 'cartoon', 'episodes', scid)
+        if db==True:
+                return db_shows
+
+def episodes():
+        cid = common.args.url
+        showname = common.args.name
         xbmcplugin.setContent(pluginhandle, 'episodes')
-        common.addDirectory('Clips', 'cartoon', 'showclips', showid)
-        listVideos(showid,'PRE-PRE,EPI-EPI')
-
-def showclips(showid=common.args.url):
-        xbmcplugin.setContent(pluginhandle, 'episodes')
-        listVideos(showid,'CLI-CLI','0','500')                
-
-def cleanxml(data):
-        return unicode(BeautifulStoneSoup(data,convertEntities=BeautifulStoneSoup.XML_ENTITIES).contents[0]).encode( "utf-8" )
-
-def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '50', sortBy='DESC', sortMethod='sortByDate', categoryName='',showseriestitle=False):
-        url = getAllEpisodes
-        url += '?networkName=CN2'
-        url += '&limit='+limit
-        url += '&offset='+offset
-        url += '&'+sortMethod+'='+sortBy
-        url += '&categoryName='+categoryName
-        url += '&filterByEpisodeType='+filterByEpisodeType
-        url += '&filterByCollectionId='+CollectionID
-        data = common.getURL(url)
-        tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
+        url = getCollectionByContentId
+        url += '?limit=200'
+        url += '&offset=0'
+        url += '&id='+cid
+        html=common.getURL(url)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         episodes = tree.findAll('episode')
         for episode in episodes:
-                showtitle = episode['collectiontitle']
-                title = episode['title']
-                episodeType = episode['episodetype']
+                episodeId = episode['id']
+                name = episode.find('title').string
+                thumbnail = episode.find('thumbnailurl').string
+                plot = episode.find('description').string
+                duration = episode.find('duration').string
                 try:
-                        seasonNum = int(episode['episeasonnumber'])
+                    seasonNum = int(episode.find('seasonnumber').string)
+                    print seasonNum
                 except:
-                        seasonNum = 0
+                    seasonNum = 0
                 try:
-                        episodeNum = int(episode['episodenumber'])
+                    episodeNum = int(episode.find('episodenumber').string)
+                    print episodeNum
                 except:
-                        episodeNum = 0
-                thumbnailUrl = episode['thumbnailurl']
-                genre = episode['collectioncategorytype']
-                ranking = episode['ranking']
-                rating = episode['rating']
-                expirationDate = episode['expirationdate'].replace(' 12:00 AM','')
-                description = cleanxml(episode.find('description').contents[1].strip())
-                segids = episode.find('value').string
-                if seasonNum == 0 or episodeNum == 0:
-                        name = title
-                        if episodeType == 'CLI-CLI':
-                                name += ' (Clip)'
-                        elif episodeType == 'PRE-PRE':
-                                name += ' (Preview)'
-                elif episodeType == 'EPI-EPI':
-                        name = str(seasonNum)+'x'+str(episodeNum)+' - '+title
-                elif episodeType == 'CLI-CLI':
-                        name = title+' (Clip from '+str(seasonNum)+'x'+str(episodeNum)+')'
-                elif episodeType == 'PRE-PRE':
-                        name = title+' (Preview for '+str(seasonNum)+'x'+str(episodeNum)+')'
-                if showseriestitle == True:
-                        name = showtitle+' - '+name
+                    episodeNum = 0
+                if episodeNum == 0 or seasonNum == 0:
+                    print 'bad season or episode value'
+                else:
+                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
                 segments = episode.findAll('segment')
-                duration = 0.00
-                for segment in segments:
-                        duration += float(segment['duration']) 
-                u = sys.argv[0]
-                u += '?url="'+urllib.quote_plus(segids)+'"'
-                u += '&mode="cartoon"'
-                u += '&sitemode="play"'
-                item=xbmcgui.ListItem(name, iconImage=thumbnailUrl, thumbnailImage=thumbnailUrl)
-                item.setInfo( type="Video", infoLabels={ "Title": title,
-                                                         "TVShowTitle":showtitle,
-                                                         "Season":seasonNum,
-                                                         "Episode":episodeNum,
-                                                         "Plot": description,
-                                                         "Genre":genre,
-                                                         "Rating":float(ranking),
-                                                         "Mpaa":rating,
-                                                         "Premiered":expirationDate,
-                                                         "Duration":str(int(duration/60))
-                                                         })
-                item.setProperty('IsPlayable', 'true')
-                xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item)
-                
+                if len(segments) == 0:
+                    url = episodeId
+                    mode = 'play'
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
+                else:
+                    url = ''
+                    for segment in segments:
+                            url += segment['id']+'<segment>'
+                    mode = 'playepisode' #PLAYEPISODE
+                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
 
-def play(segids=common.args.url):
-        segids= segids.split('#')
-        stacked_url = 'stack://'
-        for segid in segids:
-                video = getPlaylist(segid)
-                stacked_url += video.replace(',',',,')+' , '
-        stacked_url = stacked_url[:-3]
-        item = xbmcgui.ListItem(path=stacked_url)
-        print stacked_url
-        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',duration=''):
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="cartoon"'
+        u += '&sitemode="'+mode+'"'
+        item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
+        item.setInfo( type="Video", infoLabels={ "Title":name,
+                                                 "Plot":plot,
+                                                 "Season":season,
+                                                 "Episode":episode,
+                                                 "Duration":duration,
+                                                 "TVShowTitle":showname
+                                                 }) 
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
 
+def getAUTH(aifp,window,tokentype,vid,filename):
+        authUrl = 'http://www.tbs.com/processors/cvp/token.jsp'
+        parameters = {'aifp' : aifp,
+                      'window' : window,
+                      'authTokenType' : tokentype,
+                      'videoId' : vid,
+                      'profile' : 'cartoon',
+                      'path' : filename
+                      }
+        data = urllib.urlencode(parameters)
+        request = urllib2.Request(authUrl, data)
+        request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1')
+        response = urllib2.urlopen(request)
+        link = response.read(200000)
+        response.close()
+        print link
+        return re.compile('<token>(.+?)</token>').findall(link)[0]
 
-def getPlaylist(segid):
-        try:
-                getVideoPlaylist    = 'http://cnvideosvc2.cartoonnetwork.com/svc/episodeservices/getVideoPlaylist?networkName=CN2'
-                stime = getServerTime()
-                url = getVideoPlaylist + '&id=' + segid + '&r=' + stime
-                print 'Adult Swim --> getplaylist :: url = '+url
-                token = stime + '-' + md5.new(stime + segid + '-22rE=w@k4raNA').hexdigest()
-                headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14',
-                           'Host': 'cnvideosvc2.cartoonnetwork.com',
-                           'Referer':'http://www.cartoonnetwork.com/video/VideoBrowser.swf',
-                           'x-prefect-token': token
-                           }
-                req = urllib2.Request(url,'',headers)    
-                response = urllib2.urlopen(req)
-                link=response.read()
-                response.close()
-        except urllib2.URLError, e:
-                print 'Error reason: ', e.reason
-                return False
+def GET_RTMP(vid):
+        url = cvpXML+vid
+        html=common.getURL(url)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        print tree.prettify()
+        sbitrate = int(common.settings['quality'])
+        hbitrate = -1
+        files = tree.findAll('file')
+        for filenames in files:
+                try: bitrate = int(filenames['bitrate'])
+                except: bitrate = 1
+                if bitrate > hbitrate and bitrate <= sbitrate:
+                        hbitrate = bitrate
+                        filename = filenames.string
+        if 'http://' in filename:
+            filename = filename
+            return filename
         else:
-                tree = BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-                refs = tree.findAll('ref')
-                for ref in refs:
-                        value = ref.find(attrs={'name' : 'mimeType'})['value']
-                        if value == 'null' or value == 'video/x-flv':
-                                return ref['href']
+            filename = filename[1:len(filename)-4]#.replace('mp4:','')
+            serverDetails = tree.find('akamai')
+            server = serverDetails.find('src').string.split('://')[1]
+            #get auth
+            tokentype = serverDetails.find('authtokentype').string
+            window = serverDetails.find('window').string
+            aifp = serverDetails.find('aifp').string
+            
+            auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
+            rtmp = 'rtmpe://'+server+'?'+auth+' playpath='+filename
+            return rtmp
 
-def getServerTime():
-        SERVER_TIME_URL  = 'http://cnvideosvc2.cartoonnetwork.com/svc/services/getServerTime?networkName=CN'
-        data = common.getURL( SERVER_TIME_URL )
-        tree = BeautifulStoneSoup(data)
-        return tree.find('time').string
+def playepisode():
+        vids = common.args.url.split('<segment>')
+        url = 'stack://'
+        for vid in vids:
+            if vid <> '':
+                url += GET_RTMP(vid).replace(',',',,')+' , '
+        url = url[:-3]
+        item = xbmcgui.ListItem(path=url)
+        return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    
+def play():
+        url = GET_RTMP(common.args.url)
+        item = xbmcgui.ListItem(path=url)
+        return xbmcplugin.setResolvedUrl(pluginhandle, True, item)

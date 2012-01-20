@@ -14,22 +14,22 @@ from pyamf.remoting.client import RemotingService
 import resources.lib._common as common
 
 pluginhandle = int (sys.argv[1])
-
-BASE_URL = 'http://video.usanetwork.com/'
-BASE = 'http://video.usanetwork.com'
+BASE_URL = 'http://feed.theplatform.com/f/OyMl-B/PleQEkKucpUm/categories?form=json&fields=order,title,fullTitle,label,:smallBannerUrl,:largeBannerUrl&fileFields=duration,url,width,height&sort=order'
+BASE = 'http://www.usanetwork.com'
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASE_URL)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    categories=tree.find(attrs={'id' : 'find_it_branch_Full_Episodes'}).find(attrs={'class' : 'find_it_shows'}).findAll('a')
+    shows = demjson.decode(data)['entries']
     db_shows = []
-    for item in categories:
-        name = item.string
-        url = item['href']
+    for item in shows:
+        print item
+        url = item['plcategory$fullTitle']
+        name = item['title']
         if db==True:
             db_shows.append((name,'usa','episodes',url))
         else:
@@ -37,102 +37,49 @@ def rootlist(db=False):
     if db==True:
         return db_shows
 
-def episodes(url = common.args.url):
+def episodes(fullname = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+    url = 'http://feed.theplatform.com/f/OyMl-B/Y3vAV4MxgwlM'
+    url += '?form=json'
+    url += '&fields=guid,title,description,categories,content,:fullEpisode,defaultThumbnailUrl'
+    url += '&fileFields=duration,url,width,height'
+    url += '&count=true'
+    url += '&byCategories='+urllib.quote_plus(fullname)
+    url += '&byCustomValue={fullEpisode}{true}'
     data = common.getURL(url)
-    folderId = re.compile('feOsmfProp.show.folderId = "(.*?)";').findall(data)[0]
-    jsonurl = 'http://videoservices.nbcuni.com/player/feeds?networkName=usa&results=50&showHierarchy=true&profile=2&level='+folderId+'&output=json&callback=__osmf_fullep.getEpisodes' 
-    data = common.getURL(jsonurl).split('(')[1].strip(')')
-    itemList = demjson.decode(data)['channel']['item']
-    for video in itemList:
-        #video = video['content']
-        url = video['link']
-        description = video['description']
-        thumb = video['content']['thumbnail']['url']
-        seriesTitle = video['content']['subtitle']
-        titledata = video['title'].split(':')
-        try:title = titledata[1]
-        except:title = titledata[0]
-        try:episodeNum = int(titledata[0][:-2])
-        except:episodeNum = 0 
-        try:seasonNum = int(titledata[0][-2:])
-        except:seasonNum = 0
-        duration = int(float(video['content']['duration']))
-        #airDate = video['_airDate']
-        rating = video['content']['rating']['value']
+    episodes = demjson.decode(data)['entries']
+    for episode in episodes:
+        print episode
+        name = episode['title']
+        description = episode['description']
+        thumb= episode['plmedia$defaultThumbnailUrl']
+        duration=str(int(episode['media$content'][0]['plfile$duration']))
+        url=episode['media$content'][0]['plfile$url']
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="usa"'
         u += '&sitemode="play"'
-        displayname = '%sx%s - %s' % (seasonNum,episodeNum,title)
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":title,
+        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
+        item.setInfo( type="Video", infoLabels={ "Title":name,
+                                                 #"Season":season,
+                                                 #"Episode":episode,
                                                  "Plot":description,
-                                                 "Season":seasonNum,
-                                                 "Episode":episodeNum,
                                                  #"premiered":airDate,
                                                  "Duration":duration,
-                                                 "mpaa":rating,
-                                                 "TVShowTitle":seriesTitle
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False) 
-
-def episodesOld(url = common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    data = common.getURL(url)
-    rssurl = re.compile('var _rssURL = "(.+?)";').findall(data)[0].replace('%26','&')
-    data = common.getURL(rssurl)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    menu=tree.findAll('item')
-    for item in menu:
-        namedata = item('title')[0].string.encode('utf-8').title().split(':')
-        try:
-            name = namedata[1].strip()
-            seasonepisode = namedata[0]
-            if 3 == len(seasonepisode):
-                season = int(seasonepisode[:1])
-                episode = int(seasonepisode[-2:])
-            elif 4 == len(seasonepisode):
-                season = int(seasonepisode[:2])
-                episode = int(seasonepisode[-2:])
-            if season <> 0 or episode <> 0:
-                displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        except:
-            print 'no season data'
-            name = namedata[0].strip()
-            displayname = name
-            season = 0
-            episode = 0
-        url = item('link')[0].string
-        thumb = item('media:thumbnail')[0].string
-        airDate = item('pubdate')[0].string.split('T')[0]
-        description = item('description')[0].string
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="usa"'
-        u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 #"Duration":duration,
                                                  "TVShowTitle":common.args.name
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-        
+
 #Get SMIL url and play video
 def play():
-    vid=common.args.url
-    smilurl = getsmil(vid)
-    rtmpurl = getrtmp()
-    swfUrl = getswfUrl()
+    smilurl=common.args.url
+    swfUrl = 'http://www.usanetwork.com/videos/pdk/swf/flvPlayer.swf'
     data = common.getURL(smilurl)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    items=tree.findAll('video')
+    print tree.prettify()
+    rtmpbase = tree.find('meta')['base']
+    items=tree.find('switch').findAll('video')
     hbitrate = -1
     sbitrate = int(common.settings['quality']) * 1024
     for item in items:
@@ -144,40 +91,6 @@ def play():
                 playpath = 'mp4:'+playpath
             else:
                 playpath = playpath.replace('.flv','')
-            finalurl = rtmpurl+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+            finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-
-def getsmil(vid):
-    gw = RemotingService(url='http://video.nbcuni.com/amfphp/gateway.php',
-            referer='http://livepassdl.conviva.com/ver/2.27.0.43059/LivePassModuleMain.swf',
-            user_agent='Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7)',
-        )
-    ClipAll_service = gw.getService('getClipInfo.getClipAll')
-    geo  ="inside"
-    num1 = "www.usanetwork.com"
-    num2 = "-1"
-    response = ClipAll_service(vid,geo,num1,num2)
-    url = 'http://video.nbcuni.com/' + response['clipurl']
-    return url
-
-
-def getrtmp():
-    gw = RemotingService(url='http://video.nbcuni.com/amfphp/gateway.php',
-            referer='http://livepassdl.conviva.com/ver/2.27.0.43059/LivePassModuleMain.swf',
-            user_agent='Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7)',
-        )
-    ClipAll_service = gw.getService('getConfigInfo.getConfigAll')
-    num1 = "23012"
-    response = ClipAll_service(num1)
-    rtmphost= response['akamaiHostName']
-    app = response['akamaiAppName']
-    identurl = 'http://'+rtmphost+'/fcs/ident'
-    ident = common.getURL(identurl)
-    ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
-    rtmpurl = 'rtmp://'+ip+':1935/'+app+'?_fcs_vhost='+rtmphost
-    return str(rtmpurl)
-
-def getswfUrl():
-    swfUrl = "http://www.usanetwork.com/[[IMPORT]]/livepassdl.conviva.com/ver/2.27.0.43059/LivePassModuleMain.swf"
-    return swfUrl

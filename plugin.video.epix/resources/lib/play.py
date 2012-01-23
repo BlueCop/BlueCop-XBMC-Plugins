@@ -80,7 +80,7 @@ def PLAYVIDEO():
     #print common.getURL(pageurl,useCookie=True)
     smilurl = 'http://www.epixhd.com/epx/smil'+common.args.url+'smil.xml'
     data = common.getURL(smilurl,useCookie=True)
-    authurl = 'http://www.epixhd.com/epx/ajax/theater/getToken/?url=/'
+    authurl = 'http://www.epixhd.com/epx/ajax/theater/getToken/?movie='+common.args.url.strip('/')
     auth = common.getURL(authurl,useCookie=True)
     tree = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     print tree.prettify()
@@ -110,13 +110,13 @@ def PLAYVIDEO():
             return
 
     stackedUrl += buildrtmp(rtmpdata,auth).replace(',',',,')    
-    p=ResumePlayer()
+    #p=ResumePlayer()
     
     item = xbmcgui.ListItem(path=stackedUrl)
-    item.setInfo( type="Video", infoLabels={"Title": movie_name})
+    #item.setInfo( type="Video", infoLabels={"Title": movie_name})
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     
-    while not p.isPlaying():
-        print 'EPIX --> Not Playing'
-        xbmc.sleep(100)
-    p.onPlayBackStarted()    
+    #while not p.isPlaying():
+    #    print 'EPIX --> Not Playing'
+    #    xbmc.sleep(100)
+    #p.onPlayBackStarted()    

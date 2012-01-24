@@ -192,7 +192,10 @@ def play(rssurl=False):
     if rssurl == False:
         data = common.getURL(common.args.url)
         #uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
-        uri=re.compile('var url = "http://media.mtvnservices.com/(.+?)";').findall(data)[0]
+        try:
+            uri=re.compile('var url = "http://media.mtvnservices.com/(.+?)";').findall(data)[0]
+        except:
+            uri=re.compile('<param name="movie" value="http://media.mtvnservices.com/(.+?)"').findall(data)[0]
         rssurl = 'http://shadow.comedycentral.com/feeds/video_player/mrss/?uri='+uri        
     data = common.getURL(rssurl)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)

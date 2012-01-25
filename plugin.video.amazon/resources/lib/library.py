@@ -9,6 +9,7 @@ import os.path
 import sys
 import urllib
 import resources.lib.common as common
+import re
 
 pluginhandle = common.pluginhandle
 confluence_views = [500,501,502,503,504,508]
@@ -23,6 +24,10 @@ def LIBRARY_LIST_MOVIES():
     xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
     url = common.args.url
     data = common.getURL(url,useCookie=True)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
     totalItems = len(videos)
@@ -50,6 +55,10 @@ def LIBRARY_LIST_MOVIES():
 def LIBRARY_LIST_TV():
     url = common.args.url
     data = common.getURL(url,useCookie=True)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
     totalItems = len(videos)
@@ -86,6 +95,10 @@ def LIST_EPISODES(owned=False):
     thumbnail = common.args.thumb
     xbmcplugin.setContent(int(sys.argv[1]), 'Episodes') 
     data = common.getURL(episode_url,useCookie=owned)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'})
     episodes = episodebox.findAll('tr',attrs={'asin':True})

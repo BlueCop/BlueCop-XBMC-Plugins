@@ -288,23 +288,32 @@ def addTVdb(url=TV_URL,isprime=True):
     increment = 100.0 / pages 
     page = 1
     percent = int(increment*page)
-    dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)),'Added %s Episodes' % str(0))
+    dialog.update(percent,'Scanning Page %s of %s' % (str(page),str(pages)),'Added %s Episodes' % str(0))
     pagenext,episodetotal = scrapeTVdb(url,isprime)
     while pagenext:
         page += 1
         percent = int(increment*page)
-        dialog.update(percent,'Scanning Page %s or %s' % (str(page),str(pages)),'Added %s Episodes' % str(episodetotal))
+        dialog.update(percent,'Scanning Page %s of %s' % (str(page),str(pages)),'Added %s Episodes' % str(episodetotal))
         pagenext,nextotal = scrapeTVdb(pagenext,isprime)
         episodetotal += nextotal
         if (dialog.iscanceled()):
             return False
+        xbmc.sleep(2000)
     fixHDshows()
     fixGenres()
     fixYears()
     
-def scrapeTVdb(url,isprime):
+def getTVTree(url): 
     data = common.getURL(url)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    atf = tree.find(attrs={'id':'atfResults'})
+    if atf == None:
+        print tree.prettify()
+        return False
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     try:
         btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
@@ -313,8 +322,18 @@ def scrapeTVdb(url,isprime):
     except:
         print 'AMAZON: No btf found'
     nextpage = tree.find(attrs={'title':'Next page','id':'pagnNextLink','class':'pagnNext'})
-    del tree
     del data
+    return atf, nextpage
+
+    
+def scrapeTVdb(url,isprime):
+    stop = False
+    while stop == False:
+        #try:
+        atf,nextpage = getTVTree(url)
+        stop = True
+        #except:
+        #    xbmc.sleep(15000)
     returnTotal = 0
     for show in atf:
         showasin = show['name']
@@ -377,13 +396,20 @@ def scrapeShowInfo(url,owned=False):
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     spaces = re.compile(r'\s+')
     data = common.getURL(url)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     try:season = int(tree.find('div',attrs={'class':'unbox_season_selected'}).string)
     except:
         try:season = int(tree.find('div',attrs={'style':'font-size: 120%;font-weight:bold; margin-top:15px;margin-bottom:10px;'}).contents[0].split('Season')[1].strip())
         except:season = None
     episodes = []
-    try:
+    episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'})
+    if episodebox == None:
+        print tree.pretiffy()
+        episodecount = None
+    else:
         episodebox = tree.find('div',attrs={'id':'avod-ep-list-rows'}).findAll('tr',attrs={'asin':True})
         episodecount = len(episodebox)
         for episode in episodebox:
@@ -401,13 +427,12 @@ def scrapeShowInfo(url,owned=False):
             airDate = episode.find(attrs={'style':'width: 150px; overflow: hidden'}).string.strip()
             try: plot =  episode.findAll('div')[1].string.strip()
             except: plot = ''
-            episodeNum = int(episode.find('div',attrs={'style':'width: 185px;'}).string.split('.')[0].strip())
+            try:episodeNum = int(episode.find('div',attrs={'style':'width: 185px;'}).string.split('.')[0].strip())
+            except:episodeNum = int(episode.find('div',attrs={'style':'width: 185px;'}).contents[0].split('.')[0].strip())
             url = common.BASE_URL+'/gp/product/'+episodeASIN
             episodedata = [episodeASIN,season,episodeNum,episodetitle,url,plot,airDate,isHD]
             episodes.append(episodedata)
         del episodebox
-    except:
-        episodecount = None
     try:
         stardata = tree.find('span',attrs={'class':'crAvgStars'}).renderContents()
         stardata = scripts.sub('', stardata)
@@ -468,6 +493,7 @@ def scrapeShowInfo(url,owned=False):
         except: actors = None     
     try: genres = metadict['Genre']
     except: genres = None
+    print metadict
     showdata = [season,episodecount,plot,creator,runtime,year,network,actors,genres,stars,votes]
     return showdata, episodes
 
@@ -630,7 +656,7 @@ tvDBnewfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','ca
 tvDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
 if os.path.exists(tvDBnewfile):
     dialog = xbmcgui.Dialog()
-    ret = dialog.yesno('New TV Database Detected', 'Update to new Database?')
+    ret = dialog.yesno('New TV Database Detected', 'Update to new Database?','Your Watched and Favorites will be lost')
     if ret:
         import shutil
         shutil.copyfile(tvDBnewfile, tvDByourfile)

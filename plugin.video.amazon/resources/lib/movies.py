@@ -7,6 +7,7 @@ import re
 import xbmcplugin
 import xbmc
 import xbmcgui
+import shutil
 import resources.lib.common as common
 try:
     from sqlite3 import dbapi2 as sqlite
@@ -43,7 +44,7 @@ def createMoviedb():
                  watched BOOLEAN,
                  favor BOOLEAN,
                  TMDB_ID TEXT,
-                 PRIMARY KEY(movietitle,year))''')
+                 PRIMARY KEY(movietitle,year,asin))''')
     MovieDB.commit()
     c.close()
 
@@ -91,7 +92,7 @@ def unfavorMoviedb(asin=False):
     c = MovieDB.cursor()
     c.execute("update movies set favor=? where asin=?", (False,asin))
     MovieDB.commit()
-    c.close()
+    c.close() 
 
 def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False,isprime=True):
     c = MovieDB.cursor()
@@ -172,6 +173,10 @@ def addMoviesdb(url=MOVIE_URL,isprime=True,singlepage=False):
  
 def scrapeMoviesdb(url,isprime=True):
     data = common.getURL(url)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
     try:
@@ -217,6 +222,10 @@ def scrapeMovieInfo(asin):
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     spaces = re.compile(r'\s+')
     data = common.getURL(url)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     try:
         stardata = tree.find('span',attrs={'class':'crAvgStars'}).renderContents()
@@ -299,7 +308,7 @@ MovieDBfile = os.path.join(xbmc.translatePath(common.pluginpath),'resources','ca
 MovieDByourfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
 if os.path.exists(MovieDBnewfile):
     dialog = xbmcgui.Dialog()
-    ret = dialog.yesno('New Movie Database Detected', 'Update to new Database?')
+    ret = dialog.yesno('New Movie Database Detected', 'Update to new Database?', 'Your Watched and Favorites will be lost')
     if ret:
         import shutil
         shutil.copyfile(MovieDBnewfile, MovieDByourfile)

@@ -113,7 +113,7 @@ def LIST_TVSHOWS(HDonly=False,genrefilter=False,creatorfilter=False,networkfilte
             if TVDBseriesid:
                 cm.append( ('Refresh TVDB Data', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="refreshTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
             cm.append( ('Lookup Show in TVDB', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="scanTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
-            #cm.append( ('Remove Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
+            cm.append( ('Remove Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         common.addDir(seriestitle,'listtv',listmode,seriestitle,poster,fanart,infoLabels,cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
@@ -174,7 +174,7 @@ def LIST_TV_SEASONS(HDonly=False):
         cm = []
         if editenable == 'true':
             cm.append( ('Rename Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
-            #cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
+            cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
         if common.args.fanart and common.args.fanart <> '': fanart = common.args.fanart
         else: fanart=poster
         common.addDir(displayname,'listtv',mode,seriestitle+'<split>'+str(season),poster,fanart,infoLabels,cm=cm)
@@ -194,7 +194,10 @@ def LIST_EPISODES_DB(HDonly=False,owned=False,url=False):
         url = common.args.url
     split = url.split('<split>')
     seriestitle = split[0]
-    season = int(split[1])
+    try:
+        season = int(split[1])
+    except:
+        season = 0
     import tv as tvDB
     episodes = tvDB.loadTVEpisodesdb(seriestitle,season,HDonly)
     #asin,seriestitle,season,episode,episodetitle,url,plot,airdate,runtime,isHD,isprime,watched

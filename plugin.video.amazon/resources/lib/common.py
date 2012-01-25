@@ -39,7 +39,7 @@ def getURL( url , host='www.amazon.com',useCookie=False):
     if useCookie and os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17'),
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/9.0.0'),
                          ('Host', host)]
     usock = opener.open(url)
     response = usock.read()
@@ -98,7 +98,8 @@ def mechanizeLogin():
     br.set_handle_robots(False)
     br.set_cookiejar(cj)
     br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
-    sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html")   
+    sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html") 
+    #print sign_in.read()  
     br.select_form(name="sign-in")  
     br["email"] = addon.getSetting("login_name")
     br["password"] = addon.getSetting("login_pass")

@@ -31,6 +31,8 @@ class Main:
                 perpage = common.settings['popperpage']
             else:
                 perpage = common.settings['perpage']
+        if 'Subscriptions' == common.args.mode:
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.setPluginCategory( pluginhandle, category=common.args.name )
         #xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
         self.addMenuItems(perpage,common.args.page)

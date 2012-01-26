@@ -425,7 +425,6 @@ class Main:
             self.playlist.add(url=u, listitem=item)
        
     def playAD(self, video_id, pod,queue=False):
-        #try:
         if os.path.isfile(common.ADCACHE):
             data=common.OpenFile(common.ADCACHE)
             playlistSoup=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -474,6 +473,9 @@ class Main:
         #print playlistSoup.prettify()
         self.sstate = playlistSoup.find('sessionstate')['value']                                       
         self.ustate = playlistSoup.find('userstate')['value']
+        trackingurls = []
+        stack = 'stack://'
+        title = ''
         for ad in playlistSoup.findAll('ad'):
             mediafiles = ad.findAll('mediafile')
             if common.settings['adquality'] <= len(mediafiles):
@@ -481,17 +483,19 @@ class Main:
             else:
                 mediaUrl = mediafiles[0].string
             adtitle = ad.find('adtitle').string
-            item = xbmcgui.ListItem(adtitle, path=mediaUrl)
-            item.setInfo( type="Video", infoLabels={ "Title":adtitle})
-            if queue or self.queue:
-                item.setProperty('IsPlayable', 'true')
-                self.playlist.add(url=mediafiles[0].string, listitem=item)
-            else:
-                self.queue = True
-                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-            for item in ad.findAll('tracking'):
-                common.getFEED(item.string)
-        #except: pass
+            title += ' '+adtitle
+            stack += mediaUrl.replace(',',',,')+' , '
+        stack = stack[:-3]
+        item = xbmcgui.ListItem(title, path=stack)
+        item.setInfo( type="Video", infoLabels={ "Title":title})
+        if queue or self.queue:
+            item.setProperty('IsPlayable', 'true')
+            self.playlist.add(url=stack, listitem=item)        
+        else:
+            self.queue = True
+            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        for item in playlistSoup.findAll('tracking'):
+            common.getFEED(item.string)
 
     def queueVideo( self, video_id, segmented=False):
         mode='SEGMENT_play'

@@ -441,7 +441,10 @@ class Main:
         # token plid for plsnid
         if common.settings['enable_login'] =='true' and common.settings['usertoken']:
             UserID = common.settings['userid']
-            PlanID = common.settings['planid']
+            if common.settings['planid'] == '' or common.settings['planid'] == None:
+                PlanID = '0'
+            else:
+                PlanID = common.settings['planid']
         else:
             UserID = '-1'
             PlanID = '0'

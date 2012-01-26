@@ -1,5 +1,5 @@
 import xbmcplugin
-import xbmc, xbmcvfs 
+import xbmc
 import xbmcgui
 #import xbmcaddon
 import addoncompat

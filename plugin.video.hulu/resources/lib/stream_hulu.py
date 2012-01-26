@@ -609,7 +609,7 @@ class Main:
     
                 #define item
                 SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
-                newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer + " buffer=2000000000"
+                newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
                 if (common.settings['swfverify'] == 'true'):
                     newUrl += " swfvfy=true"
                     

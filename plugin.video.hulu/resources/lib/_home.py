@@ -5,7 +5,7 @@ import urllib
 import common
 import os
 import sys
-import xbmcvfs, xbmcaddon
+import xbmcaddon
 import xbmcgui
 
 from xml.etree import ElementTree

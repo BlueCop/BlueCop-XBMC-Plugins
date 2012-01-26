@@ -65,12 +65,12 @@ class Main:
             url += 'dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
             total_count = self.getTotalCount( orginalUrl )
         if noCache:
-            xml = common.getFEED(url)[0]
+            xml = common.getFEED(url)
         else:
             xml=common.getFEED(url)
         while xml == False:
             if noCache:
-                xml = common.getFEED(url)[0]
+                xml = common.getFEED(url)
             else:
                 xml=common.getFEED(url)
             time.sleep(200)

@@ -48,7 +48,10 @@ class Main:
             itemsurl += '?dp_id='+dp_id+'&package_id='+package_id+'&total=1'
         xml=common.getFEED(itemsurl)
         tree = ElementTree.XML(xml)
-        return int(tree.findtext('total_count'))
+        if tree.findtext('total_count') == "":
+            return 0
+        else:
+            return int(tree.findtext('total_count'))
 
     def addMenuItems( self, perpage, pagenumber ,url=common.args.url ):
         # Grab xml item list

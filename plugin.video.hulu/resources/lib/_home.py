@@ -5,8 +5,11 @@ import urllib
 import common
 import os
 import sys
+import xbmcvfs, xbmcaddon
+import xbmcgui
 
-from BeautifulSoup import BeautifulStoneSoup
+from xml.etree import ElementTree
+#from BeautifulSoup import BeautifulStoneSoup
 
 class Main:
     def __init__( self ):
@@ -18,16 +21,14 @@ class Main:
         #if common.settings['enable_login']=='true':
         #    if not os.path.isfile(common.COOKIEFILE):
         #        common.login_cookie()
-
-
-        html=common.getFEED(common.BASE_MENU_URL)
-        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        menuitems=tree.findAll('item')
+        xml=common.getFEED(common.BASE_MENU_URL)
+        tree = ElementTree.XML(xml)
+        menuitems = tree.findall('item')
         fanart = common.hulu_fanart
         for item in menuitems:
-            display=item.find('display').string
-            items_url='http://m.hulu.com'+item.find('items_url').string
-            cmtype=item.find('cmtype').string
+            display= item.findtext('display')
+            items_url='http://m.hulu.com'+item.findtext('items_url') 
+            cmtype=item.find('app_data').findtext('cmtype')
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
             if cmtype == 'None' or display == 'Help' or display == 'Profiles' or display == 'Now Playing':
                 continue

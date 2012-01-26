@@ -17,7 +17,7 @@ import urllib
 from array import array
 #from aes import AES
 from crypto.cipher.cbc      import CBC
-from crypto.cipher.base     import noPadding
+from crypto.cipher.base     import padWithPadLen
 from crypto.cipher.rijndael import Rijndael
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
@@ -36,13 +36,9 @@ xmldeckeys = [
              ['d6dac049cc944519806ab9a1b5e29ccfe3e74dabb4fa42598a45c35d20abdd28', '27b9bedf75ccA2eC']
              ]
 
-subdeckeys = [
-             ['4878B22E76379B55C962B18DDBC188D82299F8F52E3E698D0FAF29A40ED64B21', 'WA7hap7AGUkevuth']
-             ]
+subdeckeys  = [ xmldeckeys[0] ]
 
-smildeckeys = [
-              ['d6dac049cc944519806ab9a1b5e29ccfe3e74dabb4fa42598a45c35d20abdd28', '27b9bedf75ccA2eC']
-              ]
+smildeckeys = [ xmldeckeys[9] ]
 
 class ResumePlayer( xbmc.Player ) :            
     def __init__ ( self ):
@@ -162,7 +158,7 @@ class Main:
             self.play(video_id,queue=self.queue,segmented=int(common.args.segmented))
 
     def AES(self,key):
-        return Rijndael(key, keySize=32, blockSize=16, padding=noPadding())
+        return Rijndael(key, keySize=32, blockSize=16, padding=padWithPadLen())
 
     def AES_CBC(self,key):
         return CBC(blockCipherInstance=self.AES(key))
@@ -170,7 +166,7 @@ class Main:
     def makeGUID(self):
         guid = ''
         for i in range(8):
-            number = "%0.2X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
+            number = "%X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
             guid += number[1:]
         return guid
         
@@ -280,7 +276,6 @@ class Main:
                 sub = self.decrypt_subs(line.string)
                 sub = self.clean_subs(sub)
                 sub = unicode(BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
-
             else:
                 sub = unicode(BeautifulStoneSoup(sub,convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]).encode( "utf-8" )
 
@@ -351,46 +346,46 @@ class Main:
         return sig.hexdigest()
 
     def getSMIL(self, video_id,retry=0):
-        try:
-            epoch = int(time.mktime(time.gmtime()))
-            parameters = {'video_id': video_id,
-                          'v'       : '888324234',
-                          'ts'      : str(epoch),
-                          'np'      : '1',
-                          'vp'      : '1',
-                          'device_id' : self.GUID,
-                          'pp'      : 'Desktop',
-                          'dp_id'   : 'Hulu',
-                          'region'  : 'US',
-                          'ep'      : '1',
-                          'language': 'en'
-                          }
-            if retry > 0:
-                parameters['retry']=str(retry)
-            if common.settings['enable_login']=='true' and common.settings['enable_plus']=='true' and common.settings['usertoken']:
-                parameters['token'] = common.settings['usertoken']
-            smilURL = False
-            for item1, item2 in parameters.iteritems():
-                if not smilURL:
-                    smilURL = 'http://s.hulu.com/select?'+item1+'='+item2
-                else:
-                    smilURL += '&'+item1+'='+item2
-            smilURL += '&bcs='+self.content_sig(parameters)
-            print 'HULU --> SMILURL: ' + smilURL
-            smilXML=common.getFEED(smilURL)
+        epoch = int(time.mktime(time.gmtime()))
+        parameters = {'video_id'  : video_id,
+                      'v'         : '888324234',
+                      'ts'        : str(epoch),
+                      'np'        : '1',
+                      'vp'        : '1',
+                      'device_id' : self.GUID,
+                      'pp'        : 'Desktop',
+                      'dp_id'     : 'Hulu',
+                      'region'    : 'US',
+                      'ep'        : '1',
+                      'language'  : 'en'
+                      }
+        if retry > 0:
+            parameters['retry']=str(retry)
+        if common.settings['enable_login']=='true' and common.settings['enable_plus']=='true' and common.settings['usertoken']:
+            parameters['token'] = common.settings['usertoken']
+        smilURL = False
+        for item1, item2 in parameters.iteritems():
+            if not smilURL:
+                smilURL = 'http://s.hulu.com/select?'+item1+'='+item2
+            else:
+                smilURL += '&'+item1+'='+item2
+        smilURL += '&bcs='+self.content_sig(parameters)
+        print 'HULU --> SMILURL: ' + smilURL
+        if common.settings['proxy_enable'] == 'true':
+            proxy=True
+        else:
+            proxy=False
+        smilXML=common.getFEED(smilURL,proxy=proxy)
+        if smilXML:
             smilXML=self.decrypt_SMIL(smilXML)
+            print "GOT SMIL"
             if smilXML:
                 smilSoup=BeautifulStoneSoup(smilXML, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
                 print smilSoup.prettify()
                 return smilSoup
             else:
                 return False
-        except:
-            heading = 'SMIL ERROR'
-            message = 'Error retrieving SMIL file'
-            duration = 8000
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-            #xbmcgui.Dialog().ok('Synchronized Multimedia Integration Language File Error','Error retrieving or decrypting the SMIL file.')
+        else:
             return False
     
     def ADencrypt(self, data, iv):
@@ -401,15 +396,14 @@ class Main:
 
     def ADdecrypt(self, data):
         key = '9d489e6c3adfb6a00a23eb7afc8944affd180546c719db5393e2d4177e40c77d'
-        bindata = base64.decodestring(data)
-        bindata = bindata[1:]
+        bindata = base64.decodestring(data)[1:]
         cbc = self.AES_CBC(binascii.unhexlify(key))
         return cbc.decrypt(bindata)
   
     def MakeIV(self):
         data = self.makeGUID()
         data = binascii.unhexlify(data)
-        return base64.encodestring(data)
+        return base64.encodestring(data).replace('\n','')
 
     def queueAD(self, video_id,stop,start=0):
         for pod in range(start,stop):
@@ -427,62 +421,70 @@ class Main:
             self.playlist.add(url=u, listitem=item)
        
     def playAD(self, video_id, pod,queue=False):
-        try:
-            if os.path.isfile(common.ADCACHE):
-                data=common.OpenFile(common.ADCACHE)
-                playlistSoup=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-                self.sstate = playlistSoup.find('sessionstate')['value']                                       
-                self.ustate = playlistSoup.find('userstate')['value']
-                del playlistSoup
-                session=self.sstate
-                state=self.ustate
-            else:
-                session=''
-                state=''
-            epoch = str(int(time.mktime(time.gmtime())))
-            xmlbase='''
-    <AdRequest Pod="'''+str(pod)+'''" SessionState="'''+session+'''" ResponseType="VAST" Timestamp="'''+epoch+'''">
-      <Distributor Name="Hulu" Platform="Desktop"/>
-      <Visitor IPV4Address="" BT_RSSegments="null" UserId="-1" MiniCount="" MiniDuration="" ComputerGuid="'''+self.GUID+'''" AdFeedback="null" PlanId="0" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
-      <KeyValues>
-        <KeyValue Key="env" Value="prod"/>
-        <KeyValue Key="version" Value="Voltron"/>
-      </KeyValues>
-      <SiteLocation>
-        <VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
-          <VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
-        </VideoPlayer>
-      </SiteLocation>
-      <Diagnostics/>
-    </AdRequest>'''
-            #print xmlbase
-            IV = self.MakeIV()
-            encdata = self.ADencrypt(xmlbase,IV)
-            url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)
-            encplaylist = common.getFEED(url,postdata=encdata)
-            playlist = self.ADdecrypt(encplaylist)
-            common.SaveFile(common.ADCACHE, playlist)
-            playlistSoup=BeautifulStoneSoup(playlist, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            #print playlistSoup.prettify()
+        #try:
+        if os.path.isfile(common.ADCACHE):
+            data=common.OpenFile(common.ADCACHE)
+            playlistSoup=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
             self.sstate = playlistSoup.find('sessionstate')['value']                                       
             self.ustate = playlistSoup.find('userstate')['value']
-            mediafiles = playlistSoup.findAll('mediafile')
+            del playlistSoup
+            session=self.sstate
+            state=self.ustate
+        else:
+            session=''
+            state=''
+        epoch = str(int(time.mktime(time.gmtime())))
+        # token plid for plsnid
+        if common.settings['enable_login'] =='true' and common.settings['usertoken']:
+            UserID = common.settings['userid']
+            PlanID = common.settings['planid']
+        else:
+            UserID = '-1'
+            PlanID = '0'
+        xmlbase='''
+<AdRequest Pod="'''+str(pod)+'''" SessionState="'''+session+'''" ResponseType="VAST" Timestamp="'''+epoch+'''">
+  <Distributor Name="Hulu" Platform="Desktop"/>
+  <Visitor IPV4Address="" BT_RSSegments="null" UserId="'''+UserID+'''" MiniCount="" MiniDuration="" ComputerGuid="'''+self.GUID+'''" AdFeedback="null" PlanId="'''+PlanID+'''" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
+  <KeyValues>
+    <KeyValue Key="env" Value="prod"/>
+    <KeyValue Key="version" Value="Voltron"/>
+  </KeyValues>
+  <SiteLocation>
+    <VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
+      <VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
+    </VideoPlayer>
+  </SiteLocation>
+  <Diagnostics/>
+</AdRequest>'''
+        #print xmlbase
+        IV = self.MakeIV()
+        encdata = self.ADencrypt(xmlbase,IV)
+        url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)
+        encplaylist = common.getFEED(url,postdata=encdata)
+        playlist = self.ADdecrypt(encplaylist)
+        common.SaveFile(common.ADCACHE, playlist)
+        playlistSoup=BeautifulStoneSoup(playlist, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        #print playlistSoup.prettify()
+        self.sstate = playlistSoup.find('sessionstate')['value']                                       
+        self.ustate = playlistSoup.find('userstate')['value']
+        for ad in playlistSoup.findAll('ad'):
+            mediafiles = ad.findAll('mediafile')
             if common.settings['adquality'] <= len(mediafiles):
                 mediaUrl = mediafiles[common.settings['adquality']].string
             else:
                 mediaUrl = mediafiles[0].string
-            adtitle = playlistSoup.find('adtitle').string
+            adtitle = ad.find('adtitle').string
             item = xbmcgui.ListItem(adtitle, path=mediaUrl)
             item.setInfo( type="Video", infoLabels={ "Title":adtitle})
-            if queue:
+            if queue or self.queue:
                 item.setProperty('IsPlayable', 'true')
                 self.playlist.add(url=mediafiles[0].string, listitem=item)
             else:
                 self.queue = True
                 xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-            for item in playlistSoup.findAll('tracking'):
+            for item in ad.findAll('tracking'):
                 common.getFEED(item.string)
-        except: pass
+        #except: pass
 
     def queueVideo( self, video_id, segmented=False):
         mode='SEGMENT_play'
@@ -535,6 +537,9 @@ class Main:
             
             #getRTMP
             video=smilSoup.findAll('video')
+            if video is None or len(video) == 0:
+                xbmcgui.Dialog().ok('No Video Streams','SMIL did not contain video links')
+                return
             streams=[]
             selectedStream = None
             cdn = None
@@ -604,7 +609,7 @@ class Main:
     
                 #define item
                 SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
-                newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
+                newUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer + " buffer=2000000000"
                 if (common.settings['swfverify'] == 'true'):
                     newUrl += " swfvfy=true"
                     

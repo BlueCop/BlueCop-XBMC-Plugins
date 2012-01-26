@@ -38,6 +38,10 @@
 	<string id="30037">Ad Quality</string>
 	<string id="30038">Enabled Commercial Breaks</string>
 	<string id="30039">Commercials per Break</string>
+	
+	<string id="30041">U.S. Proxy port</string>
+	<string id="30040">U.S. Proxy IP</string>
+	<string id="30042">Enable Proxy</string>
 
 	<string id="30101">Per Page</string>
 	<string id="30102">Hulu Login</string>

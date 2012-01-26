@@ -47,7 +47,10 @@ class Main:
             self.UpdateLibrary()
 
     def UpdateLibrary(self):
-        xbmc.executebuiltin("UpdateLibrary(video)") 
+        xbmc.executebuiltin("UpdateLibrary(video)")
+
+    def Notification(self,heading,message,duration=10000):
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             
     def SaveFile(self, filename, data, dir):
         path = os.path.join(dir, filename)
@@ -73,8 +76,10 @@ class Main:
     
     def GetQueue(self, NFO=True):
         url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
+        self.Notification('Hulu Library','Queue Update',duration=15000)
         episodes = self.GetEpisodesData(url)
         for content_id,video_id,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
+            #self.Notification('Added Video',episodetitle)
             episodetitle = episodetitle.replace(':','').replace('/',' ').strip()
             u = 'plugin://plugin.video.hulu/'
             u += '?mode="TV_play"'
@@ -165,8 +170,10 @@ class Main:
             
     def GetSubscriptions(self, NFO=False):
         url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
+        self.Notification('Hulu Library','Subscriptions Update',duration=15000)
         shows = self.GetSubscriptionsData(url)
         for show_name,art,genre,plot,stars,network,premiered,year,show_id in shows:
+            self.Notification('Added Subscription',show_name)
             directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
             self.CreateDirectory(directory)
             if NFO:
@@ -250,7 +257,6 @@ class Main:
             u += '&url="'+urllib.quote_plus(content_id)+'"'
             u += '&videoid="'+urllib.quote_plus(video_id)+'"'
             self.SaveFile( filename+".strm", u, directory)
-            #self.CreateStreamFile(filename, content_id, directory)
             if NFO:
                 soup = BeautifulStoneSoup()
                 episodedetails = Tag(soup, "episodedetails")
@@ -369,7 +375,7 @@ class Main:
         return returnepisodes
     
     def SetupHuluLibrary(self):
-        print "Trying to add Amazon source paths..."
+        print "Trying to add Hulu source paths..."
         source_path = os.path.join(xbmc.translatePath('special://profile/'), 'sources.xml')
         dialog = xbmcgui.Dialog()
         

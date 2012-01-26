@@ -1,5 +1,5 @@
 import xbmcplugin
-import xbmc
+import xbmc, xbmcvfs 
 import xbmcgui
 #import xbmcaddon
 import addoncompat
@@ -67,6 +67,8 @@ defualtcdn = int(addoncompat.get_setting("defaultcdn"))
 settings['defaultcdn'] = cdns[defualtcdn]
 #setting captions
 settings['enable_captions'] = addoncompat.get_setting("enable_captions")
+
+settings['proxy_enable'] = addoncompat.get_setting('us_proxy_enable')
 #per page settings
 page = ['25','50','100','250','500','1000','2000']
 perpage = int(addoncompat.get_setting("perpage"))
@@ -95,6 +97,8 @@ if os.path.isfile(QUEUETOKEN):
     # "2011-08-13T19:44:02Z", "%Y-%m-%dT%H:%M:%SZ"
     settings['expiration'] = tree.find('token-expires-at').string
     settings['usertoken'] = tree.find('token').string
+    settings['planid'] = tree.find('plid').string
+    settings['userid'] = tree.find('id').string
 
     
 """
@@ -141,45 +145,42 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
     READ PAGE
 """
 
-def getHTML( url ):
-    print 'HULU --> common :: getHTML :: url = '+url
-    cj = cookielib.LWPCookieJar()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('Referer', 'http://hulu.com'),
-                         ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')]
-    usock=opener.open(url)
-    response=usock.read()
-    usock.close()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    return response
-
-def getFEED( url, max_age=0 , postdata=False):
+def getFEED( url , postdata=None , proxy = False):
     try:
         print 'HULU --> common :: getFEED :: url = '+url
-        cj = cookielib.LWPCookieJar()
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-        opener.addheaders = [('Referer', 'http://download.hulu.com/hulu10.html'),
-                             ('x-flash-version', '11,1,102,55'),
-                             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
-        if postdata:
-            usock=opener.open(url,postdata)
+        if proxy == True:
+            us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
+            print 'Using proxy: ' + us_proxy
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            urllib2.install_opener(opener)
+        if postdata == None:
+            req = urllib2.Request(url)
         else:
-            usock=opener.open(url)
-        response=usock.read()
-        usock.close()
-        return response
-    except:
+            req = urllib2.Request(url,postdata)
+        req.add_header('User-Agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)')
+        req.add_header('Referer', 'http://download.hulu.com/hulu10.html')
+        #req.add_header('x-flash-version', '11,1,102,55')
+        response = urllib2.urlopen(req)
+        link=response.read()
+        response.close()
+
+    except urllib2.URLError, e:
+        print 'Error reason: ', e
+        heading = 'Error'
+        message = e
+        duration = 10000
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
         return False
+    else:
+        return link
 
 def postSTOP( type,content_id,position ):
     print 'HULU --> common :: postSTOP :: content_id = '+content_id
     opener = urllib2.build_opener()
     opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
                          ('x-flash-version', '11,1,102,55'),
-                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
+                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)')]
     url = 'http://www.hulu.com/pt/position'
     strposition = "%.2f" % position
     values = {'type':type,

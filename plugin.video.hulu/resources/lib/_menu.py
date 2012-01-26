@@ -9,8 +9,11 @@ import urllib
 import urllib2
 import math
 import time
+import datetime
 
-from BeautifulSoup import BeautifulStoneSoup
+#from BeautifulSoup import BeautifulStoneSoup
+
+from xml.etree import ElementTree
 
 pluginhandle = int(sys.argv[1])
 dp_id = 'hulu'
@@ -41,16 +44,10 @@ class Main:
             itemsurl += '&dp_id='+dp_id+'&package_id='+package_id+'&total=1'
         else:
             itemsurl += '?dp_id='+dp_id+'&package_id='+package_id+'&total=1'
-        html=common.getFEED(itemsurl,7*24*60*60)
-        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        items = menuitems=tree.findAll('items')
-        for counts in items:
-            try:
-                return int(counts.find('total_count').string)
-            except:
-                return 0
+        xml=common.getFEED(itemsurl)
+        tree = ElementTree.XML(xml)
+        return int(tree.findtext('total_count'))
 
-      
     def addMenuItems( self, perpage, pagenumber ,url=common.args.url ):
         # Grab xml item list
         orginalUrl = url
@@ -58,17 +55,25 @@ class Main:
             url += '&' 
         else:
             url += '?'
+        noCache = False
         if 'Queue' == common.args.mode or 'Subscriptions' == common.args.mode or 'History' == common.args.mode:
             usertoken = common.settings['usertoken']
-            url += 'dp_id='+dp_id+'&cb=201102070846'+'&limit='+perpage+'&package_id='+package_id+'&user_id='+usertoken
+            url += 'dp_id='+dp_id+'&limit='+perpage+'&package_id='+package_id+'&user_id='+usertoken
+            noCache = True
             total_count = 0
         else:
             url += 'dp_id='+dp_id+'&package_id='+package_id+'&limit='+perpage+'&page='+pagenumber
             total_count = self.getTotalCount( orginalUrl )
-        html=common.getFEED(url,15*60)
-        while html == False:
-            html=common.getFEED(url,15*60)
-            time.sleep(2)
+        if noCache:
+            xml = common.getFEED(url)[0]
+        else:
+            xml=common.getFEED(url)
+        while xml == False:
+            if noCache:
+                xml = common.getFEED(url)[0]
+            else:
+                xml=common.getFEED(url)
+            time.sleep(200)
 
         # Add Next/Prev Pages
         if int(perpage) < int(total_count):
@@ -97,27 +102,20 @@ class Main:
                 prevthumb=xbmc.translatePath(os.path.join(common.imagepath,"prev.png"))
                 common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,updatelisting='true')
 
-
-        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        # Find all items in xml
-        menuitems=tree.findAll('item')
+        tree = ElementTree.XML(xml)
+        menuitems = tree.findall('item')        
         del tree
         for item in menuitems:
-            
-            display=item('display')[0].string.encode('utf-8')
-            url='http://m.hulu.com'+item('items_url')[0].string
-            mode=item('app_data')[0]('cmtype')[0].string
+            display=item.findtext('display').encode('utf-8')
+            displayname=display
+            url='http://m.hulu.com'+item.findtext('items_url') 
+            mode=item.find('app_data').findtext('cmtype')
             
             #Flatten All and Alphabetical
             if display == 'All' and total_count == 1:
-                print url
-                #common.args.mode = 'All'
-                self.addMenuItems(common.settings['allperpage'],common.args.page,url)
-                return
-            
-            displayname = display
+                return self.addMenuItems(common.settings['allperpage'],common.args.page,url)
             # Skip unwanted menu items
-            if mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
+            elif mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
                 continue
             
             #set Data
@@ -126,7 +124,7 @@ class Main:
                 fanart = common.args.fanart
             else:
                 fanart = common.hulu_fanart
-                #'http://assets.huluim.com/companies/key_art_hulu.jpg'
+            
             if 'Popular' in common.args.name or 'Popular' in display:
                 art = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
             elif 'Recently' in common.args.name or 'Recently' in display:
@@ -137,107 +135,66 @@ class Main:
                 art = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
             else:
                 art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
-            description = ''
-            show_name = ''
-            show_id = ''
-            company_name = ''
-            duration = ''
-            genre = ''
-            parent_id = None
-            season_number = 0
-            episode_number = 0
-            premiered = ''
-            year = 0
-            rating = 0.0
-            votes = ''
-            mpaa = ''
-            media_type = False
-    
-            data = item('data')
+
+            infoLabels={'Title':display}
+            show_id = False
+            data = item.find('data')
             if data:
-                data = data[0]
-                canonical_name      = data('canonical_name')
-                show_canonical_name = data('show_canonical_name')
+                #data = data[0]
+                canonical_name      = data.findtext('canonical_name')
+                show_canonical_name = data.findtext('show_canonical_name')
                 #Show Only
                 if canonical_name:
-                    if canonical_name[0].string:
-                        canonical_name = canonical_name[0].string
-                        show_name = data('name')[0].string.encode('utf-8')
-                        genre_data = data('genre')
-                        if genre_data:
-                            genre = genre_data[0].string
-                        parent_id_data = data('parent_id')
-                        if parent_id_data:
-                            if parent_id_data[0].string:
-                                parent_id = parent_id_data[0].string
-                        art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
-                    else:
-                        canonical_name = None
+                    infoLabels['TVShowTitle'] = data.findtext('name').encode('utf-8')
+                    infoLabels['Genre'] = data.findtext('genre')
+                    parent_id = data.findtext('parent_id')
+                    if parent_id:
+                        displayname = '- '+displayname
+                    art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                 #Video Only
                 elif show_canonical_name:
                     isVideo = True
-                    canonical_name = show_canonical_name[0].string
-                    content_id = data('content_id')[0].string
-                    video_id = data('video_id')[0].string
-                    media_type = data('media_type')[0].string
-                    art = data('thumbnail_url_16x9_large')[0].string
-                    show_name = data('show_name')[0].string.encode('utf-8')
-                    mpaa = data('content_rating')[0].string
-                    votes_data = data('votes_count')
-                    if votes_data[0].string:
-                        votes = votes_data[0].string
-                    premiered_data = data('original_premiere_date')
-                    if premiered_data[0].string:
-                        premiered = premiered_data[0].string.replace(' 00:00:00','')
-                        year = int(premiered.split('-')[0])
-                    season_number_data = data('season_number')
-                    if season_number_data[0].string:
-                        season_number = int(season_number_data[0].string)
-                    episode_number_data = data('episode_number')
-                    if episode_number_data[0].string:
-                        episode_number = int(episode_number_data[0].string)
-                    duration_data = data('duration')
-                    if duration_data[0].string:
-                        duration = float(duration_data[0].string)
-                        hour = int(math.floor(duration / 60 / 60))
-                        minute = int(math.floor((duration - (60*60*hour))/ 60))
-                        second = int(duration - (60*minute)- (60*60*hour))
-                        if len(str(second)) == 1:
-                            second = '0'+str(second)
-                        if len(str(minute)) == 1:
-                            minute = '0'+str(minute)
-                        if hour == 0:
-                            duration = str(minute)+':'+str(second)
-                        elif len(str(hour)) == 1:
-                            duration = '0'+str(hour)+':'+str(minute)+':'+str(second)
-                        else:
-                            duration = str(hour)+':'+str(minute)+':'+str(second)
+                    canonical_name = show_canonical_name
+                    content_id = data.findtext('content_id')
+                    video_id = data.findtext('video_id') 
+                    media_type = data.findtext('media_type')
+                    art = data.findtext('thumbnail_url_16x9_large')
+                    infoLabels['TVShowTitle'] = data.findtext('show_name')
+                    infoLabels['MPAA'] = data.findtext('content_rating')
+                    votes_data = data.findtext('votes_count')
+                    premiered =  data.findtext('original_premiere_date').replace(' 00:00:00','')
+                    if premiered:
+                        infoLabels['Premiered'] = premiered
+                        infoLabels['Year'] = int(premiered.split('-')[0])
+                    seasondata = data.findtext('season_number')
+                    if seasondata.isdigit():  
+                        infoLabels['Season'] = int(seasondata)
+                    else:
+                        infoLabels['Season'] = 0
+                    episodedata = data.findtext('episode_number')
+                    if episodedata.isdigit():
+                        infoLabels['Episode'] = int(episodedata)
+                    else:
+                        infoLabels['Episode'] = 0
+                    durationseconds = int(float(data.findtext('duration')))
+                    infoLabels['Duration'] =  str(datetime.timedelta(seconds=durationseconds))
                 #Both Show and Video
-                description_data = data('description')
-                if description_data:
-                    if description_data[0].string:
-                        description = unicode(common.cleanNames(description_data[0].string.replace('\n', ' ').replace('\r', ' '))).encode('utf-8')
-                rating_data = data('rating')
-                if rating_data:
-                    if rating_data[0].string:
-                        rating = float(rating_data[0].string)*2
-                company_name_data = data('company_name')
-                if company_name_data:
-                    company_name = company_name_data[0].string
-                ishd_data = data('has_hd')
-                if ishd_data:
-                    ishd = ishd_data[0].string
-                show_id_data = data('show_id')
-                if show_id_data:
-                    show_id = show_id_data[0].string
+                infoLabels['Plot'] = unicode(data.findtext('description').replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
+                rating = data.findtext('rating')
+                if rating:
+                    if rating.isdigit():
+                        infoLabels['Rating'] = float(rating)*2
+                else:
+                    rating = 0.0
+                company_name = data.findtext('company_name')
+                infoLabels['Studio'] = company_name
+                ishd = data.findtext('has_hd')
+                show_id = data.findtext('show_id')
                 if canonical_name:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"            
                 if art == None:
-                    art = ''
-            
-            #Set displayname and content type
-            if parent_id:
-                displayname = '- '+displayname
+                    art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
                 dtotal_count = self.getTotalCount( url )
@@ -275,15 +232,13 @@ class Main:
                     xbmcplugin.setContent(pluginhandle, 'episodes')
                 elif media_type == 'Film':
                     xbmcplugin.setContent(pluginhandle, 'movies')
-                    show_name = company_name
+                    #infoLabels['TVShowTitle'] = company_name
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
-                if season_number <> 0 and episode_number <> 0:
+                if infoLabels['Season'] <> 0 and infoLabels['Episode'] <> 0:
                     if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name or 'Queue' == common.args.mode or 'History' == common.args.mode or common.args.popular == 'true':
-                        #displayname = unicode(show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
-                        displayname = show_name+' - '+str(season_number)+'x'+str(episode_number)+' - '+display
+                        displayname = infoLabels['TVShowTitle']+' - '+str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
                     else:
-                        #displayname = unicode(str(season_number)+'x'+str(episode_number)+' - '+display).encode('utf-8')
-                        displayname = str(season_number)+'x'+str(episode_number)+' - '+display
+                        displayname = str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
                 if 'True' == ishd:
                     displayname += ' (HD)'
       
@@ -291,21 +246,7 @@ class Main:
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
-            item.setInfo( type="Video", infoLabels={ "Title":display,
-                                                     "Plot":description,
-                                                     "Genre":genre,
-                                                     "Season":season_number,
-                                                     "Episode":episode_number,
-                                                     "Duration":duration,
-                                                     "premiered":premiered,
-                                                     "TVShowTitle":show_name,
-                                                     "Studio":company_name,
-                                                     "Year":year,
-                                                     "MPAA":mpaa,
-                                                     "Rating":rating,
-                                                     "Votes":votes
-                                                     })
-            
+            item.setInfo( type="Video", infoLabels=infoLabels)
             item.setProperty('fanart_image',fanart)
 
             #Set total count
@@ -329,21 +270,21 @@ class Main:
                         cm.append( ('Remove Subscription', "XBMC.RunPlugin(%s?mode='removesub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                     elif show_id <> '':
                         cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
-                item.addContextMenuItems( cm )
+                item.addContextMenuItems( cm ,replaceItems=True)
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
                 u += '&videoid="'+urllib.quote_plus(video_id)+'"'
                 if common.settings['enable_login']=='true' and common.settings['usertoken']:
+                    if 'History' == common.args.mode:
+                        cm.append( ('Remove from History', "XBMC.RunPlugin(%s?mode='removehistory'&url=%s)" % ( sys.argv[0], video_id ) ) )   
                     if 'Queue' == common.args.mode:
                         cm.append( ('Remove from Queue', "XBMC.RunPlugin(%s?mode='removequeue'&url=%s)" % ( sys.argv[0], video_id ) ) )
-                    elif 'History' == common.args.mode:
-                        cm.append( ('Remove from History', "XBMC.RunPlugin(%s?mode='removehistory'&url=%s)" % ( sys.argv[0], video_id ) ) )   
                     else:
                         cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                         if show_id <> '':
                             cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                 cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
-                item.addContextMenuItems( cm )
+                item.addContextMenuItems( cm ,replaceItems=True)
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
 

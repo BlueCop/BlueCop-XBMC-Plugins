@@ -316,25 +316,29 @@ class Main:
         return True
 
     def checkCaptions(self, video_id):
-        url = 'http://www.hulu.com/captions?content_id='+video_id
-        html = common.getHTML(url)
-        capSoup = BeautifulStoneSoup(html)
-        hasSubs = capSoup.find('en')
-        if(hasSubs):
-            print "HULU --> Grabbing subtitles..."
-            #self.update_dialog('Downloading Subtitles')
-            html=common.getHTML(hasSubs.string)
-            ok = self.convert_subtitles(html,video_id)
-            if ok:
-                print "HULU --> Subtitles enabled."
-                #self.update_dialog('Subtitles Completed Successfully')
-            else:
-                print "HULU --> There was an error grabbing the subtitles."
-                #self.update_dialog('Error Downloading Subtitles')
-
+        subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
+        if os.path.isfile(subtitles):
+            print "HULU --> Using Cached Subtitles"
         else:
-            print "HULU --> No subtitles available."
-            #self.update_dialog('No Subtitles Available')
+            url = 'http://www.hulu.com/captions?content_id='+video_id
+            html = common.getFEED(url)
+            capSoup = BeautifulStoneSoup(html)
+            hasSubs = capSoup.find('en')
+            if(hasSubs):
+                print "HULU --> Grabbing subtitles..."
+                #self.update_dialog('Downloading Subtitles')
+                html=common.getFEED(hasSubs.string)
+                ok = self.convert_subtitles(html,video_id)
+                if ok:
+                    print "HULU --> Subtitles enabled."
+                    #self.update_dialog('Subtitles Completed Successfully')
+                else:
+                    print "HULU --> There was an error grabbing the subtitles."
+                    #self.update_dialog('Error Downloading Subtitles')
+    
+            else:
+                print "HULU --> No subtitles available."
+                #self.update_dialog('No Subtitles Available')
 
     def content_sig(self, parameters):
         hmac_key = 'f6daaa397d51f568dd068709b0ce8e93293e078f7dfc3b40dd8c32d36d2b3ce1'

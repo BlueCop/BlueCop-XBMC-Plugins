@@ -46,7 +46,7 @@ SMILCACHE = os.path.join(pluginpath,'resources','cache','smil.xml')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
-hulu_icon = os.path.join(common.imagepath,'fanart.jpg')
+hulu_icon = os.path.join(imagepath,'fanart.jpg')
 
 """
     GET SETTINGS

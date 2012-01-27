@@ -9,6 +9,9 @@
 		<setting id="allperpage" type="enum" label="30008" values="25|50|100|250|500|1000|2000" default="4"/>
 		<setting id="searchperpage" type="enum" label="30009" values="25|50|100|250|500|1000|2000" default="2"/>
         <setting type="sep" />
+		<setting id="viewenable" type ="bool" label="30050" default="true"/>
+		<setting id="defaultview" type="enum" lvalues="30051|30052|30053|30054|30055|30056" label="30058" default="3"/>
+		<setting type="sep" />
 	</category>
 
 	<!-- Hulu+ Login -->

@@ -22,6 +22,16 @@
 	<string id="30007">Popular/Recent/Featured Per Page</string>
 	<string id="30008">Alphabetical Per Page</string>
 	<string id="30009">Search Results</string>
+	
+	<string id="30050">Enable Set View</string>
+	<string id="30058">Default View</string>
+
+	<string id="30051">Thumbnail</string>
+	<string id="30052">Poster Wrap</string>
+	<string id="30053">List</string>
+	<string id="30054">Media Info 2</string>
+	<string id="30055">Media Info</string>
+	<string id="30056">Fanart</string>
 
 	<string id="30027">Default CDN</string>
 	<string id="30028">level3</string>

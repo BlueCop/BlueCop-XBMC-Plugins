@@ -110,6 +110,9 @@ class Main:
         tree = ElementTree.XML(xml)
         menuitems = tree.findall('item')        
         del tree
+        hasMovies = False
+        hasEpisodes = False
+        hasTVShows = False
         for item in menuitems:
             display=item.findtext('display').encode('utf-8')
             displayname=display
@@ -120,7 +123,7 @@ class Main:
             if display == 'All' and total_count == 1:
                 return self.addMenuItems(common.settings['allperpage'],common.args.page,url)
             # Skip unwanted menu items
-            elif mode == 'None' or display == 'Add to queue' or display == 'Subscriptions' or display == 'Recommended':
+            elif mode == 'None' or display == 'Add to queue' or display == 'Subscriptions':
                 continue
             
             #set Data
@@ -129,20 +132,14 @@ class Main:
                 fanart = common.args.fanart
             else:
                 fanart = common.hulu_fanart
-            
-            if 'Popular' in common.args.name or 'Popular' in display:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
-            elif 'Recently' in common.args.name or 'Recently' in display:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg")) 
-            elif 'TV' == common.args.name:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
-            elif 'Movies' == common.args.name:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
+            if common.args.art:
+                art = common.args.art
             else:
-                art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+                art = common.hulu_icon
 
             infoLabels={'Title':display}
             show_id = False
+            ishd = False
             data = item.find('data')
             if data:
                 #data = data[0]
@@ -152,6 +149,10 @@ class Main:
                 if canonical_name:
                     infoLabels['TVShowTitle'] = data.findtext('name').encode('utf-8')
                     infoLabels['Genre'] = data.findtext('genre')
+                    totalEpisodes = data.findtext('full_episodes_count')
+                    if totalEpisodes:
+                        infoLabels['Episode'] = int(totalEpisodes)
+                    totalSeasons = data.findtext('total_seasons_count')
                     parent_id = data.findtext('parent_id')
                     if parent_id:
                         displayname = '- '+displayname
@@ -167,10 +168,6 @@ class Main:
                     infoLabels['TVShowTitle'] = data.findtext('show_name')
                     infoLabels['MPAA'] = data.findtext('content_rating')
                     votes_data = data.findtext('votes_count')
-                    premiered =  data.findtext('original_premiere_date').replace(' 00:00:00','')
-                    if premiered:
-                        infoLabels['Premiered'] = premiered
-                        infoLabels['Year'] = int(premiered.split('-')[0])
                     seasondata = data.findtext('season_number')
                     if seasondata.isdigit():  
                         infoLabels['Season'] = int(seasondata)
@@ -185,6 +182,11 @@ class Main:
                     infoLabels['Duration'] =  str(datetime.timedelta(seconds=durationseconds))
                 #Both Show and Video
                 infoLabels['Plot'] = unicode(data.findtext('description').replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
+                premiered =  data.findtext('original_premiere_date')
+                if premiered:
+                    premiered = premiered.split(' ')[0]
+                    infoLabels['Premiered'] = premiered
+                    infoLabels['Year'] = int(premiered.split('-')[0])
                 rating = data.findtext('rating')
                 if rating:
                     if rating.isdigit():
@@ -196,9 +198,7 @@ class Main:
                 ishd = data.findtext('has_hd')
                 show_id = data.findtext('show_id')
                 if canonical_name:
-                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"            
-                if art == None:
-                    art = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+                    fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
 
             if mode == 'SeasonMenu':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
@@ -208,6 +208,7 @@ class Main:
                 isVideo = False
             elif mode == 'ShowPage':
                 xbmcplugin.setContent(pluginhandle, 'tvshows')
+                hasTVShows = True
                 isVideo = False
             elif common.args.mode == 'ShowPage':
                 xbmcplugin.setContent(pluginhandle, 'seasons')
@@ -235,8 +236,10 @@ class Main:
                 mode = 'TV_play'
                 if media_type == 'TV':
                     xbmcplugin.setContent(pluginhandle, 'episodes')
+                    hasEpisodes = True
                 elif media_type == 'Film':
                     xbmcplugin.setContent(pluginhandle, 'movies')
+                    hasMovies = True
                     #infoLabels['TVShowTitle'] = company_name
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
                 if infoLabels['Season'] <> 0 and infoLabels['Episode'] <> 0:
@@ -244,8 +247,8 @@ class Main:
                         displayname = infoLabels['TVShowTitle']+' - '+str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
                     else:
                         displayname = str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
-                if 'True' == ishd:
-                    displayname += ' (HD)'
+            if 'True' == ishd:
+                displayname += ' (HD)'
       
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
@@ -289,8 +292,11 @@ class Main:
                         if show_id <> '':
                             cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                 cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
-                item.addContextMenuItems( cm ,replaceItems=True)
+                item.addContextMenuItems( cm ,replaceItems=True) 
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
-
+        confluence_views = [500,501,502,503,504,508]
+        if common.settings['viewenable'] == 'true':
+            view=int(common.settings["defaultview"])
+            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 

@@ -46,6 +46,7 @@ SMILCACHE = os.path.join(pluginpath,'resources','cache','smil.xml')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
+hulu_icon = os.path.join(common.imagepath,'fanart.jpg')
 
 """
     GET SETTINGS
@@ -79,6 +80,9 @@ allperpage = int(addoncompat.get_setting("allperpage" ))
 settings['allperpage'] = page[allperpage]
 searchperpage = int(addoncompat.get_setting("searchperpage" ))
 settings['searchperpage'] = page[searchperpage]
+
+settings['viewenable'] = addoncompat.get_setting("viewenable")
+settings['defaultview'] = addoncompat.get_setting("defaultview")
 
 settings['enablelibraryfolder'] = addoncompat.get_setting("enablelibraryfolder")
 settings['customlibraryfolder'] = addoncompat.get_setting("customlibraryfolder")
@@ -129,6 +133,8 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+urllib.quote_plus(mode)+'"'
     u += '&name="'+urllib.quote_plus(name)+'"'
+    u += '&art="'+urllib.quote_plus(thumb)+'"'
+    u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     u += '&page="'+urllib.quote_plus(page)+'"'
     u += '&perpage="'+urllib.quote_plus(perpage)+'"'
     u += '&popular="'+urllib.quote_plus(popular)+'"'
@@ -151,7 +157,7 @@ def getFEED( url , postdata=None , proxy = False):
         if proxy == True:
             us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-            if addoncompat.get_setting('us_proxy_pass') <> '' or addoncompat.get_setting('us_proxy_user') <> '':
+            if addoncompat.get_setting('us_proxy_pass') <> '' and addoncompat.get_setting('us_proxy_user') <> '':
                 print 'Using authenticated proxy: ' + us_proxy
                 proxy_auth_handler = urllib2.ProxyBasicAuthHandler()
                 proxy_auth_handler.add_password(None, addoncompat.get_setting('us_proxy'), addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
@@ -198,35 +204,7 @@ def postSTOP( type,content_id,position ):
     usock=opener.open(url,data)
     response=usock.read()
     usock.close()
-    return response
-
-
-def cacheFEED( url, max_age=0,cache_dir=cachepath):
-    print 'HULU --> common :: cacheFEED :: url = '+url
-    filename = md5.new(url).hexdigest()
-    filepath = os.path.join(cache_dir, filename)
-    if os.path.exists(filepath):
-        if int(time.time()) - os.path.getmtime(filepath) < max_age:
-            print 'Returned from Cache'
-            return open(filepath).read()
-        else:
-            os.remove(filepath)
-    
-    opener = urllib2.build_opener(urllib2.HTTPHandler())
-    opener.addheaders = [('Referer', 'http://download.hulu.com/huludesktop.swf?ver=0.1.0'),
-                         ('x-flash-version', '11,1,102,55'),
-                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)')]
-    usock=opener.open(url)
-    data=usock.read()
-    usock.close()
-        
-    fd, temppath = tempfile.mkstemp()
-    fp = os.fdopen(fd, 'w')
-    fp.write(data)
-    fp.close()
-    os.rename(temppath, filepath)
-    print 'Returned from web'
-    return data       
+    return response       
 
 def SaveFile(path, data):
     file = open(path,'w')

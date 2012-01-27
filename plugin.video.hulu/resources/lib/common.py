@@ -150,9 +150,15 @@ def getFEED( url , postdata=None , proxy = False):
         print 'HULU --> common :: getFEED :: url = '+url
         if proxy == True:
             us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
-            print 'Using proxy: ' + us_proxy
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-            opener = urllib2.build_opener(proxy_handler)
+            if addoncompat.get_setting('us_proxy_pass') <> '' or addoncompat.get_setting('us_proxy_user') <> '':
+                print 'Using authenticated proxy: ' + us_proxy
+                proxy_auth_handler = urllib2.ProxyBasicAuthHandler()
+                proxy_auth_handler.add_password(None, addoncompat.get_setting('us_proxy'), addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
+                opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
+            else:
+                print 'Using proxy: ' + us_proxy
+                opener = urllib2.build_opener(proxy_handler)
             urllib2.install_opener(opener)
         if postdata == None:
             req = urllib2.Request(url)

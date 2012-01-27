@@ -8,9 +8,12 @@ import urllib
 import xbmc
 import xbmcgui
 import xbmcplugin
+import xbmcvfs
 
 import resources.lib.common as common
 
+
+print sys.argv
 #plugin constants
 __plugin__ = "Hulu"
 __authors__ = "BlueCop, hyc, rwparris2, retalogic"
@@ -46,6 +49,8 @@ def modes( ):
         elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions') or common.args.mode.endswith('History'):
             import resources.lib._menu as queue
             queue.Main()
+        elif common.args.mode.endswith('viewcomplete'):
+            common.viewcomplete()    
         elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history') or common.args.mode.endswith('vote'):
             common.queueEdit()
         else:

@@ -110,6 +110,18 @@ class Main:
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         self.queue=False
         if common.args.mode == 'TV_play':
+            if common.settings['enable_login']=='true' and common.settings['usertoken']:
+                action = "event"
+                app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+                parameters = {'event_type':'view',
+                              'token':common.settings['usertoken'],
+                              'target_type':'video',
+                              'id':common.args.videoid,
+                              'app':app}
+                common.postAPI(action,parameters,False)
+                print "HULU --> Posted view"
+                
+
             if os.path.isfile(common.ADCACHE):
                 os.remove(common.ADCACHE)
             if os.path.isfile(common.SMILCACHE):
@@ -147,6 +159,7 @@ class Main:
                 postroll = common.settings['trailads']
                 if postroll > 0:
                     self.queueAD(video_id,preroll+postroll,preroll)
+            self.queueViewComplete()
         elif common.args.mode == 'AD_play':
             self.GUID = common.args.guid
             #self.ustate = common.args.ustate
@@ -408,7 +421,15 @@ class Main:
         data = self.makeGUID()
         data = binascii.unhexlify(data)
         return base64.encodestring(data).replace('\n','')
-
+    
+    def queueViewComplete(self):
+        mode='AD_play'
+        u = sys.argv[0]
+        u += "?mode='viewcomplete'"
+        u += '&videoid="'+urllib.quote_plus(common.args.videoid)+'"'
+        item=xbmcgui.ListItem("Remove from Queue")
+        self.playlist.add(url=u, listitem=item)
+            
     def queueAD(self, video_id,stop,start=0):
         for pod in range(start,stop):
             mode='AD_play'
@@ -549,7 +570,7 @@ class Main:
             #getRTMP
             video=smilSoup.findAll('video')
             if video is None or len(video) == 0:
-                xbmcgui.Dialog().ok('No Video Streams','SMIL did not contain video links')
+                xbmcgui.Dialog().ok('No Video Streams','SMIL did not contain video links','Geo-Blocked')
                 return
             streams=[]
             selectedStream = None
@@ -664,15 +685,13 @@ class Main:
                         self.playlist.add(url=newUrl, listitem=item)
                     else:
                         self.queue = True
-                        self.p=ResumePlayer()
                         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-                        while not self.p.isPlaying():
+                        while not xbmc.Player().isPlaying():
                             print 'HULU --> Not Playing'
                             xbmc.sleep(100)
                         #Enable Subtitles
                         subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
                         if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
                             print "HULU --> Setting subtitles"
-                            self.p.setSubtitles(subtitles)
-                        #self.p.onPlayBackStarted()
+                            xbmc.Player().setSubtitles(subtitles)
                     return False

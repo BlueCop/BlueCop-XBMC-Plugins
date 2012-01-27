@@ -335,6 +335,21 @@ def userSettings():
               'operation'   : 'config'}
     return postAPI(action , values, False)
 
+def viewcomplete():
+    print "HULU --> Posting View Complete"
+    action = "event"
+    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
+    parameters = {'event_type':'view_complete',
+                  'token':settings['usertoken'],
+                  'target_type':'video',
+                  'id':args.videoid,
+                  'app':app}
+    postAPI(action,parameters,False)
+    heading = 'Video Completed'
+    message = 'Removed from Queue'
+    duration = 4000
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+    
 
 def queueEdit():
     values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',

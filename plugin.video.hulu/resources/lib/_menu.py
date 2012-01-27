@@ -99,13 +99,13 @@ class Main:
             if npage_begin < total_count:
                 next_name = 'Next Page ('+str(npage_begin)+'-'+str(npage_end)+' of '+str(total_count)+')'
                 nextthumb=xbmc.translatePath(os.path.join(common.imagepath,"next.png"))
-                common.addDirectory(next_name,url,common.args.mode,page=str(next_page),icon=nextthumb,perpage=perpage,popular=popular,updatelisting='true')
+                common.addDirectory(next_name,url,common.args.mode,page=str(next_page),icon=nextthumb,perpage=perpage,popular=popular,fanart=common.hulu_fanart,updatelisting='true')
             if prev_page > 0:
                 ppage_begin = int(perpage)*(prev_page-1)+1
                 ppage_end = int(perpage)*prev_page
                 prev_name = 'Previous Page ('+str(ppage_begin)+'-'+str(ppage_end)+' of '+str(total_count)+')'
                 prevthumb=xbmc.translatePath(os.path.join(common.imagepath,"prev.png"))
-                common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,updatelisting='true')
+                common.addDirectory(prev_name,url,common.args.mode,page=str(prev_page),icon=prevthumb,perpage=perpage,popular=popular,fanart=common.hulu_fanart,updatelisting='true')
 
         tree = ElementTree.XML(xml)
         menuitems = tree.findall('item')        
@@ -221,8 +221,12 @@ class Main:
                 xbmcplugin.setContent(pluginhandle, 'tvshows')
                 hasTVShows = True
                 isVideo = False
+            elif common.args.mode == 'ChannelMenu':
+                xbmcplugin.setContent(pluginhandle, 'tvshows')
+                fanart = common.hulu_fanart
+                art = common.hulu_icon
             elif common.args.mode == 'ShowPage':
-                xbmcplugin.setContent(pluginhandle, 'seasons')
+                xbmcplugin.setContent(pluginhandle, 'episodes')
                 dtotal_count = self.getTotalCount( url )
                 episode_number = dtotal_count
                 displayname = displayname + ' ('+str(dtotal_count)+')'
@@ -230,6 +234,7 @@ class Main:
                     continue
             #Set Networks and Studios fanart
             elif common.args.name == 'Networks' or common.args.name == 'Studios':
+                xbmcplugin.setContent(pluginhandle, 'tvshows')
                 fanart = "http://assets.huluim.com/companies/key_art_"+canonical_name.replace('-','_')+".jpg"
                 art = fanart
             #Add Count to Display Name for Non-Show/Episode Lists

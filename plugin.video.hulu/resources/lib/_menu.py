@@ -40,6 +40,10 @@ class Main:
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
         else:
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True)
+        confluence_views = [500,501,502,503,504,508]
+        if common.settings['viewenable'] == 'true':
+            view=int(common.settings["defaultview"])
+            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
     def getTotalCount( self, itemsurl ):
         if '?' in itemsurl:
@@ -311,8 +315,4 @@ class Main:
                 item.addContextMenuItems( cm ,replaceItems=True) 
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
-        confluence_views = [500,501,502,503,504,508]
-        if common.settings['viewenable'] == 'true':
-            view=int(common.settings["defaultview"])
-            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 

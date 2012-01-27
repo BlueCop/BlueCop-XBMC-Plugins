@@ -46,7 +46,7 @@ SMILCACHE = os.path.join(pluginpath,'resources','cache','smil.xml')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
-hulu_icon = os.path.join(imagepath,'fanart.jpg')
+hulu_icon = os.path.join(imagepath,'icon.png')
 
 """
     GET SETTINGS
@@ -133,8 +133,8 @@ def addDirectory(name, url='', mode='default', thumb='', icon='', fanart='', plo
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+urllib.quote_plus(mode)+'"'
     u += '&name="'+urllib.quote_plus(name)+'"'
-    u += '&art="'+urllib.quote_plus(thumb)+'"'
-    u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+    u += '&art=""'
+    u += '&fanart=""'
     u += '&page="'+urllib.quote_plus(page)+'"'
     u += '&perpage="'+urllib.quote_plus(perpage)+'"'
     u += '&popular="'+urllib.quote_plus(popular)+'"'

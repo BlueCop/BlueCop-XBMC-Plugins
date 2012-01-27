@@ -44,7 +44,6 @@ class Main:
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_search.jpg"))
             common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,page='1',perpage='25')
         if common.settings['enable_login']=='true':
-            #try:
             if not os.path.isfile(common.QUEUETOKEN):
                 common.login_queue()
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_queue.jpg"))
@@ -55,5 +54,3 @@ class Main:
             common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_history.jpg"))
             common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')
-            #except:
-            #    print 'Hulu Queue Failure'

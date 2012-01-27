@@ -43,11 +43,11 @@ class Main:
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         total_count= int(tree('results')[0]('count')[0].string)
         if huluonly == '1' and total_count == 0:
-            self.addMenuItems(perpage,pagenumber,search,'0')
+            #self.addMenuItems(perpage,pagenumber,search,'0')
             return
         elif huluonly == '1':
             searchicon = xbmc.translatePath(os.path.join(common.imagepath,"search_icon.png"))
-            common.addDirectory('Search Off Hulu',search,'Search', thumb=searchicon, icon=searchicon, updatelisting='true')
+            #common.addDirectory('Search Off Hulu',search,'Search', thumb=searchicon, icon=searchicon, updatelisting='true')
         menuitems=tree.findAll('video')
         del tree
         for item in menuitems:

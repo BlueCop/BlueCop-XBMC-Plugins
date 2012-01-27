@@ -128,12 +128,21 @@ class Main:
             
             #set Data
             isVideo = False
-            if common.args.fanart:
+            if common.args.fanart and common.args.fanart <> '':
                 fanart = common.args.fanart
             else:
                 fanart = common.hulu_fanart
-            if common.args.art:
+            
+            if common.args.art and common.args.art <> '':
                 art = common.args.art
+            elif 'Popular' in common.args.name or 'Popular' in display:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
+            elif 'Recently' in common.args.name or 'Recently' in display:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg")) 
+            elif 'TV' == common.args.name:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
+            elif 'Movies' == common.args.name:
+                art = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
             else:
                 art = common.hulu_icon
 
@@ -181,7 +190,9 @@ class Main:
                     durationseconds = int(float(data.findtext('duration')))
                     infoLabels['Duration'] =  str(datetime.timedelta(seconds=durationseconds))
                 #Both Show and Video
-                infoLabels['Plot'] = unicode(data.findtext('description').replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
+                plot=data.findtext('description')
+                if plot:
+                    infoLabels['Plot'] = unicode(plot.replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
                 premiered =  data.findtext('original_premiere_date')
                 if premiered:
                     premiered = premiered.split(' ')[0]

@@ -86,6 +86,8 @@ class Main:
                 displayname = infoLabels['TVShowTitle']+' - '+str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+infoLabels['Title']
             elif infoLabels['TVShowTitle'] <> '' and infoLabels['TVShowTitle'] not in infoLabels['Title']:
                 displayname = infoLabels['TVShowTitle']+' - '+infoLabels['Title']
+            else:
+                displayname = infoLabels['Title']
                 
             ishd = item.findtext('has-hd')
             if 'True' == ishd:

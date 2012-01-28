@@ -31,14 +31,11 @@ def modes( ):
         if sys.argv[2]=='':
             import resources.lib._home as home
             home.Main()
-        elif common.args.mode.endswith('xbmclibrary'):
+        elif common.args.mode.endswith('Library'):
             import resources.lib.xbmclibrary as xbmclibrary
             xbmclibrary.Main()
         elif common.args.mode.endswith('_play'):
             import resources.lib.stream_hulu as stream_media
-            stream_media.Main()
-        elif common.args.mode.endswith('_playoffsite'):
-            import resources.lib.stream_offsite as stream_media
             stream_media.Main()
         elif common.args.mode.endswith('Menu') or common.args.mode.endswith('Page'):
             import resources.lib._menu as menu

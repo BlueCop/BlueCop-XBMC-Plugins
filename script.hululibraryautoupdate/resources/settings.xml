@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<settings>
+    <setting id="timer_amount" type="enum" values="1|1.5|2|5|10" label="30000" default="1" />
+    <setting id="update_video" type="bool" label="30001" default="true" />
+</settings>

@@ -6,12 +6,7 @@ import common
 import os
 import sys
 import urllib
-import urllib2
-import math
-import time
 import datetime
-
-#from BeautifulSoup import BeautifulStoneSoup
 
 from xml.etree import ElementTree
 
@@ -82,7 +77,7 @@ class Main:
                 xml = common.getFEED(url)
             else:
                 xml=common.getFEED(url)
-            time.sleep(200)
+            xbmc.sleep(400)
 
         # Add Next/Prev Pages
         if int(perpage) < int(total_count):
@@ -137,7 +132,7 @@ class Main:
             else:
                 fanart = common.hulu_fanart
             
-            if common.args.art and common.args.art <> '':
+            if common.args.art <> '':
                 art = common.args.art
             elif 'Popular' in common.args.name or 'Popular' in display:
                 art = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
@@ -311,7 +306,7 @@ class Main:
                         cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                         if show_id <> '':
                             cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
-                cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
+                    cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 item.addContextMenuItems( cm ,replaceItems=True) 
                 item.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)

@@ -38,9 +38,15 @@ class Main:
             self.CreateDirectory(TV_SHOWS_PATH)
         else:
             return
-        if common.args.mode == 'updatexbmclibrary':
-            self.GetQueue()
+        
+        if common.args.mode.startswith('Force'):
+            self.EnableNotifications = True
         else:
+            self.EnableNotifications = False
+            
+        if common.args.mode.endswith('QueueLibrary'):
+            self.GetQueue()
+        elif common.args.mode.endswith('SubscriptionsLibrary'):
             self.GetSubscriptions()
             
         if (common.settings['updatelibrary'] == 'true'):
@@ -50,7 +56,8 @@ class Main:
         xbmc.executebuiltin("UpdateLibrary(video)")
 
     def Notification(self,heading,message,duration=10000):
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        if self.EnableNotifications == True:
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             
     def SaveFile(self, filename, data, dir):
         path = os.path.join(dir, filename)
@@ -75,7 +82,7 @@ class Main:
         return ''.join(c for c in name if c in valid_chars)
     
     def GetQueue(self, NFO=True):
-        url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
+        url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         self.Notification('Hulu Library','Queue Update',duration=15000)
         episodes = self.GetEpisodesData(url)
         for content_id,video_id,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
@@ -169,7 +176,7 @@ class Main:
                     self.SaveFile( filename+'.nfo', str(soup), directory)
             
     def GetSubscriptions(self, NFO=False):
-        url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&cb=201102070846&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
+        url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         self.Notification('Hulu Library','Subscriptions Update',duration=15000)
         shows = self.GetSubscriptionsData(url)
         for show_name,art,genre,plot,stars,network,premiered,year,show_id in shows:

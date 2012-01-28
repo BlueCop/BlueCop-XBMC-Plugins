@@ -17,10 +17,6 @@ class Main:
         xbmcplugin.endOfDirectory( handle=int( sys.argv[ 1 ] ) )
     
     def addMainHomeItems( self ):
-        #DISABLED WEBSITE LOGIN
-        #if common.settings['enable_login']=='true':
-        #    if not os.path.isfile(common.COOKIEFILE):
-        #        common.login_cookie()
         xml=common.getFEED(common.BASE_MENU_URL)
         tree = ElementTree.XML(xml)
         menuitems = tree.findall('item')
@@ -47,10 +43,10 @@ class Main:
             if not os.path.isfile(common.QUEUETOKEN):
                 common.login_queue()
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_queue.jpg"))
-            cm = [ ('Add Queue to Library', "XBMC.RunPlugin(%s?mode='updatexbmclibrary')" % ( sys.argv[0] ) ) ]
+            cm = [ ('Add Queue to Library', "XBMC.RunPlugin(%s?mode='ForceQueueLibrary')" % ( sys.argv[0] ) ) ]
             common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_subscriptions.jpg"))
-            cm = [ ('Add Subscriptions to Library', "XBMC.RunPlugin(%s?mode='xbmclibrary')" % ( sys.argv[0] ) ) ]
+            cm = [ ('Add Subscriptions to Library', "XBMC.RunPlugin(%s?mode='ForceSubscriptionsLibrary')" % ( sys.argv[0] ) ) ]
             common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_history.jpg"))
             common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')

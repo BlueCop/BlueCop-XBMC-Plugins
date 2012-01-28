@@ -85,15 +85,15 @@
   </extension>
 </addon>
 
-<addon id="plugin.video.amazon"
-       name="Amazon"
-       version="0.4.2"
+<addon id="plugin.video.hulu"
+       name="Hulu"
+       version="3.2.0"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
     <import addon="script.module.beautifulsoup" version="3.0.8"/>
-    <import addon="script.module.demjson" version="1.4"/>
-    <import addon="script.module.mechanize" version="0.2.5"/>
+    <import addon="script.module.elementtree" version="1.2.7"/>
+    <import addon="script.module.cryptopy" version="1.2.6"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
              library="default.py">
@@ -101,8 +101,8 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
-    <summary>Amazon Prime Video Streaming</summary>
-    <description>Free Movies and Television Shows for Prime Members</description>
+    <summary>Hulu video plugin</summary>
+    <description>Videos from Hulu.com</description>
     <disclaimer>Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
   </extension>
 </addon>

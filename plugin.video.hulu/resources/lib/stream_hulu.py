@@ -109,23 +109,22 @@ class Main:
         video_id=common.args.url
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         self.queue=False
-        if common.args.mode == 'TV_play':
-            if common.settings['enable_login']=='true' and common.settings['usertoken']:
-                action = "event"
-                app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-                parameters = {'event_type':'view',
-                              'token':common.settings['usertoken'],
-                              'target_type':'video',
-                              'id':common.args.videoid,
-                              'app':app}
-                common.postAPI(action,parameters,False)
-                print "HULU --> Posted view"
+        if common.args.mode.endswith('TV_play'):
+            if common.args.mode.startswith('Captions'):
+                common.settings['enable_captions']='true'
+                self.NoResolve=True
+            elif common.args.mode.startswith('NoCaptions'):
+                common.settings['enable_captions']='false'
+                self.NoResolve=True
+            elif common.args.mode.startswith('Select'):
+                common.settings['quality']='0'
+                self.NoResolve=True
                 
+            if common.settings['enable_login']=='true' and common.settings['usertoken']:
+                common.viewed(common.args.videoid)
 
             if os.path.isfile(common.ADCACHE):
                 os.remove(common.ADCACHE)
-            if os.path.isfile(common.SMILCACHE):
-                os.remove(common.SMILCACHE)
             self.GUID = self.makeGUID()
             playlistmode = common.settings['segmentvideos']
             if playlistmode == 'true':
@@ -514,7 +513,10 @@ class Main:
             self.playlist.add(url=stack, listitem=item)        
         else:
             self.queue = True
-            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            if self.NoResolve:
+                xbmc.Player().play(stack,item)
+            else:
+                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
         for item in playlistSoup.findAll('tracking'):
             common.getFEED(item.string)
 
@@ -675,7 +677,10 @@ class Main:
                             self.playlist.add(url=fnewUrl, listitem=item)
                         else:
                             self.queue = True
-                            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                            if self.NoResolve:
+                                xbmc.Player().play(fnewUrl,item)
+                            else:
+                                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
                         return segments
                 else:
                     item = xbmcgui.ListItem(series_title+' - '+str(season)+'x'+str(episode)+' - '+title,path=newUrl)
@@ -685,13 +690,16 @@ class Main:
                         self.playlist.add(url=newUrl, listitem=item)
                     else:
                         self.queue = True
-                        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-                        while not xbmc.Player().isPlaying():
-                            print 'HULU --> Not Playing'
-                            xbmc.sleep(100)
-                        #Enable Subtitles
+                        if self.NoResolve:
+                            xbmc.Player().play(newUrl,item)
+                        else:
+                            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                            
                         subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
                         if (common.settings['enable_captions'] == 'true') and os.path.isfile(subtitles):
-                            print "HULU --> Setting subtitles"
+                            while not xbmc.Player().isPlaying():
+                                print 'HULU --> Not Playing'
+                                xbmc.sleep(200)
+                            #Enable Subtitles
                             xbmc.Player().setSubtitles(subtitles)
                     return False

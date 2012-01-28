@@ -110,6 +110,7 @@ class Main:
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         self.queue=False
         if common.args.mode.endswith('TV_play'):
+            self.NoResolve=False
             if common.args.mode.startswith('Captions'):
                 common.settings['enable_captions']='true'
                 self.NoResolve=True

@@ -7,7 +7,10 @@ import sys
 import urllib
 import datetime
 
-from xml.etree import ElementTree
+try:
+    from xml.etree import ElementTree
+except:
+    from elementtree import ElementTree
 
 pluginhandle = int(sys.argv[1])
 dp_id = 'hulu'

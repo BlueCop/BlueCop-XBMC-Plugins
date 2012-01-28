@@ -8,8 +8,10 @@ import sys
 import xbmcaddon
 import xbmcgui
 
-from xml.etree import ElementTree
-#from BeautifulSoup import BeautifulStoneSoup
+try:
+    from xml.etree import ElementTree
+except:
+    from elementtree import ElementTree
 
 class Main:
     def __init__( self ):

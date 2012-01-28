@@ -1,54 +1,59 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-        AMAZON
+        Plugin for streaming media from Hulu.com
 """
 #main imports
-import xbmcplugin
+import sys
+import os
+import urllib
 import xbmc
 import xbmcgui
-import xbmcaddon
-import sys
+import xbmcplugin
+
 import resources.lib.common as common
-import urllib
 
-pluginhandle = common.pluginhandle
 
+print sys.argv
 #plugin constants
-__plugin__ = "AMAZON"
-__authors__ = "BlueCop"
-__credits__ = ""
-__version__ = "0.3.2"
+__plugin__ = "Hulu"
+__authors__ = "BlueCop, hyc, rwparris2, retalogic"
+__credits__ = "zoltar12 for the original hulu plugin, BlueCop for h264 & flv url changes"
 
 
-print "\n\n\n\n\n\n\n====================AMAZON START====================\n\n\n\n\n\n"
+#temp#
+print "\n\n\n\n\n\n\nstart of HULU plugin\n\n\n\n\n\n"
+try:print "HULU--> common.args.mode -- > " + common.args.mode
+except: print "HULU--> no mode has been defined"
+#end temp#
+
 
 def modes( ):
-    if sys.argv[2]=='':
-        common.mechanizeLogin()
-        updatemovie = []
-        updatemovie.append( ('Export Movie Favorites to Library',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="xbmclibrary"&sitemode="LIST_MOVIES")' ) )
-        updatemovie.append( ('Full Movie Refresh(DB)', 'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="movies"&sitemode="addMoviesdb")' ) )
-        updatemovie.append( ('Recent Movies Refresh(DB)',  'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="movies"&sitemode="addNewMoviesdb")' ) )
-        common.addDir('Movies','listmovie','LIST_MOVIE_ROOT', cm=updatemovie)
-        updatetv = []
-        updatetv.append( ('Export TV Favorites to Library',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="xbmclibrary"&sitemode="LIST_TVSHOWS")' ) )
-        updatetv.append( ('Full Television Refresh(DB)', 'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="addTVdb")' ) )
-        #updatetv.append( ('Update New Television',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="addNewTVdb")' % ( sys.argv[0] ) ) )
-        updatetv.append( ('Scan TVDB(DB)',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="scanTVDBshows")' ) )
-        updatetv.append( ('Delete User Database',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="deleteUserDatabase")' ) )
-        updatetv.append( ('Delete Backup Database',   'XBMC.RunPlugin(plugin://plugin.video.amazon/?mode="tv"&sitemode="deleteBackupDatabase")' ) )
-        #updatetv.append( ('Fix HD Shows',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixHDshows")' % ( sys.argv[0] ) ) )
-        #updatetv.append( ('Fix Genres',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixGenres")' % ( sys.argv[0] ) ) )
-        #updatetv.append( ('Fix Years',   'XBMC.RunPlugin(%s?mode="tv"&sitemode="fixYears")' % ( sys.argv[0] ) ) )
-        common.addDir('Television','listtv','LIST_TV_ROOT', cm=updatetv)
-        common.addDir('Search Prime','searchprime','SEARCH_PRIME','http://www.amazon.com/s?ie=UTF8&field-is_prime_benefit=1&rh=n%3A2858778011%2Ck%3A')
-        if common.addon.getSetting('enablelibrary') == 'true':
-            common.addDir('My Library','library','LIBRARY_ROOT')
-        xbmcplugin.endOfDirectory(pluginhandle)
-    else:
-        exec 'import resources.lib.%s as sitemodule' % common.args.mode
-        exec 'sitemodule.%s()' % common.args.sitemode
+        if sys.argv[2]=='':
+            import resources.lib._home as home
+            home.Main()
+        elif common.args.mode.endswith('Library'):
+            import resources.lib.xbmclibrary as xbmclibrary
+            xbmclibrary.Main()
+        elif common.args.mode.endswith('_play'):
+            import resources.lib.stream_hulu as stream_media
+            stream_media.Main()
+        elif common.args.mode.endswith('Menu') or common.args.mode.endswith('Page'):
+            import resources.lib._menu as menu
+            menu.Main()
+        elif common.args.mode.endswith('Search'):
+            import resources.lib._search as search
+            search.Main()
+        elif common.args.mode.endswith('Queue') or common.args.mode.endswith('Subscriptions') or common.args.mode.endswith('History'):
+            import resources.lib._menu as queue
+            queue.Main()
+        elif common.args.mode.endswith('viewcomplete'):
+            common.viewcomplete()    
+        elif common.args.mode.endswith('queue') or common.args.mode.endswith('sub') or common.args.mode.endswith('history') or common.args.mode.endswith('vote'):
+            common.queueEdit()
+        else:
+            xbmcgui.Dialog().ok('common.args.mode',common.args.mode)
+            print "unknown mode--> "+common.args.mode
 
-modes ( )
+if ( __name__ == "__main__" ):
+        modes ( )
+
 sys.modules.clear()

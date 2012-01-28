@@ -61,8 +61,11 @@ def GETSTREAMS(getstream):
         return False, False, False
 
 def PLAYVIDEO():
-    common.mechanizeLogin()
-    swfUrl, values = GETFLASHVARS(common.args.url)            
+    try:
+        swfUrl, values = GETFLASHVARS(common.args.url)
+    except:
+        common.mechanizeLogin()
+        swfUrl, values = GETFLASHVARS(common.args.url)      
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
     getstream += '?asin='+values['asin']

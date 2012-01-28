@@ -90,22 +90,41 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
         liz.addContextMenuItems( cm , replaceItems=True )
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
 
+
 def mechanizeLogin():
-    if os.path.isfile(COOKIEFILE):
-        os.remove(COOKIEFILE)
-    cj = cookielib.LWPCookieJar()
-    br = mechanize.Browser()  
-    br.set_handle_robots(False)
-    br.set_cookiejar(cj)
-    br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
-    sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html") 
-    #print sign_in.read()  
-    br.select_form(name="sign-in")  
-    br["email"] = addon.getSetting("login_name")
-    br["password"] = addon.getSetting("login_pass")
-    logged_in = br.submit()  
-    error_str = "The e-mail address and password you entered do not match any accounts on record."  
-    if error_str in logged_in.read():
-        xbmcgui.Dialog().ok('Login Error',error_str)
-        print error_str
-    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+    succeeded = dologin()
+    retrys = 0
+    while succeeded == False:
+        xbmc.sleep(400)
+        retry += 1
+        print 'Login Retry: '+str(retry)
+        succeeded = dologin()
+        if retrys >= 3:
+            xbmcgui.Dialog().ok('Login Error','Failed to Login')
+            succeeded=True
+
+def dologin():
+    try:
+        if os.path.isfile(COOKIEFILE):
+            os.remove(COOKIEFILE)
+        cj = cookielib.LWPCookieJar()
+        br = mechanize.Browser()  
+        br.set_handle_robots(False)
+        br.set_cookiejar(cj)
+        br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
+        sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html") 
+        #print sign_in.read()  
+        br.select_form(name="sign-in")  
+        br["email"] = addon.getSetting("login_name")
+        br["password"] = addon.getSetting("login_pass")
+        logged_in = br.submit()  
+        error_str = "The e-mail address and password you entered do not match any accounts on record."  
+        if error_str in logged_in.read():
+            xbmcgui.Dialog().ok('Login Error',error_str)
+            print error_str
+            return True
+        else:
+            cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+            return True
+    except:
+        return False

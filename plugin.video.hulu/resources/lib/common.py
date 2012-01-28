@@ -9,11 +9,11 @@ import sys
 import os
 import cookielib
 import operator
-import sha
 import re
 import time
-import md5
-import tempfile
+
+import hashlib
+
 from BeautifulSoup import BeautifulStoneSoup
 
 
@@ -25,7 +25,7 @@ class _Info:
     def __init__( self, *args, **kwargs ):
         self.__dict__.update( kwargs )
 
-exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"','\'')), )
+exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"','\'').replace('%5C', '%5C%5C')), )
 
 
 """
@@ -308,13 +308,13 @@ def postAPI( action , parameters, secure):
     for item1, item2 in sorted_parameters:
         paramsString += str(item1) + str(item2)
     secret = "mTGPli7doNEpGfaVB9fquWfuAis"
-    sig = sha.new(secret + action + paramsString).hexdigest()
+    sig = hashlib.sha1(secret + action + paramsString).hexdigest()
     parameters['sig'] = sig
     data = urllib.urlencode(parameters)
-    headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET CLR 1.1.4322; .NET4.0C)',
+    headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)',
                'Host': host,
-               'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0',
-               'x-flash-version':'10,1,51,66'
+               'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0'#,
+               #'x-flash-version':'10,1,51,66'
                }
     req = urllib2.Request(url,data,headers)
     response = urllib2.urlopen(req)

@@ -40,69 +40,6 @@ subdeckeys  = [ xmldeckeys[0] ]
 
 smildeckeys = [ xmldeckeys[9] ]
 
-class ResumePlayer( xbmc.Player ) :            
-    def __init__ ( self ):
-        xbmc.Player.__init__( self )
-        self.player_playing = False
-        self.content_id=common.args.url
-        
-    def onPlayBackStarted(self):
-        print 'HULU --> onPlayBackStarted'
-        if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            if self.player_playing:
-                self.seekPlayback()
-                if common.settings['enable_login']=='true' and common.settings['usertoken']:
-                    action = "event"
-                    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-                    parameters = {'event_type':'view',
-                                  'token':common.settings['usertoken'],
-                                  'target_type':'video',
-                                  'id':common.args.videoid,
-                                  'app':app}
-                    common.postAPI(action,parameters,False)
-                    print "HULU --> Posted view"
-                    #self.p.onPlayBackStarted()
-            self.player_playing = True
-            while self.player_playing:
-                try:
-                    xbmc.sleep(1000)
-                    self.stoptime = self.getTime()
-                except:
-                    pass
-
-    def onPlayBackStopped(self):
-        if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            print "HULU --> onPlayBackStopped "+str(self.stoptime)
-            common.postSTOP( 'stop',self.content_id, self.stoptime )
-            self.player_playing = False
-
-    def onPlayBackEnded(self):
-        if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            print "HULU --> onPlayBackEnded"
-            common.postSTOP( 'stop',self.content_id, self.stoptime )
-            action = "event"
-            app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-            parameters = {'event_type':'view_complete',
-                          'token':common.settings['usertoken'],
-                          'target_type':'video',
-                          'id':common.args.videoid,
-                          'app':app}
-            common.postAPI(action,parameters,False)
-            print "HULU --> Posted view_complete complete"
-            self.player_playing = False
-
-    def seekPlayback(self):
-        if common.settings['enable_login']=='true' and common.settings['usertoken']:
-            try:
-                url = 'http://www.hulu.com/pt/position?content_id='+self.content_id+'&format=xml&token='+common.settings['usertoken']
-                data= common.getFEED(url)
-                tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-                position = float(tree.find('position').string)
-                should_resume = tree.find('should_resume').string
-                if should_resume == '1':
-                    self.seekTime(position)
-            except: print 'HULU --> failed to seek'
-
 class Main:
 
     def __init__( self ):
@@ -161,12 +98,14 @@ class Main:
                     self.queueAD(video_id,preroll+postroll,preroll)
             self.queueViewComplete()
         elif common.args.mode == 'AD_play':
+            self.NoResolve=False
             self.GUID = common.args.guid
             #self.ustate = common.args.ustate
             #self.sstate = common.args.sstate
             pod = int(common.args.pod)
             self.playAD(video_id,pod,queue=self.queue)
         elif common.args.mode == 'SEGMENT_play':
+            self.NoResolve=False
             self.GUID = common.args.guid
             self.play(video_id,queue=self.queue,segmented=int(common.args.segmented))
 

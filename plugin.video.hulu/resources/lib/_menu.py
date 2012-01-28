@@ -256,7 +256,7 @@ class Main:
                     xbmcplugin.setContent(pluginhandle, 'episodes')
                     hasEpisodes = True
                 elif media_type == 'Film':
-                    xbmcplugin.setContent(pluginhandle, 'movies')
+                    xbmcplugin.setContent(pluginhandle, 'episodes')
                     hasMovies = True
                     #infoLabels['TVShowTitle'] = company_name
                 #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)

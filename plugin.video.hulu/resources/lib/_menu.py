@@ -209,6 +209,7 @@ class Main:
                 company_name = data.findtext('company_name')
                 infoLabels['Studio'] = company_name
                 ishd = data.findtext('has_hd')
+                hascaptions=data.findtext('has_captions')
                 show_id = data.findtext('show_id')
                 if canonical_name:
                     fanart = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
@@ -267,7 +268,7 @@ class Main:
                         displayname = str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
             if 'True' == ishd:
                 displayname += ' (HD)'
-      
+
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
@@ -308,12 +309,13 @@ class Main:
                     else:
                         cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                         if show_id <> '':
-                            cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) ) 
-                    if common.settings['enable_captions'] == 'true':
-                        cm.append( ('Play without Subtitles', "XBMC.RunPlugin(%s?mode='NoCaptions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) ) 
-                    else:
-                        cm.append( ('Play with Subtitles', "XBMC.RunPlugin(%s?mode='Captions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) ) 
-                    cm.append( ('Assign Subtitles', "XBMC.RunPlugin(%s?mode='SUBTITLE_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) )
+                            cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                    if 'True' == hascaptions:
+                        if common.settings['enable_captions'] == 'true':
+                            cm.append( ('Play without Subtitles', "XBMC.RunPlugin(%s?mode='NoCaptions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) ) 
+                        else:
+                            cm.append( ('Play with Subtitles', "XBMC.RunPlugin(%s?mode='Captions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) ) 
+                        cm.append( ('Assign Subtitles', "XBMC.RunPlugin(%s?mode='SUBTITLE_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) )
                     cm.append( ('Select Quality', "XBMC.RunPlugin(%s?mode='Select_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) )
                     cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 item.addContextMenuItems( cm ,replaceItems=True) 

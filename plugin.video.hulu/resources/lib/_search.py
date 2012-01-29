@@ -119,6 +119,12 @@ class Main:
                 cm.append( ('Add to Queue', "XBMC.RunPlugin(%s?mode='addqueue'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 if show_id <> '':
                     cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
+                if common.settings['enable_captions'] == 'true':
+                    cm.append( ('Play without Subtitles', "XBMC.RunPlugin(%s?mode='NoCaptions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) ) 
+                else:
+                    cm.append( ('Play with Subtitles', "XBMC.RunPlugin(%s?mode='Captions_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], content_id, video_id ) ) ) 
+                cm.append( ('Assign Subtitles', "XBMC.RunPlugin(%s?mode='SUBTITLE_play'&url='%s'&videoid='%s')" % ( sys.argv[0], content_id, video_id ) ) )
+                cm.append( ('Select Quality', "XBMC.RunPlugin(%s?mode='Select_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], content_id, video_id ) ) )
                 cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 item.addContextMenuItems( cm ,replaceItems=True) 
             item.setProperty('IsPlayable', 'true')

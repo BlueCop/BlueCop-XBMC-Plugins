@@ -96,7 +96,8 @@ class Main:
                 postroll = common.settings['trailads']
                 if postroll > 0:
                     self.queueAD(video_id,preroll+postroll,preroll)
-            self.queueViewComplete()
+            if common.settings['enable_login']=='true':
+                self.queueViewComplete()
         elif common.args.mode == 'AD_play':
             self.NoResolve=False
             self.GUID = common.args.guid
@@ -108,6 +109,12 @@ class Main:
             self.NoResolve=False
             self.GUID = common.args.guid
             self.play(video_id,queue=self.queue,segmented=int(common.args.segmented))
+        elif common.args.mode == 'SUBTITLE_play':
+            self.checkCaptions(video_id)
+            subtitles = os.path.join(common.pluginpath,'resources','cache',video_id+'.srt')
+            if xbmc.Player().isPlaying() and os.path.isfile(subtitles):
+                print 'HULU --> Enabling Subtitles'
+                xbmc.Player().setSubtitles(subtitles)
 
     def AES(self,key):
         return Rijndael(key, keySize=32, blockSize=16, padding=padWithPadLen())
@@ -134,7 +141,7 @@ class Main:
         m = md5.new()
         m.update(str(xor_cid) + "MAZxpK3WwazfARjIpSXKQ9cmg9nPe5wIOOfKuBIfz7bNdat6gQKHj69ZWNWNVB1")
         value = m.digest()
-        return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "")
+        return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "").replace('/n','')
 
     def decrypt_pid(self, p):
         cp_strings = [

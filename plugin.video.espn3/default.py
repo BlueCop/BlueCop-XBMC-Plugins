@@ -11,6 +11,12 @@ import time
 from datetime import datetime, timedelta
 from BeautifulSoup import BeautifulStoneSoup
 
+try:
+    from xml.etree import ElementTree
+except:
+    from elementtree import ElementTree
+
+
 ## Get the settings
 
 selfAddon = xbmcaddon.Addon(id='plugin.video.espn3')
@@ -63,7 +69,7 @@ if selfAddon.getSetting('goalline') == 'true':
 channels = channels[:-1]
 
 def CATEGORIES():
-    curdate = datetime.now()
+    curdate = datetime.utcnow()
     upcoming = int(selfAddon.getSetting('upcoming'))+1
     days = (curdate+timedelta(days=upcoming)).strftime("%Y%m%d")
     addDir('Live', 'http://espn.go.com/watchespn/feeds/startup?action=live'+channels, 1, defaultlive)
@@ -81,10 +87,10 @@ def CATEGORIES():
     replays4 = [60,90,120,240]
     replays4 = replays4[int(selfAddon.getSetting('replays4'))]
     start4 = (curdate-timedelta(days=replays4)).strftime("%Y%m%d")
-    addDir('Replay '+str(replays1)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start1, 2, defaultreplay)
-    addDir('Replay '+str(replays2)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start2, 2, defaultreplay)
-    addDir('Replay '+str(replays3)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+enddate+'&startDate='+start3, 2, defaultreplay)
-    addDir('Replay '+str(replays3)+'-'+str(replays4)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+'&endDate='+start3+'&startDate='+start4, 2, defaultreplay)
+    addDir('Replay '+str(replays1)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start1, 2, defaultreplay)
+    addDir('Replay '+str(replays2)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start2, 2, defaultreplay)
+    addDir('Replay '+str(replays3)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+enddate+'&startDate='+start3, 2, defaultreplay)
+    addDir('Replay '+str(replays3)+'-'+str(replays4)+' Days', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels+'&endDate='+start3+'&startDate='+start4, 2, defaultreplay)
     addDir('Replay All', 'http://espn.go.com/watchespn/feeds/startup?action=replay'+channels, 2, defaultreplay)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -97,6 +103,7 @@ def LISTSPORTS(url,name):
     #else:
     useCookie=False
     data = get_html(url,useCookie=useCookie)
+    data = '<?xml version="1.0" encoding="CP1252"?>'+data
     SaveFile('videocache.xml', data, ADDONDATA)
     if 'action=replay' in url:
         image = defaultreplay
@@ -106,8 +113,8 @@ def LISTSPORTS(url,name):
         image = defaultimage
     addDir('(All)', url, 1, image)
     sports = []
-    for event in BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('sportdisplayvalue'):
-        sport = event.string.title().encode('utf-8')
+    for event in ElementTree.XML(data).findall('event'):
+        sport = event.findtext('sportDisplayValue').title().encode('utf-8')
         if sport not in sports:
             sports.append(sport)
     for sport in sports:
@@ -127,49 +134,48 @@ def INDEX(url,name,bysport=False):
         data = get_html(url,useCookie=useCookie)
     else:
         data = ReadFile('videocache.xml', ADDONDATA)
-    for event in BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('event'):
-        sport = event.find('sportdisplayvalue').string.title().encode('utf-8')
+    for event in ElementTree.XML(data).findall('event'):
+        sport = event.findtext('sportDisplayValue').title().encode('utf-8')
         if name <> sport and bysport == True:
             continue
         else:
-            ename = event.find('name').string.encode('utf-8')
-            eventid = event['id']
-            bamContentId = event['bamcontentid']
-            bamEventId = event['bameventid']
+            ename = event.findtext('name').encode('utf-8')
+            eventid = event.get('id')
+            bamContentId = event.get('bamContentId')
+            bamEventId = event.get('bamEventId')
             authurl = '&partnerContentId='+eventid
             authurl += '&eventId='+bamEventId
             authurl += '&contentId='+bamContentId
-            sport2 = event.find('sport').string.title().encode('utf-8')
+            sport2 = event.findtext('sport').title().encode('utf-8')
             if sport <> sport2:
                 sport += ' ('+sport2+')'
-            league = event.find('league').string
-            location = event.find('site').string
-            networkid = event.find('networkid').string
+            league = event.findtext('league')
+            location = event.findtext('site')
+            networkid = event.findtext('networkId')
             if networkid is not None:
                 network = networkmap[networkid]
-            thumb = event.find('large').string
-            starttime = int(event.find('starttimegmtms').string)/1000
-            endtime = int(event.find('endtimegmtms').string)/1000
+            thumb = event.findtext('large')
+            starttime = int(event.findtext('startTimeGmtMs'))/1000
+            endtime = int(event.findtext('endTimeGmtMs'))/1000
             start = time.strftime("%m/%d/%Y %I:%M %p",time.localtime(starttime))
             if 'action=live' in url:
                 length = str((endtime - time.time())/60)
             else:
                 length = str((endtime - starttime)/60)
-            try: end = event.find('caption').string+''
-            except:
-                try: end = event.find('summary').string+''
-                except: end = ''
+            
+            
+            end = event.findtext('summary')
+            if end == '':
+                end = event.findtext('caption')
+
             plot = ''
             if network and ('action=live' in url or 'action=upcoming' in url):
                 plot += 'Network: '+network+' - '
-            if sport is not None:
+            if sport <> '' and sport <> ' ':
                 plot += 'Sport: '+sport+'\n'
-            else:
-                sport = ''
-            if league is not None:
-                if league <> ' ':
-                    plot += 'League: '+league+'\n'
-            if location is not None:
+            if league <> '' and league <> ' ':
+                plot += 'League: '+league+'\n'
+            if location <> '' and location <> ' ':
                 plot += 'Location: '+location+'\n'
             plot += end
             infoLabels = {'title':ename,
@@ -271,10 +277,14 @@ def PLAY(url,videonetwork):
                 else:
                     if not blackoutstatus.find('successstatus'):
                         if blackoutstatus.find('blackout').string:
+                            dialog = xbmcgui.Dialog()
                             dialog.ok("Blacked Out", blackoutstatus.find('blackout').string)
                             return
             smilurl = tree.find('url').string
-            
+            if smilurl == ' ' or smilurl == '':
+                dialog = xbmcgui.Dialog()
+                dialog.ok("Error", 'SMIL url blank','Unable to playback video')
+                return
             auth = smilurl.split('?')[1]
             smilurl += '&rand='+("%.16f" % random.random())
         
@@ -388,7 +398,7 @@ def login():
             if logintype == 'comcast':
                 comcastLogin = re.compile('function comcastLogin\(\){(.*?)}').findall(data)[0]
                 Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(comcastLogin)[0]
-                LoginUrl = re.compile('var A="(.*?)";').findall(comcastLogin)[0]
+                LoginUrl = re.compile('var link="(.*?)";').findall(comcastLogin)[0]
                 sign_in = br.open(LoginUrl)
                 br.select_form(nr=0)
                 response = br.submit()
@@ -399,7 +409,8 @@ def login():
             elif logintype == 'att':
                 attLogin = re.compile('function attLogin\(\){(.*?)}').findall(data)[0]
                 Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(attLogin)
-                LoginUrl = re.compile('var A="(.*?)";').findall(attLogin)[0]
+                LoginUrl = re.compile('var link="(.*?)";').findall(attLogin)[0]
+                print LoginUrl
                 sign_in = br.open(LoginUrl)
                 br.select_form(nr=0)
                 response = br.submit()
@@ -445,7 +456,7 @@ def login():
             elif logintype == 'cox':
                 coxLogin = re.compile('function coxLogin\(\){(.*?)}').findall(data)[0]
                 Cookie = re.compile('set_cookie2\("(.*?)","(.*?)",').findall(coxLogin)[0]
-                LoginUrl = re.compile('var A="(.*?)";').findall(coxLogin)[0]
+                LoginUrl = re.compile('var link="(.*?)";').findall(coxLogin)[0]
                 sign_in = br.open(LoginUrl)
                 br.select_form(name="LoginPage")  
                 br["username"] = selfAddon.getSetting("login_name")

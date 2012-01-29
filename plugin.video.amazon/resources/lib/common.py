@@ -96,8 +96,8 @@ def mechanizeLogin():
     retrys = 0
     while succeeded == False:
         xbmc.sleep(400)
-        retry += 1
-        print 'Login Retry: '+str(retry)
+        retrys += 1
+        print 'Login Retry: '+str(retrys)
         succeeded = dologin()
         if retrys >= 3:
             xbmcgui.Dialog().ok('Login Error','Failed to Login')

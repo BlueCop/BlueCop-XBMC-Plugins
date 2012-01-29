@@ -12,8 +12,6 @@ import operator
 import re
 import time
 
-import hashlib
-
 from BeautifulSoup import BeautifulStoneSoup
 
 
@@ -294,6 +292,13 @@ def check_expiration(expiration):
         print 'Expired Token'
         login_queue()
 
+def signatureSHA(data):
+    try:
+        import hashlib
+        return hashlib.sha1(data).hexdigest()
+    except:
+        import sha
+        return sha.new(data).hexdigest()
 
 def postAPI( action , parameters, secure):
     if secure == True:
@@ -308,7 +313,7 @@ def postAPI( action , parameters, secure):
     for item1, item2 in sorted_parameters:
         paramsString += str(item1) + str(item2)
     secret = "mTGPli7doNEpGfaVB9fquWfuAis"
-    sig = hashlib.sha1(secret + action + paramsString).hexdigest()
+    sig = signatureSHA(secret + action + paramsString)
     parameters['sig'] = sig
     data = urllib.urlencode(parameters)
     headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)',

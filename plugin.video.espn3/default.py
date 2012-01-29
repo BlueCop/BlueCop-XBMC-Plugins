@@ -154,7 +154,7 @@ def INDEX(url,name,bysport=False):
             networkid = event.findtext('networkId')
             if networkid is not None:
                 network = networkmap[networkid]
-            thumb = event.findtext('large')
+            thumb = event.find('thumbnail').findtext('large')
             starttime = int(event.findtext('startTimeGmtMs'))/1000
             endtime = int(event.findtext('endTimeGmtMs'))/1000
             start = time.strftime("%m/%d/%Y %I:%M %p",time.localtime(starttime))

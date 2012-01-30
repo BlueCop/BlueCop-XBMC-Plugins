@@ -40,9 +40,10 @@
 	<string id="30031">SWF Verify</string>
 	
 	<string id="30032">Custom Library Folder</string>
-	<string id="30033">Library Folder stored in addon settings</string>
-	<string id="30034">Update Library when complete</string>
+	<string id="30033">Default Library Folder</string>
+	<string id="30034">Update Library</string>
 	
+	<string id="30045">Network Pre-Roll</string>
 	<string id="30035">Pre-Roll Ads</string>
 	<string id="30036">Trailing Ads</string>
 	<string id="30037">Ad Quality</string>

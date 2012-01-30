@@ -173,7 +173,8 @@ class Main:
                     isVideo = True
                     canonical_name = show_canonical_name
                     content_id = data.findtext('content_id')
-                    video_id = data.findtext('video_id') 
+                    video_id = data.findtext('video_id')
+                    eid = data.findtext('eid') 
                     media_type = data.findtext('media_type')
                     art = data.findtext('thumbnail_url_16x9_large')
                     infoLabels['TVShowTitle'] = data.findtext('show_name')
@@ -204,8 +205,6 @@ class Main:
                 if rating:
                     if rating.isdigit():
                         infoLabels['Rating'] = float(rating)*2
-                else:
-                    rating = 0.0
                 company_name = data.findtext('company_name')
                 infoLabels['Studio'] = company_name
                 ishd = data.findtext('has_hd')
@@ -301,6 +300,7 @@ class Main:
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
                 u += '&videoid="'+urllib.quote_plus(video_id)+'"'
+                u += '&eid="'+urllib.quote_plus(eid)+'"'
                 if common.settings['enable_login']=='true' and common.settings['usertoken']:
                     if 'History' == common.args.mode:
                         cm.append( ('Remove from History', "XBMC.RunPlugin(%s?mode='removehistory'&url=%s)" % ( sys.argv[0], video_id ) ) )   

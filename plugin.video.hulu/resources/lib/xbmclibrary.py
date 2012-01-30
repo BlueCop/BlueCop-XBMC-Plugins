@@ -85,13 +85,14 @@ class Main:
         url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         self.Notification('Hulu Library','Queue Update',duration=15000)
         episodes = self.GetEpisodesData(url)
-        for content_id,video_id,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
+        for content_id,video_id,eid,media_type,show_name,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
             #self.Notification('Added Video',episodetitle)
             episodetitle = episodetitle.replace(':','').replace('/',' ').strip()
             u = 'plugin://plugin.video.hulu/'
             u += '?mode="TV_play"'
             u += '&url="'+urllib.quote_plus(content_id)+'"'
             u += '&videoid="'+urllib.quote_plus(video_id)+'"'
+            u += '&eid="'+urllib.quote_plus(eid)+'"'
             if media_type == 'TV':
                 filename = self.cleanfilename('S%sE%s - %s' % (season,episode,episodetitle))
                 directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
@@ -256,13 +257,14 @@ class Main:
     def GetEpisodes(self, directory, showid, NFO=True):
         url = 'http://m.hulu.com/menu/11674?show_id='+showid+'&dp_id=hulu&limit=2000&package_id='+package_id
         episodes = self.GetEpisodesData(url)
-        for content_id,video_id,media_type,showname,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
+        for content_id,video_id,eid,media_type,showname,episodetitle,season,episode,premiered,year,duration,plot,studio, mpaa,rating,votes,thumb,fanart,ishd,expires_at in episodes:
             episodetitle = episodetitle.replace(':','').replace('/',' ').strip()
             filename = self.cleanfilename('S%sE%s - %s' % (season,episode,episodetitle))
             u = 'plugin://plugin.video.hulu/'
             u += '?mode="TV_play"'
             u += '&url="'+urllib.quote_plus(content_id)+'"'
             u += '&videoid="'+urllib.quote_plus(video_id)+'"'
+            u += '&eid="'+urllib.quote_plus(eid)+'"'
             self.SaveFile( filename+".strm", u, directory)
             if NFO:
                 soup = BeautifulStoneSoup()
@@ -332,6 +334,7 @@ class Main:
                 content_id = data('content_id')[0].string
                 media_type = data('media_type')[0].string
                 video_id = data('video_id')[0].string
+                eid = data('eid')[0].string
                 if media_type == 'TV' or media_type == 'Web Original':
                     show_name = data('show_name')[0].string.encode('utf-8')
                     season_number = data('season_number')[0].string.encode('utf-8')
@@ -362,6 +365,7 @@ class Main:
                 #art = "http://assets.hulu.com/shows/key_art_"+canonical_name.replace('-','_')+".jpg"
                 returnepisodes.append([content_id,
                                        video_id,
+                                       eid,
                                        media_type,
                                        show_name,
                                        episodetitle,

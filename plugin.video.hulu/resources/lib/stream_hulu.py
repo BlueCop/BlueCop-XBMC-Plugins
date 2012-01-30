@@ -5,10 +5,8 @@ import xbmcplugin
 import common
 import ads
 import subtitles
-
 import sys
 import binascii
-import md5
 import base64
 import os
 import hmac
@@ -57,11 +55,13 @@ class Main:
                 common.viewed(common.args.videoid)
                 
             if not self.NoResolve:
-                addcount = admodule.PreRoll(video_id,self.GUID)
+                if (common.settings['networkpreroll'] == 'true'):
+                    self.NetworkPreroll()
+                addcount = admodule.PreRoll(video_id,self.GUID,self.queue)
+                if addcount > 0:
+                    self.queue=True
             else:
                 addcount = 0
-            if addcount > 0:
-                self.queue=True
             if common.settings['segmentvideos'] == 'true':
                 segments = self.playSegment(video_id)
                 if segments:
@@ -189,6 +189,22 @@ class Main:
         milliseconds = (((int(hour)*60*60)+(int(minute)*60)+int(seconds))*1000)+frame
         return milliseconds
 
+    def NetworkPreroll( self ):
+        url = 'http://r.hulu.com/videos?eid='+common.args.eid+'&include=video_assets&include_eos=1&_language=en&_package_group_id=1&_region=US'
+        data=common.getFEED(url)
+        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        networkPreroll = tree.find('show').find('link-url').string
+        name = tree.find('channel').string
+        infoLabels={ "Title":name }
+        item = xbmcgui.ListItem(name+' Intro',path=networkPreroll)
+        item.setInfo( type="Video", infoLabels=infoLabels)
+        if self.queue:
+            item.setProperty('IsPlayable', 'true')
+            common.playlist.add(url=networkPreroll, listitem=item)
+        else:
+            self.queue = True
+            xbmcplugin.setResolvedUrl(common.handle, True, item)
+
     def playSegment( self, video_id, segment=0):
         try:
             if segments > 0: smilSoup = self.getSMIL(video_id,retry=1)
@@ -198,7 +214,8 @@ class Main:
             finalUrl = self.selectStream(smilSoup)
             self.displayname, self.infoLabels, segments  = self.getMeta(smilSoup)
             segmentUrl = finalUrl
-            if segments:
+            if segments and segments[0] <> '':
+                print segments
                 segmentUrl = finalUrl
                 if segment > 0:
                     startseconds = self.time2ms(segments[segment-1])
@@ -345,6 +362,7 @@ class Main:
         return ecb.decrypt(v3).split("~")[0]
 
     def cid2eid(self, p):
+        import md5
         dec_cid = int(p.lstrip('m'), 36)
         xor_cid = dec_cid ^ 3735928559 # 0xDEADBEEF
         m = md5.new()
@@ -376,6 +394,7 @@ class Main:
                 return v2
 
     def pid_auth(self, pid):
+        import md5
         m=md5.new()
         m.update(str(pid) + "yumUsWUfrAPraRaNe2ru2exAXEfaP6Nugubepreb68REt7daS79fase9haqar9sa")
         return m.hexdigest()

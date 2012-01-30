@@ -76,6 +76,7 @@ class Main:
             company_name = item.findtext('company-name')
             content_id = item.findtext('content-id')
             video_id = item.findtext('id')
+            eid = item.findtext('eid')
             show_id = item.find('show').findtext('id')
 
             art = item.findtext('thumbnail-url')
@@ -109,6 +110,7 @@ class Main:
             u += '?url="'+urllib.quote_plus(content_id)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
             u += '&videoid="'+urllib.quote_plus(video_id)+'"'
+            u += '&eid="'+urllib.quote_plus(eid)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
             item.setInfo( type="Video", infoLabels=infoLabels)
             item.setProperty('fanart_image',fanart)

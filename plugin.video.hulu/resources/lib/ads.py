@@ -15,15 +15,18 @@ class Main:
     def __init__( self ):
         pass
 
-    def PreRoll(self,video_id,GUID):
+    def PreRoll(self,video_id,GUID,queue):
         addcount = 0
         preroll = common.settings['prerollads']
         if preroll > 0:
-            self.playAD(video_id,addcount,GUID)
-            addcount += 1
-            if preroll > 1:
+            if queue:
                 self.queueAD(video_id,preroll,addcount,GUID)
-                addcount += preroll - 1
+            else:
+                self.playAD(video_id,addcount,GUID)
+                addcount += 1
+                if preroll > 1:
+                    self.queueAD(video_id,preroll,addcount,GUID)
+                    addcount += preroll - 1
         return addcount
     
     def Trailing(self,addcount,video_id,GUID):
@@ -122,9 +125,10 @@ class Main:
             else:
                 mediaUrl = mediafiles[0].string
             adtitle = ad.find('adtitle').string
-            title += ' '+adtitle
+            title += ' '+adtitle+''
             stack += mediaUrl.replace(',',',,')+' , '
         stack = stack[:-3]
+        title = title.strip()
         item = xbmcgui.ListItem(title, path=stack)
         item.setInfo( type="Video", infoLabels={ "Title":title})
         xbmcplugin.setResolvedUrl(common.handle, True, item)

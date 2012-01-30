@@ -38,6 +38,7 @@
 	<!-- Advanced -->
 	<category label="30103">
 		<setting type="sep" />
+		<setting id='queueremove' type ="bool" label="30046" default="false"/>
         <setting id='enable_captions' type ="bool" label="30026" default="false"/>
         <setting type="sep" />
 		<setting id="quality" type="enum" lvalues="30015|30023|30024|30020|30025|30016|30017|30018" label="30004" default="1"/>

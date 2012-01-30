@@ -58,11 +58,16 @@ COOKIEFILE = os.path.join(pluginpath,'resources','cache','hulu-cookies.lwp')
 QUEUETOKEN = os.path.join(pluginpath,'resources','cache','token.xml')
 ADCACHE = os.path.join(pluginpath,'resources','cache','ad.xml')
 SMILCACHE = os.path.join(pluginpath,'resources','cache','smil.xml')
+WARNING = os.path.join(pluginpath,'resources','cache','warning')
 cachepath = os.path.join(pluginpath,'resources','cache')
 imagepath  = os.path.join(pluginpath,'resources','images')
 hulu_fanart = os.path.join(pluginpath,'fanart.jpg')
 hulu_icon = os.path.join(imagepath,'icon.png')
 
+
+if os.path.isfile(WARNING):
+    xbmcgui.Dialog().ok('Attention','This is Free Software.','If you paid for the Hulu plug-in then you have','been defrauded and should request a refund.',)
+    os.remove(WARNING)
 """
     GET SETTINGS
 """
@@ -84,7 +89,7 @@ defualtcdn = int(addoncompat.get_setting("defaultcdn"))
 settings['defaultcdn'] = cdns[defualtcdn]
 #setting captions
 settings['enable_captions'] = addoncompat.get_setting("enable_captions")
-
+settings['queueremove'] = addoncompat.get_setting("queueremove")
 settings['proxy_enable'] = addoncompat.get_setting('us_proxy_enable')
 #per page settings
 page = ['25','50','100','250','500','1000','2000']

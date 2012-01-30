@@ -57,8 +57,8 @@ class Main:
             if not self.NoResolve:
                 if (common.settings['networkpreroll'] == 'true'):
                     self.NetworkPreroll()
-                addcount,succeeded = admodule.PreRoll(video_id,self.GUID,self.queue)
-                if addcount > 0 and succeeded:
+                addcount = admodule.PreRoll(video_id,self.GUID,self.queue)
+                if addcount > 0:
                     self.queue=True
             else:
                 addcount = 0
@@ -74,7 +74,7 @@ class Main:
                 self.play(video_id)
             admodule.Trailing(addcount,video_id,self.GUID)
             
-            if common.settings['enable_login']=='true' and common.settings['usertoken']:
+            if common.settings['queueremove']=='true' and common.settings['enable_login']=='true' and common.settings['usertoken']:
                 self.queueViewComplete()
                 
         elif common.args.mode == 'SEGMENT_play':
@@ -160,7 +160,7 @@ class Main:
                 xbmcgui.Dialog().ok('Content Expired',expire_message)
                 return False
             elif plus_message in smil:
-                xbmcgui.Dialog().ok('Too many connections',plus_message)
+                xbmcgui.Dialog().ok('Too many sessions','please close any Hulu Plus videos','you may be watching on other devices')
                 return False
     
     def queueViewComplete(self):
@@ -196,7 +196,6 @@ class Main:
         networkPreroll = tree.find('show').find('link-url').string
         if networkPreroll is not None:
             if '.flv' in networkPreroll:
-                print networkPreroll
                 name = tree.find('channel').string
                 infoLabels={ "Title":name }
                 item = xbmcgui.ListItem(name+' Intro',path=networkPreroll)

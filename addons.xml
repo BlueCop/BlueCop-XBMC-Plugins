@@ -182,7 +182,7 @@
 </addon>
 
 <addon id="script.hululibraryautoupdate"
-    name="Hulu Library Auto Update" version="1.1.1" provider-name="robweber">
+    name="Hulu Library Auto Update" version="1.1.2" provider-name="robweber/pkscuot">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
   </requires>

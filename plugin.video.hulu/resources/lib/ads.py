@@ -20,7 +20,7 @@ class Main:
         preroll = common.settings['prerollads']
         if preroll > 0:
             if queue:
-                self.queueAD(video_id,preroll+1,addcount,GUID)
+                self.queueAD(video_id,preroll,addcount,GUID)
                 addcount += preroll
                 succeeded = True
             else:

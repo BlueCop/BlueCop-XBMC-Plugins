@@ -57,8 +57,8 @@ class Main:
             if not self.NoResolve:
                 if (common.settings['networkpreroll'] == 'true'):
                     self.NetworkPreroll()
-                addcount = admodule.PreRoll(video_id,self.GUID,self.queue)
-                if addcount > 0:
+                addcount,succeeded = admodule.PreRoll(video_id,self.GUID,self.queue)
+                if addcount > 0 and succeeded:
                     self.queue=True
             else:
                 addcount = 0
@@ -194,16 +194,19 @@ class Main:
         data=common.getFEED(url)
         tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
         networkPreroll = tree.find('show').find('link-url').string
-        name = tree.find('channel').string
-        infoLabels={ "Title":name }
-        item = xbmcgui.ListItem(name+' Intro',path=networkPreroll)
-        item.setInfo( type="Video", infoLabels=infoLabels)
-        if self.queue:
-            item.setProperty('IsPlayable', 'true')
-            common.playlist.add(url=networkPreroll, listitem=item)
-        else:
-            self.queue = True
-            xbmcplugin.setResolvedUrl(common.handle, True, item)
+        if networkPreroll is not None:
+            if '.flv' in networkPreroll:
+                print networkPreroll
+                name = tree.find('channel').string
+                infoLabels={ "Title":name }
+                item = xbmcgui.ListItem(name+' Intro',path=networkPreroll)
+                item.setInfo( type="Video", infoLabels=infoLabels)
+                if self.queue:
+                    item.setProperty('IsPlayable', 'true')
+                    common.playlist.add(url=networkPreroll, listitem=item)
+                else:
+                    self.queue = True
+                    xbmcplugin.setResolvedUrl(common.handle, True, item)
 
     def playSegment( self, video_id, segment=0):
         try:
@@ -214,8 +217,7 @@ class Main:
             finalUrl = self.selectStream(smilSoup)
             self.displayname, self.infoLabels, segments  = self.getMeta(smilSoup)
             segmentUrl = finalUrl
-            if segments and segments[0] <> '':
-                print segments
+            if segments:
                 segmentUrl = finalUrl
                 if segment > 0:
                     startseconds = self.time2ms(segments[segment-1])
@@ -271,7 +273,12 @@ class Main:
                      "Plot":plot,
                      "Season":season,
                      "Episode":episode}
-        try:segments = ref['tp:segments'].replace('T:','').split(',')
+        try:
+            segments = ref['tp:segments']
+            if segments <> '':
+                segments=segments.replace('T:','').split(',')
+            else:
+                segments = False
         except:segments = False
         return displayname, infoLabels, segments
                 

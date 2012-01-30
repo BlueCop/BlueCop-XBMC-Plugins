@@ -20,14 +20,17 @@ class Main:
         preroll = common.settings['prerollads']
         if preroll > 0:
             if queue:
-                self.queueAD(video_id,preroll,addcount,GUID)
+                self.queueAD(video_id,preroll+1,addcount,GUID)
+                addcount += preroll
+                succeeded = True
             else:
-                self.playAD(video_id,addcount,GUID)
-                addcount += 1
-                if preroll > 1:
-                    self.queueAD(video_id,preroll,addcount,GUID)
-                    addcount += preroll - 1
-        return addcount
+                succeeded = self.playAD(video_id,addcount,GUID)
+                if succeeded:
+                    addcount += 1
+                    if preroll > 1:
+                        self.queueAD(video_id,preroll,addcount,GUID)
+                        addcount += preroll - 1
+        return addcount, succeeded
     
     def Trailing(self,addcount,video_id,GUID):
         postroll = common.settings['trailads']
@@ -104,7 +107,7 @@ class Main:
   </SiteLocation>
   <Diagnostics/>
 </AdRequest>'''
-        #print xmlbase
+        print xmlbase
         IV = self.MakeIV()
         encdata = self.ADencrypt(xmlbase,IV)
         url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)
@@ -112,7 +115,7 @@ class Main:
         playlist = self.ADdecrypt(encplaylist)
         common.SaveFile(common.ADCACHE, playlist)
         playlistSoup=BeautifulStoneSoup(playlist, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        #print playlistSoup.prettify()
+        print playlistSoup.prettify()
         self.sstate = playlistSoup.find('sessionstate')['value']                                       
         self.ustate = playlistSoup.find('userstate')['value']
         trackingurls = []
@@ -131,6 +134,10 @@ class Main:
         title = title.strip()
         item = xbmcgui.ListItem(title, path=stack)
         item.setInfo( type="Video", infoLabels={ "Title":title})
-        xbmcplugin.setResolvedUrl(common.handle, True, item)
-        for item in playlistSoup.findAll('tracking'):
-            common.getFEED(item.string)
+        if '.swf' not in stack:
+            xbmcplugin.setResolvedUrl(common.handle, True, item)
+            for item in playlistSoup.findAll('tracking'):
+                common.getFEED(item.string)
+            return True
+        else:
+            return False

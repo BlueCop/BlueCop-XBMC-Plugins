@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <strings>
     <!-- Plugin settings -->
-    <string id="30000">Amount of time between updates (hours)</string>
-    <string id="30001">Update Hulu Video Libary</string>
+    <string id="30000">Update Library from Hulu Queue</string>
+    <string id="30001">Amount of time between queue updates (hours)</string>
+    <string id="30002">Update Library from Hulu Subscriptions</string>
+    <string id="30003">Amount of time between subscription updates (hours)</string>
+    <string id="30004"> </string>
+    <string id="30005">XBMC must be restarted for changes to take effect.</string>
 </strings>

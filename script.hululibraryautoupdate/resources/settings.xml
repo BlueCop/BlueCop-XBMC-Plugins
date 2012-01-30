@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <settings>
-    <setting id="timer_amount" type="enum" values="1|1.5|2|5|10" label="30000" default="1" />
-    <setting id="update_video" type="bool" label="30001" default="true" />
+    <setting id="update_queue" type="bool" label="30000" default="false" />
+    <setting id="timer_amount_queue" type="enum" values="1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24" label="30001" default="2" />
+    <setting id="update_subscriptions" type="bool" label="30002" default="false" />
+    <setting id="timer_amount_subscriptions" type="enum" values="1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24" label="30003" default="24" />
+    <setting label="30004" type="lsep" />
+    <setting label="30005" type="lsep" />
 </settings>

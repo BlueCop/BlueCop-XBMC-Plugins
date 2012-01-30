@@ -46,7 +46,7 @@ class Main:
         for item in menuitems:
             infoLabels={}
             infoLabels['Title']=item.findtext('title').encode('utf-8')
-            infoLabels['Genre'] = item.findtext('genre')
+            infoLabels['Genre'] = item.findtext('genre', default="")
             infoLabels['TVShowTitle'] = item.find('show').findtext('name').encode('utf-8')
             infoLabels['MPAA'] = item.findtext('content-rating')
             infoLabels['Votes'] = item.findtext('votes-count')

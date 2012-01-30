@@ -159,7 +159,7 @@ class Main:
                 #Show Only
                 if canonical_name:
                     infoLabels['TVShowTitle'] = data.findtext('name').encode('utf-8')
-                    infoLabels['Genre'] = data.findtext('genre')
+                    infoLabels['Genre'] = data.findtext('genre', default="")
                     totalEpisodes = data.findtext('full_episodes_count')
                     if totalEpisodes:
                         infoLabels['Episode'] = int(totalEpisodes)
@@ -205,7 +205,7 @@ class Main:
                 if rating:
                     if rating.isdigit():
                         infoLabels['Rating'] = float(rating)*2
-                company_name = data.findtext('company_name')
+                company_name = data.findtext('company_name', default="")
                 infoLabels['Studio'] = company_name
                 ishd = data.findtext('has_hd')
                 hascaptions=data.findtext('has_captions')

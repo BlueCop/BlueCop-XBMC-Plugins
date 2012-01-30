@@ -189,8 +189,9 @@ def getFEED( url , postdata=None , proxy = False):
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
             if addoncompat.get_setting('us_proxy_pass') <> '' and addoncompat.get_setting('us_proxy_user') <> '':
                 print 'Using authenticated proxy: ' + us_proxy
-                proxy_auth_handler = urllib2.ProxyBasicAuthHandler()
-                proxy_auth_handler.add_password(None, addoncompat.get_setting('us_proxy'), addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
+                password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                password_mgr.add_password(None, us_proxy, addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
+                proxy_auth_handler = urllib2.ProxyBasicAuthHandler(password_mgr)
                 opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
             else:
                 print 'Using proxy: ' + us_proxy

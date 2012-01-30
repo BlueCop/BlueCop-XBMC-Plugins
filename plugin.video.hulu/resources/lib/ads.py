@@ -30,6 +30,8 @@ class Main:
                     if preroll > 1:
                         self.queueAD(video_id,preroll,addcount,GUID)
                         addcount += preroll - 1
+        else:
+            succeeded = False
         return addcount, succeeded
     
     def Trailing(self,addcount,video_id,GUID):

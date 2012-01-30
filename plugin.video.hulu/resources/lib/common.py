@@ -1,7 +1,6 @@
 import xbmcplugin
 import xbmc
 import xbmcgui
-#import xbmcaddon
 import addoncompat
 import urllib
 import urllib2
@@ -11,9 +10,16 @@ import cookielib
 import operator
 import re
 import time
+import random
 
-from BeautifulSoup import BeautifulStoneSoup
+from crypto.cipher.cbc      import CBC
+from crypto.cipher.base     import padWithPadLen
+from crypto.cipher.rijndael import Rijndael
 
+try:
+    from xml.etree import ElementTree
+except:
+    from elementtree import ElementTree
 
 """
     PARSE ARGV
@@ -31,8 +37,19 @@ exec "args = _Info(%s)" % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", "
 """
 BASE_MENU_URL = "http://m.hulu.com/menu/hd_main_menu?show_id=0&dp_id=huludesktop&package_id=2&page=1"
 
-#define etc.
-login_url   = "https://secure.hulu.com/account/authenticate"
+xmldeckeys = [
+             ['4878B22E76379B55C962B18DDBC188D82299F8F52E3E698D0FAF29A40ED64B21', 'WA7hap7AGUkevuth'],
+             ['246DB3463FC56FDBAD60148057CB9055A647C13C02C64A5ED4A68F81AE991BF5', 'vyf8PvpfXZPjc7B1'],
+             ['8CE8829F908C2DFAB8B3407A551CB58EBC19B07F535651A37EBC30DEC33F76A2', 'O3r9EAcyEeWlm5yV'],
+             ['852AEA267B737642F4AE37F5ADDF7BD93921B65FE0209E47217987468602F337', 'qZRiIfTjIGi3MuJA'],
+             ['76A9FDA209D4C9DCDFDDD909623D1937F665D0270F4D3F5CA81AD2731996792F', 'd9af949851afde8c'],
+             ['1F0FF021B7A04B96B4AB84CCFD7480DFA7A972C120554A25970F49B6BADD2F4F', 'tqo8cxuvpqc7irjw'],
+             ['3484509D6B0B4816A6CFACB117A7F3C842268DF89FCC414F821B291B84B0CA71', 'SUxSFjNUavzKIWSh'],
+             ['B7F67F4B985240FAB70FF1911FCBB48170F2C86645C0491F9B45DACFC188113F', 'uBFEvpZ00HobdcEo'],
+             ['40A757F83B2348A7B5F7F41790FDFFA02F72FC8FFD844BA6B28FD5DFD8CFC82F', 'NnemTiVU0UA5jVl0'],
+             ['d6dac049cc944519806ab9a1b5e29ccfe3e74dabb4fa42598a45c35d20abdd28', '27b9bedf75ccA2eC']
+             ]
+
 #define file locations
 addoncompat.get_revision()
 pluginpath = addoncompat.get_path()
@@ -91,16 +108,31 @@ settings['login_name'] = addoncompat.get_setting("login_name")
 settings['login_pass'] = addoncompat.get_setting("login_pass")
 settings['enable_login'] = addoncompat.get_setting("enable_login")
 settings['enable_plus'] = addoncompat.get_setting("enable_plus")
-if os.path.isfile(QUEUETOKEN):
-    tokenfile = open(QUEUETOKEN, "r")
-    tokenxml = tokenfile.read()
-    tokenfile.close()
-    tree=BeautifulStoneSoup(tokenxml)
-    # "2011-08-13T19:44:02Z", "%Y-%m-%dT%H:%M:%SZ"
-    settings['expiration'] = tree.find('token-expires-at').string
-    settings['usertoken'] = tree.find('token').string
-    settings['planid'] = tree.find('plid').string
-    settings['userid'] = tree.find('id').string
+
+#Token settings
+def setToken():       
+    xml = OpenFile(QUEUETOKEN)
+    tree = ElementTree.XML(xml)
+    settings['expiration'] = tree.findtext('token-expires-at')
+    settings['usertoken'] = tree.findtext('token')
+    settings['planid'] = tree.findtext('plid')
+    settings['userid'] = tree.findtext('id')
+
+def checkToken():
+    if os.path.isfile(QUEUETOKEN):
+        setToken()
+        expires = time.strptime(settings['expiration'], "%Y-%m-%dT%H:%M:%SZ")
+        now = time.localtime()
+        if now > expires:
+            print 'Expired Token'
+            login_queue()
+    elif settings['enable_login'] == 'true':
+        login_queue()
+        if os.path.isfile(QUEUETOKEN):
+            setToken()
+    else:
+        print 'HULU -->  Login disabled'
+        
 
     
 """
@@ -113,7 +145,6 @@ def cleanNames(string):
         return string
     except:
         return string
-
 
 
 """
@@ -215,50 +246,18 @@ def OpenFile(path):
     file.close()
     return contents
 
+def AES(key):
+    return Rijndael(key, keySize=32, blockSize=16, padding=padWithPadLen())
 
-"""
-    Hulu+ Cookie Login
-    NO LONGER USED
-"""
+def AES_CBC(key):
+    return CBC(blockCipherInstance=AES(key))
 
-def login_cookie():
-    #don't do anything if they don't have a password or username entered
-    if settings['login_name']=='' or settings['login_pass']=='':
-        print "Hulu --> WARNING: Could not login.  Please enter a username and password in settings"
-        return False
-
-    cj = cookielib.LWPCookieJar()
-    if os.path.isfile(COOKIEFILE):
-        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('Referer', 'http://hulu.com'),
-                         ('Content-Type', 'application/x-www-form-urlencoded'),
-                         ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14'),
-                         ('Connection', 'keep-alive')]
-    data =urllib.urlencode({"login":settings['login_name'],"password":settings['login_pass']})
-    usock = opener.open(login_url, data)
-    response = usock.read()
-    usock.close()
-    
-    print 'HULU -- > These are the cookies we have received:'
-    for index, cookie in enumerate(cj):
-        print 'HULU--> '+str(index)+': '+str(cookie)
-        
-    print "HULU --> login_url response (we want 'ok=1'): " + response
-    if response == 'ok=1':
-        cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-        loggedIn = True
-        heading = 'Success'
-        message = 'Hulu Login Successful'
-        duration = 1500
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-    else:
-        loggedIn = False
-        heading = 'Failure'
-        message = 'Hulu Login Failed'
-        duration = 1500
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+def makeGUID():
+    guid = ''
+    for i in range(8):
+        number = "%X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
+        guid += number[1:]
+    return guid
     
 """
     Queue Token Login
@@ -268,31 +267,24 @@ def login_queue():
         print "Hulu --> WARNING: Could not login.  Please enter a username and password in settings"
         return False
     action = "authenticate"
-    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-    nonce = NONCE()
-    username = settings['login_name']
-    password = settings['login_pass']
-    parameters = {'login'   : username,
-                  'password': password,
-                  'app'     : app,
-                  'nonce'   : nonce}
+    parameters = {'login'   : settings['login_name'],
+                  'password': settings['login_pass'],
+                  'nonce'   : NONCE()}
     data = postAPI(action,parameters,True)
-    file = open(QUEUETOKEN, 'w')
-    file.write(data)
-    file.close()
-    heading = 'Success'
-    message = 'User Queue Login Successful'
-    duration = 1500
+    SaveFile(QUEUETOKEN, data)
+    Notify('Success','User Queue Login Successful',4000)
+    
+def Notify(heading,message,duration):
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
 
-def check_expiration(expiration):
-    expires = time.strptime(expiration, "%Y-%m-%dT%H:%M:%SZ")
-    now = time.localtime()
-    if now > expires:
-        print 'Expired Token'
-        login_queue()
-
-def signatureSHA(data):
+def APIsignature(action,parameters):
+    parameters['app'] = 'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'
+    sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
+    paramsString = ''
+    for item1, item2 in sorted_parameters:
+        paramsString += str(item1) + str(item2)
+    secret = "mTGPli7doNEpGfaVB9fquWfuAis"
+    data = secret + action + paramsString
     try:
         import hashlib
         return hashlib.sha1(data).hexdigest()
@@ -308,18 +300,11 @@ def postAPI( action , parameters, secure):
         url = 'http://www.'
         host = 'www.hulu.com'
     url += 'hulu.com/api/1.0/'+action
-    sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
-    paramsString = ''
-    for item1, item2 in sorted_parameters:
-        paramsString += str(item1) + str(item2)
-    secret = "mTGPli7doNEpGfaVB9fquWfuAis"
-    sig = signatureSHA(secret + action + paramsString)
-    parameters['sig'] = sig
+    parameters['sig'] = APIsignature(action,parameters)
     data = urllib.urlencode(parameters)
     headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)',
                'Host': host,
-               'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0'#,
-               #'x-flash-version':'10,1,51,66'
+               'Referer':'http://download.hulu.com/huludesktop.swf?ver=0.1.0'
                }
     req = urllib2.Request(url,data,headers)
     response = urllib2.urlopen(req)
@@ -329,47 +314,39 @@ def postAPI( action , parameters, secure):
 
 def NONCE():
     action = 'nonce'
-    values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'}
+    values = {}
     data = postAPI(action,values,True)
     return re.compile('<nonce>(.+?)</nonce>').findall(data)[0]
 
 def userSettings():
     action = 'user'
-    values = {'app'         : 'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
-              'token'       : settings['usertoken'],
+    values = {'token'       : settings['usertoken'],
               'operation'   : 'config'}
     return postAPI(action , values, False)
 
 def viewcomplete():
     action = "event"
-    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
     parameters = {'event_type':'view_complete',
                   'token':settings['usertoken'],
                   'target_type':'video',
-                  'id':args.videoid,
-                  'app':app}
+                  'id':args.videoid}
     postAPI(action,parameters,False)
     print "HULU --> Posted View Complete"
-    #heading = 'Video Completed'
-    #message = 'Removed from Queue'
-    #duration = 4000
-    #xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
     
-def viewed(videoid):    
-    action = "event"
-    app = "f8aa99ec5c28937cf3177087d149a96b5a5efeeb"
-    parameters = {'event_type':'view',
-                  'token':settings['usertoken'],
-                  'target_type':'video',
-                  'id':videoid,
-                  'app':app}
-    postAPI(action,parameters,False)
-    print "HULU --> Posted view"
-    
+def viewed(videoid):
+    try:
+        action = "event"
+        parameters = {'event_type':'view',
+                      'token':settings['usertoken'],
+                      'target_type':'video',
+                      'id':videoid}
+        postAPI(action,parameters,False)
+        print "HULU --> Posted view"
+    except:
+        print "HULU --> Post view failed"
 
 def queueEdit():
-    values = {'app':'f8aa99ec5c28937cf3177087d149a96b5a5efeeb',
-              'token':settings['usertoken'],
+    values = {'token':settings['usertoken'],
               'id':args.url}
     try:
         if args.mode == 'addqueue':
@@ -418,13 +395,59 @@ def queueEdit():
             heading = 'Failure'
             message = 'Operation Failed'
             duration = 4000
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        Notify(heading,message,duration)
     except:
-        heading = 'Failure'
-        message = 'Operation Failed'
-        duration = 4000
+        Notify('Failure','Operation Failed',4000)
+
+
+#Do token settings
+checkToken()
+
+
+
+
+
+"""
+    Hulu+ Cookie Login
+    NO LONGER USED
+"""
+
+def login_cookie():
+    #don't do anything if they don't have a password or username entered
+    login_url   = "https://secure.hulu.com/account/authenticate"
+    if settings['login_name']=='' or settings['login_pass']=='':
+        print "Hulu --> WARNING: Could not login.  Please enter a username and password in settings"
+        return False
+
+    cj = cookielib.LWPCookieJar()
+    if os.path.isfile(COOKIEFILE):
+        cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer', 'http://hulu.com'),
+                         ('Content-Type', 'application/x-www-form-urlencoded'),
+                         ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14'),
+                         ('Connection', 'keep-alive')]
+    data =urllib.urlencode({"login":settings['login_name'],"password":settings['login_pass']})
+    usock = opener.open(login_url, data)
+    response = usock.read()
+    usock.close()
+    
+    print 'HULU -- > These are the cookies we have received:'
+    for index, cookie in enumerate(cj):
+        print 'HULU--> '+str(index)+': '+str(cookie)
+        
+    print "HULU --> login_url response (we want 'ok=1'): " + response
+    if response == 'ok=1':
+        cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+        loggedIn = True
+        heading = 'Success'
+        message = 'Hulu Login Successful'
+        duration = 1500
         xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
-try:
-    check_expiration(settings['expiration'])
-except:
-    print 'no expiration'
+    else:
+        loggedIn = False
+        heading = 'Failure'
+        message = 'Hulu Login Failed'
+        duration = 1500
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )

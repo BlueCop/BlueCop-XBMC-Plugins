@@ -46,7 +46,7 @@
 
 <addon id="plugin.video.espn3"
        name="ESPN"
-       version="0.9.6"
+       version="0.9.8"
        provider-name="Ksosez,BlueCop">
     <requires>
         <import addon="xbmc.python" version="1.0"/>
@@ -228,6 +228,20 @@
        name="mechanize"
        version="0.2.5"
        provider-name="wwwsearch.sourceforge.net/mechanize/">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+  </requires>
+  <extension point="xbmc.python.module"
+             library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
+</addon>
+
+<addon id="script.module.pycrypto"
+       name="pycrypto"
+       version="2.5"
+       provider-name="www.dlitz.net/software/pycrypto/">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
   </requires>

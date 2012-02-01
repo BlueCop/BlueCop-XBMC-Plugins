@@ -132,6 +132,7 @@ def INDEX(url,name,bysport=False):
         #else:
         useCookie=False
         data = get_html(url,useCookie=useCookie)
+        data = '<?xml version="1.0" encoding="CP1252"?>'+data
     else:
         data = ReadFile('videocache.xml', ADDONDATA)
     for event in ElementTree.XML(data).findall('event'):

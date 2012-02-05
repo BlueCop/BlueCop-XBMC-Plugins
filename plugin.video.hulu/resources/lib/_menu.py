@@ -177,7 +177,7 @@ class Main:
                     eid = data.findtext('eid') 
                     media_type = data.findtext('media_type')
                     art = data.findtext('thumbnail_url_16x9_large')
-                    infoLabels['TVShowTitle'] = data.findtext('show_name')
+                    infoLabels['TVShowTitle'] = data.findtext('show_name').encode('utf-8')
                     infoLabels['MPAA'] = data.findtext('content_rating')
                     votes_data = data.findtext('votes_count')
                     seasondata = data.findtext('season_number')
@@ -208,6 +208,7 @@ class Main:
                 company_name = data.findtext('company_name', default="")
                 infoLabels['Studio'] = company_name
                 ishd = data.findtext('has_hd')
+                language = data.findtext('language', default="").upper()
                 hascaptions=data.findtext('has_captions')
                 show_id = data.findtext('show_id')
                 if canonical_name:
@@ -265,8 +266,11 @@ class Main:
                         displayname = infoLabels['TVShowTitle']+' - '+str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
                     else:
                         displayname = str(infoLabels['Season'])+'x'+str(infoLabels['Episode'])+' - '+display
+                if 'EN' <> language:
+                    displayname += ' ('+language+')'
             if 'True' == ishd:
                 displayname += ' (HD)'
+
 
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
@@ -320,5 +324,7 @@ class Main:
                     cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
                 item.addContextMenuItems( cm ,replaceItems=True) 
                 item.setProperty('IsPlayable', 'true')
+                item.setProperty('VideoAspect', '1.85')
+                #item.setProperty('VideoCodec', '1.85 : 1')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
 

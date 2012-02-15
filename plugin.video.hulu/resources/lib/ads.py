@@ -94,20 +94,21 @@ class Main:
             PlanID = '0'
         xmlbase='''
 <AdRequest Pod="'''+str(pod)+'''" SessionState="'''+session+'''" ResponseType="VAST" Timestamp="'''+epoch+'''">
-  <Distributor Name="Hulu" Platform="Desktop"/>
-  <Visitor IPV4Address="" BT_RSSegments="null" UserId="'''+UserID+'''" MiniCount="" MiniDuration="" ComputerGuid="'''+GUID+'''" AdFeedback="null" PlanId="'''+PlanID+'''" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
-  <KeyValues>
-    <KeyValue Key="env" Value="prod"/>
-    <KeyValue Key="version" Value="Voltron"/>
-  </KeyValues>
-  <SiteLocation>
-    <VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
-      <VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
-    </VideoPlayer>
-  </SiteLocation>
-  <Diagnostics/>
+<Distributor Name="Hulu" Platform="Desktop"/>
+<Visitor IPV4Address="" BT_RSSegments="null" UserId="'''+UserID+'''" MiniCount="" MiniDuration="" ComputerGuid="'''+GUID+'''" AdFeedback="null" PlanId="'''+PlanID+'''" FlashVersion="WIN 11,1,102,55" State="'''+state+'''"/>
+<KeyValues>
+<KeyValue Key="env" Value="prod"/>
+<KeyValue Key="version" Value="Voltron"/>
+</KeyValues>
+<SiteLocation>
+<VideoPlayer Url="http://download.hulu.com/huludesktop.swf" Mode="normal">
+<VideoAsset PId="NO_MORE_RELEASES_PLEASE_'''+video_id+'''" Id="'''+video_id+'''" ContentLanguage="en" BitRate="650" Width="320" Height="240"/>
+</VideoPlayer>
+</SiteLocation>
+<Diagnostics/>
 </AdRequest>'''
         print xmlbase
+        xmlbase=xmlbase.replace('/n','')
         IV = self.MakeIV()
         encdata = self.ADencrypt(xmlbase,IV)
         url = 'http://p.hulu.com/getPlaylist?kv=1&iv='+urllib.quote_plus(IV)

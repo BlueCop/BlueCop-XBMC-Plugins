@@ -13,6 +13,8 @@ import hmac
 import operator
 import time
 import urllib
+import re
+import md5
 from array import array
 
 from BeautifulSoup import BeautifulStoneSoup
@@ -27,7 +29,10 @@ smildeckeys = [ common.xmldeckeys[9] ]
 
 class Main:
     def __init__( self ):
-        video_id=common.args.url
+        if 'http://' in common.args.url:
+            video_id=self.getIDS4HTTP(common.args.url)
+        else:
+            video_id=common.args.url
         admodule = ads.Main()
         common.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         if common.args.mode.endswith('TV_play'):
@@ -49,6 +54,7 @@ class Main:
                 common.settings['quality']='0'
                 common.settings['segmentvideos'] = 'false'
                 self.NoResolve=True
+
             
             # POST VIEW
             if common.settings['enable_login']=='true' and common.settings['usertoken']:
@@ -89,6 +95,19 @@ class Main:
             admodule.playAD(video_id,pod,self.GUID)
         elif common.args.mode == 'SUBTITLE_play':
             subtitles.Main().SetSubtitles(video_id)
+            
+    def getIDS4HTTP(self, url):
+        pagedata=common.getFEED(url)
+        common.args.videoid = url.split('watch/')[1].split('/')[0]
+        content_id = re.compile('so.addVariable\("content_id", (.*?)\);').findall(pagedata)[0].strip()
+        common.args.eid = self.cid2eid(content_id)
+        return content_id
+
+    def cid2eid(self, content_id):
+        m = md5.new()
+        m.update(str(content_id) + "MAZxpK3WwazfARjIpSXKQ9cmg9nPe5wIOOfKuBIfz7bNdat6gQKHj69ZWNWNVB1")
+        value = m.digest()
+        return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "").replace('\n','')
               
     def getSMIL(self, video_id,retry=0):
         epoch = int(time.mktime(time.gmtime()))
@@ -182,7 +201,7 @@ class Main:
         item.setInfo( type="Video", infoLabels=self.infoLabels)
         item.setProperty('IsPlayable', 'true')
         common.playlist.add(url=u, listitem=item)
-    
+
     def time2ms( self, time):
         hour,minute,seconds = time.split(';')[0].split(':')
         frame = int((float(time.split(';')[1])/24)*1000)
@@ -336,7 +355,7 @@ class Main:
                 appName += '?sessionid=sessionId&' + token
                 stream = stream[0:len(stream)-4]
                 finalUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
-
+                
             elif "akamai" in cdn:
                 appName += '?sessionid=sessionId&' + token
                 finalUrl = server + "?sessionid=sessionId&" + token + " app=" + appName
@@ -367,7 +386,7 @@ class Main:
         ecb = common.AES(binascii.unhexlify(cidkey))
         return ecb.decrypt(v3).split("~")[0]
 
-    def cid2eid(self, p):
+    def cid2eidOLD(self, p):
         import md5
         dec_cid = int(p.lstrip('m'), 36)
         xor_cid = dec_cid ^ 3735928559 # 0xDEADBEEF

@@ -23,13 +23,14 @@ USERFILE = os.path.join(pluginpath,'resources','userfile.js')
 
 # Root listing
 def listCategories():
-    logedin = login_cookie()
+    #logedin = login_cookie()
     addDir('Music Videos',  'http://www.vevo.com/videos',       'rootVideos')
     addDir('Search Videos', '',                                 'searchVideos')
     addDir('Artists',       'http://www.vevo.com/artists',      'rootArtists')
     addDir('Search Artists','',                                 'searchArtists')
-    if logedin:
-        addDir('My Playlists',  'http://www.vevo.com/user/profile/',             'myPlaylists')
+    #if logedin:
+    if addon.getSetting('userid')<>'':
+        addDir('My Playlists',  'http://www.vevo.com/user/profile/'+addon.getSetting('userid'),'myPlaylists')
     addDir('VEVO Playlists',     'http://www.vevo.com/playlists',    'rootPlaylists')
     addDir('Shows',         'http://www.vevo.com/shows',        'rootShows')
     addDir('Channels',      'http://www.vevo.com/channels',     'rootChannels')
@@ -244,11 +245,11 @@ def rootPlaylists():
     
 def myPlaylists():
     url = params['url']
-    userfile = open(USERFILE, "r")
-    userdata = userfile.read()
-    userfile.close()
-    userid = demjson.decode(userdata)['userId']
-    url += str(userid)
+    #userfile = open(USERFILE, "r")
+    #userdata = userfile.read()
+    #userfile.close()
+    #userid = demjson.decode(userdata)['userId']
+    #url += str(userid)
     listPlaylists(url,alloptions=True)
 
 def listPlaylists(url = False,alloptions=False):

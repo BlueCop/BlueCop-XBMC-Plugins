@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
+	<string id="30019">Six Digit User ID</string>
 	<string id="30000">E-Mail</string>
 	<string id="30001">Password</string>
 

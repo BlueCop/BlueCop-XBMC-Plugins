@@ -62,11 +62,15 @@ class Main:
         elif common.args.mode.endswith('SubscriptionsLibrary'):
             self.GetSubscriptions()
         elif common.args.mode.endswith('PopularMoviesLibrary'):
-            pass
+            self.GetPopMovies()
         elif common.args.mode.endswith('PopularShowsLibrary'):
-            pass 
+            self.GetPopShows()
         elif common.args.mode.endswith('PopularEpisodesLibrary'):
-            pass            
+            self.GetPopEpisodes()     
+        elif common.args.mode.endswith('FullShowsLibrary'):
+            self.GetFullShows()
+        elif common.args.mode.endswith('FullMoviesLibrary'):
+            self.GetFullMovies()
             
         if (common.settings['updatelibrary'] == 'true'):
             self.UpdateLibrary()
@@ -74,7 +78,7 @@ class Main:
     def UpdateLibrary(self):
         xbmc.executebuiltin("UpdateLibrary(video)")
 
-    def Notification(self,heading,message,duration=5000):
+    def Notification(self,heading,message,duration=15000):
         if self.EnableNotifications == True:
             xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             
@@ -96,22 +100,55 @@ class Main:
     def GetSubscriptions(self):
         url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         self.Notification('Hulu Library','Subscriptions Update')
-        xml=common.getFEED(url)
-        tree = ElementTree.XML(xml)
-        items = tree.findall('item')        
-        del tree
-        for item in items:
-            self.ExportShow(item)
+        self.ExportShowList(url)
             
     def GetQueue(self):
         url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
         self.Notification('Hulu Library','Queue Update')
+        self.ExportVideoList(url)
+
+    def GetPopShows(self):
+        url = 'http://m.hulu.com/menu/11693?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        self.Notification('Hulu Library','Popular Shows')
+        self.ExportShowList(url)
+        
+    def GetPopEpisodes(self):
+        url = 'http://m.hulu.com/menu/11695?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        self.Notification('Hulu Library','Popular Episodes')
+        self.ExportVideoList(url)
+
+    def GetPopMovies(self):
+        url = 'http://m.hulu.com/menu/11697?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        self.Notification('Hulu Library','Popular Movies')
+        self.ExportShowList(url)
+
+    def GetFullShows(self):
+        url = 'http://m.hulu.com/menu/11808?dp_id=hulu&package_id='+package_id+'&limit=2000&page=1'
+        self.Notification('Hulu Library','All Full Episodes')
+        self.ExportShowList(url)
+        
+    def GetFullMovies(self):
+        url = 'http://m.hulu.com/menu/11854?dp_id=hulu&package_id='+package_id+'&limit=2000&page=1'
+        self.Notification('Hulu Library','All Full Movies')
+        self.ExportShowList(url)
+        url = 'http://m.hulu.com/menu/11854?dp_id=hulu&package_id='+package_id+'&limit=2000&page=2'
+        self.ExportShowList(url)
+        
+    def ExportVideoList(self,url):
         xml=common.getFEED(url)
         tree = ElementTree.XML(xml)
         items = tree.findall('item')        
         del tree
         for item in items:
             self.ExportVideo(item)
+
+    def ExportShowList(self,url):  
+        xml=common.getFEED(url)
+        tree = ElementTree.XML(xml)
+        items = tree.findall('item')        
+        del tree
+        for item in items:
+            self.ExportShow(item)
     
     def ExportShow(self, show):
         data = show.find('data')

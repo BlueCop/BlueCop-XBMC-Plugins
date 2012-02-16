@@ -28,19 +28,25 @@ class Main:
             items_url='http://m.hulu.com'+item.findtext('items_url') 
             cmtype=item.find('app_data').findtext('cmtype')
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon.png"))
+            cm = []
             if cmtype == 'None' or display == 'Help' or display == 'Profiles' or display == 'Now Playing':
                 continue
             elif display =='Popular':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
+                cm.append( ('Export Popular Shows', "XBMC.RunPlugin(%s?mode='PopularShowsLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export Popular Movies', "XBMC.RunPlugin(%s?mode='PopularMoviesLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export Popular Episodes', "XBMC.RunPlugin(%s?mode='PopularEpisodesLibrary')" % ( sys.argv[0] ) ) )
             elif display =='Recently Added':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg"))        
             elif display == 'TV':
+                #cm.append( ('Export All Full Shows', "XBMC.RunPlugin(%s?mode='FullShowsLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
             elif display == 'Movies':
+                #cm.append( ('Export All Full Movies', "XBMC.RunPlugin(%s?mode='FullMoviesLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
             elif display == 'Search':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_search.jpg"))
-            common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,page='1',perpage='25')
+            common.addDirectory(display,items_url,cmtype,thumbnail,thumbnail,fanart=fanart,page='1',perpage='25',cm=cm)
         if common.settings['enable_login']=='true':
             if not os.path.isfile(common.QUEUETOKEN):
                 common.login_queue()

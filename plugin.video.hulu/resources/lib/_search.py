@@ -78,6 +78,7 @@ class Main:
             video_id = item.findtext('id')
             eid = item.findtext('eid')
             show_id = item.find('show').findtext('id')
+            language = item.findtext('language', default='').upper()
 
             art = item.findtext('thumbnail-url')
             canonical_name = item.find('show').findtext('canonical-name')
@@ -92,10 +93,13 @@ class Main:
                 displayname = infoLabels['TVShowTitle']+' - '+infoLabels['Title']
             else:
                 displayname = infoLabels['Title']
-                
+
+            if 'EN' <> language:
+                displayname += ' ('+language+')'
             ishd = item.findtext('has-hd')
             if 'True' == ishd:
                 displayname += ' (HD)'
+
             hascaptions = item.findtext('has-captions')
                 
             

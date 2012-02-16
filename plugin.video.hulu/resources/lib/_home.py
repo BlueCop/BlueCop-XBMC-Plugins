@@ -46,9 +46,11 @@ class Main:
                 common.login_queue()
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_queue.jpg"))
             cm = [ ('Add Queue to Library', "XBMC.RunPlugin(%s?mode='ForceQueueLibrary')" % ( sys.argv[0] ) ) ]
+            cm.append( ('Clear Library Directory', "XBMC.RunPlugin(%s?mode='ClearLibrary')" % ( sys.argv[0] ) ) )
             common.addDirectory('Queue'         ,'http://m.hulu.com/menu/hd_user_queue'          , 'Queue'         ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_subscriptions.jpg"))
             cm = [ ('Add Subscriptions to Library', "XBMC.RunPlugin(%s?mode='ForceSubscriptionsLibrary')" % ( sys.argv[0] ) ) ]
+            cm.append( ('Clear Library Directory', "XBMC.RunPlugin(%s?mode='ClearLibrary')" % ( sys.argv[0] ) ) )
             common.addDirectory('Subscriptions' ,'http://m.hulu.com/menu/hd_user_subscriptions'  , 'Subscriptions' ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000',cm=cm)
             thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_history.jpg"))
             common.addDirectory('History'       ,'http://m.hulu.com/menu/hd_user_history'        , 'History'       ,thumbnail,thumbnail,fanart=fanart,page='1',perpage='2000')

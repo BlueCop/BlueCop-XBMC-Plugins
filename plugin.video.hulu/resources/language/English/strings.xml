@@ -57,10 +57,16 @@
 	<string id="30044">Password</string>
 	
 	<string id="30046">Remove from Queue</string>
+	
+	<string id="30060">Export Show NFO</string>
+	<string id="30061">Export Episode NFO</string>
+	<string id="30062">Export Movie NFO</string>
 
-	<string id="30101">Per Page</string>
+	<string id="30063">Title suffix</string>
+
+	<string id="30101">Listings</string>
 	<string id="30102">Hulu Login</string>
 	<string id="30103">Streaming</string>
-	<string id="30104">Library</string>
+	<string id="30104">Export to Library</string>
 	<string id="30105">Ads</string>
 </strings>

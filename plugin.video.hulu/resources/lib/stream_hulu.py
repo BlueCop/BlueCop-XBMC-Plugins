@@ -165,6 +165,7 @@ class Main:
         encdata = binascii.unhexlify(encsmil)
         expire_message = 'Your access to play this content has expired.'
         plus_message = 'please close any Hulu Plus videos you may be watching on other devices'
+        proxy_message = 'you are trying to access Hulu through an anonymous proxy tool'
         for key in smildeckeys[:]:
             cbc = common.AES_CBC(binascii.unhexlify(key[0]))
             smil = cbc.decrypt(encdata,key[1])
@@ -180,6 +181,9 @@ class Main:
                 return False
             elif plus_message in smil:
                 xbmcgui.Dialog().ok('Too many sessions','please close any Hulu Plus videos','you may be watching on other devices')
+                return False
+            elif proxy_message in smil:
+                xbmcgui.Dialog().ok('Proxy Detected','Based on your IP address we noticed','you are trying to access Hulu','through an anonymous proxy tool')
                 return False
     
     def queueViewComplete(self):
@@ -370,9 +374,9 @@ class Main:
 
             #define item
             SWFPlayer = 'http://download.hulu.com/huludesktop.swf'
-            finalUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer
-            if (common.settings['swfverify'] == 'true'):
-                finalUrl += " swfvfy=true"
+            finalUrl += " playpath=" + stream + " swfurl=" + SWFPlayer + " pageurl=" + SWFPlayer + " swfvfy=true"
+            #if (common.settings['swfverify'] == 'true'):
+            #    finalUrl += " swfvfy=true"
             return finalUrl
 
                            

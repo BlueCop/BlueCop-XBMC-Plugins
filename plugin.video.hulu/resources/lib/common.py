@@ -12,9 +12,11 @@ import re
 import time
 import random
 
+
 from crypto.cipher.cbc      import CBC
 from crypto.cipher.base     import padWithPadLen
 from crypto.cipher.rijndael import Rijndael
+
 
 try:
     from xml.etree import ElementTree
@@ -83,7 +85,7 @@ settings['networkpreroll'] = addoncompat.get_setting("networkpreroll")
 settings['trailads'] = int(addoncompat.get_setting("trailads"))
 settings['adbreaks'] = int(addoncompat.get_setting("adbreaks"))
 settings['segmentvideos'] = addoncompat.get_setting("segmentvideos")
-settings['swfverify'] = addoncompat.get_setting("swfverify")
+#settings['swfverify'] = addoncompat.get_setting("swfverify")
 cdns = ['level3','limelight','akamai']
 defualtcdn = int(addoncompat.get_setting("defaultcdn"))
 settings['defaultcdn'] = cdns[defualtcdn]
@@ -108,6 +110,10 @@ settings['defaultview'] = addoncompat.get_setting("defaultview")
 settings['enablelibraryfolder'] = addoncompat.get_setting("enablelibraryfolder")
 settings['customlibraryfolder'] = addoncompat.get_setting("customlibraryfolder")
 settings['updatelibrary'] = addoncompat.get_setting("updatelibrary")
+settings['librarysuffix'] = addoncompat.get_setting("librarysuffix")
+settings['shownfo'] = addoncompat.get_setting("shownfo")
+settings['movienfo'] = addoncompat.get_setting("movienfo")
+settings['episodenfo'] = addoncompat.get_setting("episodenfo")
 
 #settings login
 settings['login_name'] = addoncompat.get_setting("login_name")
@@ -285,7 +291,6 @@ def Notify(heading,message,duration):
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
 
 def APIsignature(action,parameters):
-    parameters['app'] = 'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'
     sorted_parameters = sorted(parameters.iteritems(), key=operator.itemgetter(0))
     paramsString = ''
     for item1, item2 in sorted_parameters:
@@ -307,6 +312,7 @@ def postAPI( action , parameters, secure):
         url = 'http://www.'
         host = 'www.hulu.com'
     url += 'hulu.com/api/1.0/'+action
+    parameters['app'] = 'f8aa99ec5c28937cf3177087d149a96b5a5efeeb'
     parameters['sig'] = APIsignature(action,parameters)
     data = urllib.urlencode(parameters)
     headers = {'User-Agent':'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)',

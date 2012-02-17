@@ -39,10 +39,10 @@ class Main:
             elif display =='Recently Added':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg"))        
             elif display == 'TV':
-                #cm.append( ('Export All Full Shows', "XBMC.RunPlugin(%s?mode='FullShowsLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export All Full Shows', "XBMC.RunPlugin(%s?mode='FullShowsLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
             elif display == 'Movies':
-                #cm.append( ('Export All Full Movies', "XBMC.RunPlugin(%s?mode='FullMoviesLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export All Full Movies', "XBMC.RunPlugin(%s?mode='FullMoviesLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
             elif display == 'Search':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_search.jpg"))

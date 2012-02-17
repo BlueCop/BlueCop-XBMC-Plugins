@@ -8,6 +8,8 @@ import sys
 import urllib
 import string
 import shutil
+import md5
+import base64
 import resources.lib.common as common
 
 from BeautifulSoup import BeautifulStoneSoup
@@ -99,40 +101,40 @@ class Main:
 
     def GetSubscriptions(self):
         url = 'http://m.hulu.com/menu/hd_user_subscriptions?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
-        self.Notification('Hulu Library','Subscriptions Update')
         self.ExportShowList(url)
+        self.Notification('Hulu Library','Exported Subscriptions')
             
     def GetQueue(self):
         url = 'http://m.hulu.com/menu/hd_user_queue?dp_id=hulu&limit=2000&package_id='+package_id+'&user_id='+common.settings['usertoken']
-        self.Notification('Hulu Library','Queue Update')
         self.ExportVideoList(url)
+        self.Notification('Hulu Library','Exported Queue')
 
     def GetPopShows(self):
         url = 'http://m.hulu.com/menu/11693?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
-        self.Notification('Hulu Library','Popular Shows')
         self.ExportShowList(url)
+        self.Notification('Hulu Library','Exported Popular Shows')
         
     def GetPopEpisodes(self):
         url = 'http://m.hulu.com/menu/11695?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
-        self.Notification('Hulu Library','Popular Episodes')
         self.ExportVideoList(url)
+        self.Notification('Hulu Library','Exported Popular Episodes')
 
     def GetPopMovies(self):
         url = 'http://m.hulu.com/menu/11697?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
-        self.Notification('Hulu Library','Popular Movies')
         self.ExportShowList(url)
+        self.Notification('Hulu Library','Exported Popular Movies')
 
     def GetFullShows(self):
         url = 'http://m.hulu.com/menu/11808?dp_id=hulu&package_id='+package_id+'&limit=2000&page=1'
-        self.Notification('Hulu Library','All Full Episodes')
-        self.ExportShowList(url)
+        self.ExportShowList(url,delay=1500)
+        self.Notification('Hulu Library','Exported Full Episodes')
         
     def GetFullMovies(self):
         url = 'http://m.hulu.com/menu/11854?dp_id=hulu&package_id='+package_id+'&limit=2000&page=1'
-        self.Notification('Hulu Library','All Full Movies')
         self.ExportShowList(url)
         url = 'http://m.hulu.com/menu/11854?dp_id=hulu&package_id='+package_id+'&limit=2000&page=2'
         self.ExportShowList(url)
+        self.Notification('Hulu Library','Exported Full Movies')
         
     def ExportVideoList(self,url):
         xml=common.getFEED(url)
@@ -142,13 +144,39 @@ class Main:
         for item in items:
             self.ExportVideo(item)
 
-    def ExportShowList(self,url):  
+    def ExportShowList(self,url,delay=0):  
         xml=common.getFEED(url)
         tree = ElementTree.XML(xml)
         items = tree.findall('item')        
         del tree
         for item in items:
+            self.ExportShowMovie(item)
+            xbmc.sleep(delay)
+            
+    def ExportShowMovie(self, item):
+        feature_films_count = item.find('data').findtext('feature_films_count').strip()
+        full_episodes_count = item.find('data').findtext('full_episodes_count').strip()
+        if feature_films_count == '1' or feature_films_count == 1:
+            title = item.find('data').findtext('name')
+            filename = self.cleanfilename(title)
+            content_id = item.find('data').findtext('feature_film_content_id')
+            video_id = item.find('data').findtext('feature_film_id')
+            eid = self.cid2eid(content_id)
+            strm = 'plugin://plugin.video.hulu/?mode="TV_play"'
+            strm += '&url="'+urllib.quote_plus(content_id)+'"'
+            strm += '&videoid="'+urllib.quote_plus(video_id)+'"'
+            strm += '&eid="'+urllib.quote_plus(eid)+'"'
+            self.SaveFile( filename+'.strm', strm, MOVIE_PATH)
+        elif full_episodes_count <> '':
             self.ExportShow(item)
+        elif feature_films_count <> '':
+            self.ExportShow(item)
+
+    def cid2eid(self, content_id):
+        m = md5.new()
+        m.update(str(content_id) + "MAZxpK3WwazfARjIpSXKQ9cmg9nPe5wIOOfKuBIfz7bNdat6gQKHj69ZWNWNVB1")
+        value = m.digest()
+        return base64.encodestring(value).replace("+", "-").replace("/", "_").replace("=", "").replace('\n','')
     
     def ExportShow(self, show):
         data = show.find('data')
@@ -177,10 +205,10 @@ class Main:
             strm += '&eid="'+urllib.quote_plus(eid)+'"'
             media_type = data.findtext('media_type')
             if media_type == 'TV' or media_type == 'Web Original':
-                title = data.findtext('title').encode('utf-8')
+                title = data.findtext('title').encode('utf-8').strip()
                 season = data.findtext('season_number').encode('utf-8')
                 episode = data.findtext('episode_number').encode('utf-8')
-                show_name = data.findtext('show_name').encode('utf-8')
+                show_name = data.findtext('show_name').encode('utf-8').strip()
                 filename = self.cleanfilename('S%sE%s - %s' % (season,episode,title))
                 directory = os.path.join(TV_SHOWS_PATH,self.cleanfilename(show_name))
                 self.CreateDirectory(directory)

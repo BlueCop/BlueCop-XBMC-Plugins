@@ -31,14 +31,17 @@ class Main:
     def __init__( self ):
         if 'http://' in common.args.url:
             video_id=self.getIDS4HTTP(common.args.url)
+            self.queue=True
+            httpplay=True
         else:
+            self.queue=False
+            httpplay=False
             video_id=common.args.url
         admodule = ads.Main()
         common.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         if common.args.mode.endswith('TV_play'):
             if os.path.isfile(common.ADCACHE):
                 os.remove(common.ADCACHE)
-            self.queue=False
             self.NoResolve=False
             self.GUID = common.makeGUID()
             
@@ -53,8 +56,13 @@ class Main:
             elif common.args.mode.startswith('Select'):
                 common.settings['quality']='0'
                 common.settings['segmentvideos'] = 'false'
-                self.NoResolve=True
-
+                self.NoResolve=True 
+                
+            if ((common.settings['segmentvideos'] == 'true') or
+                (common.settings['networkpreroll'] == 'true') or
+                (common.settings['prerollads'] > 0) or
+                (common.settings['trailads'] > 0)):
+                    common.playlist.clear()
             
             # POST VIEW
             if common.settings['enable_login']=='true' and common.settings['usertoken']:
@@ -82,7 +90,10 @@ class Main:
             
             if common.settings['queueremove']=='true' and common.settings['enable_login']=='true' and common.settings['usertoken']:
                 self.queueViewComplete()
-                
+            
+            if httpplay:
+                xbmc.Player().play(common.playlist)
+
         elif common.args.mode == 'SEGMENT_play':
             self.queue=False
             self.NoResolve=False

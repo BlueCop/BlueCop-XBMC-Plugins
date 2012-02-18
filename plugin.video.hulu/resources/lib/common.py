@@ -80,7 +80,7 @@ handle = int(sys.argv[1])
 #settings Advanced
 settings['quality'] = addoncompat.get_setting("quality")
 settings['adquality'] = int(addoncompat.get_setting("adquality"))
-settings['prerollads'] = int(addoncompat.get_setting("prerollads"))
+settings['prerollads'] = int(addoncompat.get_setting("prerollads"))+1
 settings['networkpreroll'] = addoncompat.get_setting("networkpreroll")
 settings['trailads'] = int(addoncompat.get_setting("trailads"))
 settings['adbreaks'] = int(addoncompat.get_setting("adbreaks"))

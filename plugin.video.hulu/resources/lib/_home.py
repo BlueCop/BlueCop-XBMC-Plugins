@@ -33,16 +33,16 @@ class Main:
                 continue
             elif display =='Popular':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_popular.jpg"))
-                cm.append( ('Export Popular Shows', "XBMC.RunPlugin(%s?mode='PopularShowsLibrary')" % ( sys.argv[0] ) ) )
-                cm.append( ('Export Popular Movies', "XBMC.RunPlugin(%s?mode='PopularMoviesLibrary')" % ( sys.argv[0] ) ) )
-                cm.append( ('Export Popular Episodes', "XBMC.RunPlugin(%s?mode='PopularEpisodesLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export Popular Shows', "XBMC.RunPlugin(%s?mode='ForcePopularShowsLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export Popular Movies', "XBMC.RunPlugin(%s?mode='ForcePopularMoviesLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export Popular Episodes', "XBMC.RunPlugin(%s?mode='ForcePopularEpisodesLibrary')" % ( sys.argv[0] ) ) )
             elif display =='Recently Added':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_recently_added.jpg"))        
             elif display == 'TV':
-                cm.append( ('Export All Full Shows', "XBMC.RunPlugin(%s?mode='FullShowsLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export All Full Shows', "XBMC.RunPlugin(%s?mode='ForceFullShowsLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_tv.jpg"))
             elif display == 'Movies':
-                cm.append( ('Export All Full Movies', "XBMC.RunPlugin(%s?mode='FullMoviesLibrary')" % ( sys.argv[0] ) ) )
+                cm.append( ('Export All Full Movies', "XBMC.RunPlugin(%s?mode='ForceFullMoviesLibrary')" % ( sys.argv[0] ) ) )
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_movies.jpg"))
             elif display == 'Search':
                 thumbnail = xbmc.translatePath(os.path.join(common.imagepath,"icon_search.jpg"))

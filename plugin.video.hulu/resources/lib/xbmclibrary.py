@@ -80,7 +80,7 @@ class Main:
     def UpdateLibrary(self):
         xbmc.executebuiltin("UpdateLibrary(video)")
 
-    def Notification(self,heading,message,duration=15000):
+    def Notification(self,heading,message,duration=10000):
         if self.EnableNotifications == True:
             xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
             
@@ -110,17 +110,17 @@ class Main:
         self.Notification('Hulu Library','Exported Queue')
 
     def GetPopShows(self):
-        url = 'http://m.hulu.com/menu/11693?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        url = 'http://m.hulu.com/menu/11693?dp_id=hulu&package_id='+package_id+'&limit='+common.settings['popperpage']+'&page=1'
         self.ExportShowList(url)
         self.Notification('Hulu Library','Exported Popular Shows')
         
     def GetPopEpisodes(self):
-        url = 'http://m.hulu.com/menu/11695?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        url = 'http://m.hulu.com/menu/11695?dp_id=hulu&package_id='+package_id+'&limit='+common.settings['popperpage']+'&page=1'
         self.ExportVideoList(url)
         self.Notification('Hulu Library','Exported Popular Episodes')
 
     def GetPopMovies(self):
-        url = 'http://m.hulu.com/menu/11697?dp_id=hulu&package_id='+package_id+'&limit=100&page=1'
+        url = 'http://m.hulu.com/menu/11697?dp_id=hulu&package_id='+package_id+'&limit='+common.settings['popperpage']+'&page=1'
         self.ExportShowList(url)
         self.Notification('Hulu Library','Exported Popular Movies')
 

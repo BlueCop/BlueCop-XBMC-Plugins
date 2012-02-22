@@ -292,7 +292,8 @@ class Main:
             return segments
 
     def getMeta( self, smilSoup ): 
-        ref = smilSoup.findAll('ref')[1]
+        refs = smilSoup.findAll('ref')
+        ref = refs[1]
         title = ref['title']
         series_title = ref['tp:series_title']
         plot = ref['abstract']
@@ -301,9 +302,14 @@ class Main:
         try:episode = int(ref['tp:episode_number'])
         except:episode = -1
         displayname = series_title+' - '+str(season)+'x'+str(episode)+' - '+title
+        try:
+            playlist = refs[0]['src']
+            mpaa=re.compile('rating,([^\]]+)').findall(playlist)[0]
+        except: mpaa=''
         infoLabels={ "Title":title,
                      "TVShowTitle":series_title,
                      "Plot":plot,
+                     "MPAA":mpaa,
                      "Season":season,
                      "Episode":episode}
         try:

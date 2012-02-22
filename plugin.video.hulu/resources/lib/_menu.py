@@ -80,7 +80,7 @@ class Main:
                 xml = common.getFEED(url)
             else:
                 xml=common.getFEED(url)
-            xbmc.sleep(400)
+            #xbmc.sleep(400)
 
         # Add Next/Prev Pages
         if int(perpage) < int(total_count):
@@ -195,7 +195,24 @@ class Main:
                 #Both Show and Video
                 plot=data.findtext('description')
                 if plot:
-                    infoLabels['Plot'] = unicode(plot.replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
+                    plot = unicode(plot.replace('\n', ' ').replace('\r', ' ')).encode('utf-8')
+                else:
+                    plot = ''
+                
+                plus_only=data.findtext('plus_only')
+                if plus_only == 'True':
+                    plus_web_expires_at=data.findtext('plus_web_expires_at')
+                    if plus_web_expires_at:
+                        plot = 'Plus Expires: '+plus_web_expires_at.replace(' 00:00:00','')+'\n'+plot
+                else:
+                    expires_at=data.findtext('expires_at')
+                    if expires_at:
+                        plot = 'Expires: '+expires_at.replace(' 00:00:00','')+'\n'+plot
+                    else:
+                        composite_expires_at=data.findtext('composite_expires_at')
+                        if composite_expires_at:
+                            plot = 'Expires: '+composite_expires_at.replace(' 00:00:00','')+'\n'+plot
+                infoLabels['Plot'] = plot                
                 premiered =  data.findtext('original_premiere_date')
                 if premiered:
                     premiered = premiered.split(' ')[0]
@@ -300,7 +317,7 @@ class Main:
                         cm.append( ('Remove Subscription', "XBMC.RunPlugin(%s?mode='removesub'&url=%s)" % ( sys.argv[0], show_id ) ) )
                     elif show_id <> '':
                         cm.append( ('Add to Subscriptions', "XBMC.RunPlugin(%s?mode='addsub'&url=%s)" % ( sys.argv[0], show_id ) ) )
-                item.addContextMenuItems( cm ,replaceItems=True)
+                item.addContextMenuItems( cm )#,replaceItems=True)
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=True,totalItems=total_items)
             elif isVideo == True:
                 u += '&videoid="'+urllib.quote_plus(video_id)+'"'
@@ -322,9 +339,7 @@ class Main:
                         cm.append( ('Assign Subtitles', "XBMC.RunPlugin(%s?mode='SUBTITLE_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) )
                     cm.append( ('Select Quality', "XBMC.RunPlugin(%s?mode='Select_TV_play'&url='%s'&videoid='%s')" % ( sys.argv[0], url, video_id ) ) )
                     cm.append( ('Vote for Video', "XBMC.RunPlugin(%s?mode='vote'&url=%s)" % ( sys.argv[0], video_id ) ) )
-                item.addContextMenuItems( cm ,replaceItems=True) 
+                item.addContextMenuItems( cm )#,replaceItems=True) 
                 item.setProperty('IsPlayable', 'true')
-                item.setProperty('VideoAspect', '1.85')
-                #item.setProperty('VideoCodec', '1.85 : 1')
                 xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False,totalItems=total_items)
 

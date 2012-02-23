@@ -31,8 +31,20 @@ class Main:
                 perpage = common.settings['perpage']
         if 'Subscriptions' == common.args.mode:
             xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DATE)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_MPAA_RATING)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        elif 'Queue' == common.args.mode or 'History' == common.args.mode:
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DATE)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_MPAA_RATING)
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
         xbmcplugin.setPluginCategory( pluginhandle, category=common.args.name )
-        #xbmcplugin.setPluginFanart(pluginhandle, common.args.fanart)
         self.addMenuItems(perpage,common.args.page)
         if common.args.updatelisting == 'true':
             xbmcplugin.endOfDirectory( pluginhandle, cacheToDisc=True, updateListing=True)
@@ -83,6 +95,7 @@ class Main:
             #xbmc.sleep(400)
 
         # Add Next/Prev Pages
+        count = 0
         if int(perpage) < int(total_count):
             if 'Popular' in common.args.name or 'Featured' in common.args.name or 'Recently' in common.args.name:
                 popular='true'
@@ -178,6 +191,7 @@ class Main:
                     media_type = data.findtext('media_type')
                     art = data.findtext('thumbnail_url_16x9_large')
                     infoLabels['TVShowTitle'] = data.findtext('show_name').encode('utf-8')
+                    infoLabels['Genre'] = data.findtext('parent_channel_name', default="")
                     infoLabels['MPAA'] = data.findtext('content_rating')
                     votes_data = data.findtext('votes_count')
                     seasondata = data.findtext('season_number')
@@ -217,11 +231,13 @@ class Main:
                 if premiered:
                     premiered = premiered.split(' ')[0]
                     infoLabels['Premiered'] = premiered
+                    datesplit=premiered.split('-')
+                    infoLabels['date'] = datesplit[2]+'.'+datesplit[1]+'.'+datesplit[0]
                     infoLabels['Year'] = int(premiered.split('-')[0])
                 rating = data.findtext('rating')
                 if rating:
-                    if rating.isdigit():
-                        infoLabels['Rating'] = float(rating)*2
+                    #if rating.isdigit():
+                    infoLabels['Rating'] = float(rating)*2
                 company_name = data.findtext('company_name', default="")
                 infoLabels['Studio'] = company_name
                 ishd = data.findtext('has_hd')
@@ -293,6 +309,9 @@ class Main:
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="'+urllib.quote_plus(mode)+'"'
             item=xbmcgui.ListItem(displayname, iconImage=art, thumbnailImage=art)
+            infoLabels['Title']=displayname
+            infoLabels['count']=count
+            count += 1
             item.setInfo( type="Video", infoLabels=infoLabels)
             item.setProperty('fanart_image',fanart)
 

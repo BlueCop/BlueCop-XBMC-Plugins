@@ -65,7 +65,7 @@ site_dict = {'ABC': 'abc',
              #'FOX': 'fox',
              #'FX': 'fx',
              #'The Hub':'hub',
-             'AMC','amc'
+             'AMC':'amc'
              }
 
 addoncompat.get_revision()

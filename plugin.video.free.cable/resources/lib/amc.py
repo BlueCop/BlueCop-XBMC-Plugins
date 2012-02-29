@@ -8,7 +8,6 @@ import sys
 import os
 import re
 
-from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
 import demjson
 import pyamf
@@ -27,7 +26,7 @@ def masterlist():
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.find('select',attrs={'id':'rb-video-browser-show'}).findAll('option',attrs={'title':True})
     db_shows = []
     for show in shows:
@@ -42,7 +41,7 @@ def rootlist(db=False):
 
 def showcats():
     data = common.getURL(BASE_URL)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     video_types=tree.find('select',attrs={'id':'rb-video-browser-content_type'}).findAll('option')
     shows=tree.find('select',attrs={'id':'rb-video-browser-show'}).findAll('option')#,attrs={'title':True})
     db_shows = []
@@ -68,7 +67,7 @@ def videos():
               'module_id_base':'rb-video-browser'}
     data = common.getURL( url , values)
     data = demjson.decode(data)['html']['date']
-    items = BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('li')
+    items = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES).findAll('li')
     for item in items:
         link = item.find('a')
         img = link.find('img')
@@ -76,6 +75,7 @@ def videos():
         name = img['title']
         plot = img['alt'].replace('/n',' ')
         thumb = img['src']
+        print item.prettify()
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="amc"'

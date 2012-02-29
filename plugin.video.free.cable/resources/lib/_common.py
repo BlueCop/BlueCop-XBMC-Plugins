@@ -59,13 +59,15 @@ site_dict = {'ABC': 'abc',
              'Oxygen':'oxygen',
              'Food Network':'food',
              'TV Land':'tvland',
-             #'Comedy Central':'comedy',
+             'Comedy Central':'comedy',
              #'Adult Swim':'adultswim',
              #'Cartoon Network':'cartoon'
              #'FOX': 'fox',
              #'FX': 'fx',
              #'The Hub':'hub',
-             'AMC':'amc'
+             'AMC':'amc',
+             'Biography':'bio',
+             'The WB':'thewb'
              }
 
 addoncompat.get_revision()

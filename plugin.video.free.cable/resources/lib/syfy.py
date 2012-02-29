@@ -78,19 +78,30 @@ def play():
     data = common.getURL(smilurl)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     print tree.prettify()
-    rtmpbase = tree.find('meta')['base']
-    items=tree.find('switch').findAll('video')
-    hbitrate = -1
-    sbitrate = int(common.settings['quality']) * 1024
-    for item in items:
-        bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            playpath = item['src']
-            if '.mp4' in playpath:
-                playpath = 'mp4:'+playpath
-            else:
-                playpath = playpath.replace('.flv','')
-            finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    rtmpbase = tree.find('meta')
+    if rtmpbase:
+        rtmpbase = rtmpbase['base']
+        items=tree.find('switch').findAll('video')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality']) * 1024
+        for item in items:
+            bitrate = int(item['system-bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                playpath = item['src']
+                if '.mp4' in playpath:
+                    playpath = 'mp4:'+playpath
+                else:
+                    playpath = playpath.replace('.flv','')
+                finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    else:
+        items=tree.find('switch').findAll('video')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality']) * 1024
+        for item in items:
+            bitrate = int(item['system-bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                finalurl = item['src']
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)

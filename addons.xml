@@ -46,7 +46,7 @@
 
 <addon id="plugin.video.espn3"
        name="ESPN"
-       version="0.9.8"
+       version="0.9.9"
        provider-name="Ksosez,BlueCop">
     <requires>
         <import addon="xbmc.python" version="1.0"/>

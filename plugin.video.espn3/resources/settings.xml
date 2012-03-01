@@ -28,6 +28,7 @@
 		<setting id="espn3" type="bool" label="ESPN3" default="true"/>
 		<setting id="espnu" type="bool" label="ESPNU" default="false"/>
 		<setting id="goalline" type="bool" label="Goal Line" default="false"/>
+		<setting id="buzzerbeater" type="bool" label="Buzzer Beater" default="false"/>
 		<setting type="sep" />
 	</category>
 	<category label="Days">   

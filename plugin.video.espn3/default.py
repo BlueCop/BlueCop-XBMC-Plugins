@@ -53,7 +53,8 @@ networkmap = {'n360':'ESPN3',
               'n501':'ESPN',
               'n502':'ESPN2',
               'n599':'ESPNU',
-              'ngl':'Goal Line'}
+              'ngl':'Goal Line',
+              'nbb':'Buzzer Beater'}
 
 channels = '&channel='
 if selfAddon.getSetting('espn1') == 'true':
@@ -66,6 +67,8 @@ if selfAddon.getSetting('espnu') == 'true':
     channels += 'espnu,'
 if selfAddon.getSetting('goalline') == 'true':
     channels += 'goalline,'
+if selfAddon.getSetting('buzzerbeater') == 'true':
+    channels += 'buzzerbeater,'
 channels = channels[:-1]
 
 def CATEGORIES():
@@ -202,6 +205,8 @@ def INDEX(url,name,bysport=False):
                 mode = 8
             elif networkid == 'ngl':
                 mode = 9
+            elif networkid == 'nbb':
+                mode = 10  
             addLink(ename, authurl, mode, thumb, thumb, infoLabels=infoLabels)
     xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[3])+")")
@@ -221,6 +226,9 @@ def PLAYESPNU(url):
 
 def PLAYESPNGL(url):
     PLAY(url,'ngl')
+
+def PLAYESPNBB(url):
+    PLAY(url,'nbb')
     
 def PLAY(url,videonetwork):
     data = ReadFile('userdata.xml', ADDONDATA)
@@ -596,4 +604,5 @@ elif mode == 8:
     PLAYESPNU(url)
 elif mode == 9:
     PLAYESPNGL(url)
-
+elif mode == 10:
+    PLAYESPNBB(url)

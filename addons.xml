@@ -68,7 +68,7 @@
 
 <addon id="plugin.video.free.cable"
        name="Free Cable"
-       version="0.2.8"
+       version="0.2.9"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>

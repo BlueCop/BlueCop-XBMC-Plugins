@@ -59,15 +59,20 @@ site_dict = {'ABC': 'abc',
              'Oxygen':'oxygen',
              'Food Network':'food',
              'TV Land':'tvland',
-             'Comedy Central':'comedy',
+             #'Comedy Central':'comedy',
              #'Adult Swim':'adultswim',
-             #'Cartoon Network':'cartoon'
+             #'Cartoon Network':'cartoon',
              #'FOX': 'fox',
              #'FX': 'fx',
              #'The Hub':'hub',
              'AMC':'amc',
              'Biography':'bio',
-             'The WB':'thewb'
+             'The WB':'thewb',
+             'Game Show Network':'gsn',
+             'Nickelodeon':'nick',
+             'Nick Toons':'nicktoons',
+             'Nick Teen':'nickteen',
+             'HGTV':'hgtv'
              }
 
 addoncompat.get_revision()

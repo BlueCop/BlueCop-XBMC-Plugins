@@ -67,8 +67,9 @@ def listVideos(url = False):
     max = 100
     page = int(params['page'])
     offset = (page-1)*max
-    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)
+    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
     data = getURL(fetch_url)
+    print data
     videos = demjson.decode(data)['result']
     total = len(videos)
     if total >= max:
@@ -78,13 +79,16 @@ def listVideos(url = False):
         title = video['title']
         video_image = video['image_url']
         duration = video['duration_in_seconds']
-        
-        artistdata = video['artists_main'][0]
-        artist_id = artistdata['id']
-        artist_name = artistdata['name']
-        artist_image = artistdata['image_url']
-        
-        if video['artists_featured']:
+
+        if len(video['artists_main']) > 0:
+            artistdata = video['artists_main'][0]
+            artist_id = artistdata['id']
+            artist_name = artistdata['name']
+            artist_image = artistdata['image_url']
+        else:
+            artist_name = ''
+    
+        if len(video['artists_featured']) > 0:
             featuredartist = video['artists_featured'][0]
             featuredartist_id = featuredartist['id']
             featuredartist_name = featuredartist['name']

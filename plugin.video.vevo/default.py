@@ -8,6 +8,7 @@ import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import demjson
+from json import dumps, loads
 
 import unicodedata 
 
@@ -332,9 +333,8 @@ def matchedArtists():
                       'query':artist}
         json_list.append(artistjson)
     json_query['query']=json_list
-    json_query = demjson.encode(json_query)
+    json_query = dumps(json_query)
     data = getURL( url , postdata=json_query)
-    print data
     artists = demjson.decode(data)['result']
     total = len(artists)
     for artist in artists:

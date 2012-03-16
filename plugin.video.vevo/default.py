@@ -30,11 +30,12 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 
 def listCategories():
     addDir('Video Premieres',    'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',   'listVideos')
-    addDir('Music Videos',       'http://api.vevo.com/mobile/v1/video/list.json',                   'rootVideos')
-    addDir('Search Videos',      '',                                                                'searchVideos')
-    addDir('Artists',            'http://api.vevo.com/mobile/v1/artist/list.json',                  'rootArtists')
-    addDir('Search Artists',     '',                                                                'searchArtists')
-    #addDir('My Artists',         ' ',   ' ')
+    addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                   'rootVideos')
+    addDir('Artists by Genre',            'http://api.vevo.com/mobile/v1/artist/list.json',                  'rootArtists')
+    addDir('My Artists',         '',                                                                'matchedArtists')
+    addDir('Search',             '',                                                                'searchArtists')
+    #addDir('Search Videos',      '',                                                                'searchVideos')
+    #addDir('Search Artists',     '',                                                                'searchArtists')
     addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Staff Picks',        '',                                                                'listStaffPicks')
     addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
@@ -296,23 +297,67 @@ def rootShows(url = False):
 
 # Search
 def searchVideos():
-    url = 'http://api.vevo.com/mobile/v1/search/videos.json?'
-    Search('Videos',url)
+    Search('Videos')
 
 def searchArtists():
-    url = 'http://api.vevo.com/mobile/v1/search/artists.json?'
-    Search('Artists',url)
+    Search('Artists')
 
-def Search(mode,url):
-        keyb = xbmc.Keyboard('', 'Search '+mode)
-        keyb.doModal()
-        if keyb.isConfirmed():
-                search = urllib.quote_plus(keyb.getText())
-                url += '&q='+search
-                if mode == 'Videos':
-                    listVideos(url)
-                elif mode == 'Artists':
-                    listArtists(url)
+def researchArtists():
+    listArtists(params['url'])
+    
+def researchVideos():
+    listVideos(params['url'])
+
+def Search(mode):
+    keyb = xbmc.Keyboard('', 'Search '+mode)
+    keyb.doModal()
+    if keyb.isConfirmed():
+            search = urllib.quote_plus(keyb.getText())
+            vurl = 'http://api.vevo.com/mobile/v1/search/videos.json?q='+search
+            aurl = 'http://api.vevo.com/mobile/v1/search/artists.json?q='+search
+            if mode == 'Videos':
+                addDir('*Artist Results*',aurl,'researchArtists')
+                listVideos(vurl)
+            elif mode == 'Artists':
+                addDir('*Video Results*',vurl,'researchVideos')
+                listArtists(aurl)
+
+def matchedArtists():
+    url = 'http://api.vevo.com/mobile/v1/search/artistmatch.json'
+    artists = getLibraryArtists()
+    json_query = {}
+    json_list = []
+    for artist in artists:
+        artistjson = {'songCount':1,
+                      'query':artist}
+        json_list.append(artistjson)
+    json_query['query']=json_list
+    json_query = demjson.encode(json_query)
+    data = getURL( url , postdata=json_query)
+    print data
+    artists = demjson.decode(data)['result']
+    total = len(artists)
+    for artist in artists:
+        artist = artist['artist']
+        artist_id = artist['id']
+        artist_name = artist['name']
+        artist_image = artist['image_url']
+        video_count = artist['video_count']
+        url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
+        display_name=artist_name+' ('+str(video_count)+')'
+        addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    
+      
+def getLibraryArtists():
+    json_query = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetArtists", "id": 1}')
+    json_response = demjson.decode(json_query)
+    artistlist = []
+    if json_response['result']:
+        for item in json_response['result']['artists']:
+            artistname = item['label']
+            artistlist.append(artistname)
+    return artistlist
     
 # Play Video
 def playVideo():
@@ -386,7 +431,7 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
                                            })
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
 
-def getURL( url , extraheader=True):
+def getURL( url , extraheader=True, postdata=False):
     try:
         print 'VEVO --> common :: getURL :: url = '+url
         cj = cookielib.LWPCookieJar()
@@ -397,7 +442,10 @@ def getURL( url , extraheader=True):
                              ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
         if extraheader:
             opener.addheaders = [('X-Requested-With', 'XMLHttpRequest')]
-        usock=opener.open(url)
+        if postdata:
+            usock=opener.open(url,postdata)
+        else:
+            usock=opener.open(url)
         response=usock.read()
         usock.close()
         #if os.path.isfile(COOKIEFILE):

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-	<string id="30019">Six Digit User ID</string>
 	<string id="30000">E-Mail</string>
 	<string id="30001">Password</string>
 
@@ -13,12 +12,10 @@
 	<string id="30010">720p@3328kbps</string>
 	<string id="30011">1080p@4392kbps</string>
 	<string id="30012">1080p@5392kbps</string>
-	
-	<string id="30013">Related Playlist Mode</string>
+
 	<string id="30014">UnPause Hack</string>
 	<string id="30015">UnPause Delay</string>
-	
-	<string id="30016">A</string>
-	<string id="30017">B</string>
-	<string id="30018">Related Mode</string>
+
+	<string id="30016">Per Page</string>
+	<string id="30017">Play from Youtube</string>
 </strings>

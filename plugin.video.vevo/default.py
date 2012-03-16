@@ -21,20 +21,30 @@ BASE = 'http://www.vevo.com'
 COOKIEFILE = os.path.join(pluginpath,'resources','vevo-cookies.lwp')
 USERFILE = os.path.join(pluginpath,'resources','userfile.js')
 
+fanart = os.path.join(pluginpath,'fanart.jpg')
+vicon = os.path.join(pluginpath,'icon.png')
+maxperpage=(int(addon.getSetting('perpage'))+1)*25
+
+
 # Root listing
 
 def listCategories():
     addDir('Video Premieres',    'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',   'listVideos')
-    addDir('Staff Picks',        'http://api.vevo.com/mobile/v1/featured/TopVideos.json?',          'listVideos')
     addDir('Music Videos',       'http://api.vevo.com/mobile/v1/video/list.json',                   'rootVideos')
     addDir('Search Videos',      '',                                                                'searchVideos')
     addDir('Artists',            'http://api.vevo.com/mobile/v1/artist/list.json',                  'rootArtists')
     addDir('Search Artists',     '',                                                                'searchArtists')
-    #addDir('Favorite Artists',   '',                                                                '')
-    #addDir('Favorite Videos',    '',                                                                '')
-    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                    'rootShows')
+    #addDir('My Artists',         ' ',   ' ')
+    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
+    addDir('Staff Picks',        '',                                                                'listStaffPicks')
+    addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle)
-    
+
+def listStaffPicks():
+    addDir('Video Picks',        'http://api.vevo.com/mobile/v1/featured/TopVideos.json?',          'listVideos')
+    addDir('Playlist Picks',     'http://api.vevo.com/mobile/v3/featured/TopPlaylists.json?',       'listPlaylists')
+    xbmcplugin.endOfDirectory(pluginhandle)
+
 # Video listings
 def rootVideos():
     videos_url = params['url']
@@ -43,9 +53,9 @@ def rootVideos():
 
 def sortByVideo():
     url = params['url']
-    addDir('Most Recent',   url+'&order=MostRecent',      'listVideos')
-    addDir('Most Liked',    url+'&order=MostFavorited',   'sortWhenVideo')
     addDir('Most Viewed',   url+'&order=MostViewed',      'sortWhenVideo')
+    addDir('Most Liked',    url+'&order=MostFavorited',   'sortWhenVideo')
+    addDir('Most Recent',   url+'&order=MostRecent',      'listVideos')
     addDir('Surprise Me',   url+'&order=Random',          'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
 
@@ -61,54 +71,99 @@ def sortWhenVideo():
     addDir(name+' All-Time',      url+'AllTime',    'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
     
-def listVideos(url = False):
+def listVideos(url = False,playlist=False,playall=False):
     if not url:
         url = params['url']
-    max = 100
+    max = maxperpage
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
     data = getURL(fetch_url)
-    print data
-    videos = demjson.decode(data)['result']
-    total = len(videos)
-    if total >= max:
-        addDir('*Next Page*', url,    'listVideos', page=str(page+1))
-    for video in videos:
-        video_id = video['isrc']
-        title = video['title']
-        video_image = video['image_url']
-        duration = video['duration_in_seconds']
-
-        if len(video['artists_main']) > 0:
-            artistdata = video['artists_main'][0]
-            artist_id = artistdata['id']
-            artist_name = artistdata['name']
-            artist_image = artistdata['image_url']
+    if data:
+        if playlist:
+            videos = demjson.decode(data)['result']['videos']
         else:
-            artist_name = ''
+            videos = demjson.decode(data)['result']
+        total = len(videos)
+        if playall:
+            playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+            playlist.clear()        
+        elif playlist is False:
+            total = len(videos)
+            if total >= max:
+                addDir('*Next Page*', url,    'listVideos', page=str(page+1))
+            addDir('*Play All*', url, 'playAll',folder=False)
+        for video in videos:
+            video_id = video['isrc']
+            try:title = video['title'].encode('utf-8')
+            except: title = ''
+            video_image = video['image_url']
+            duration = video['duration_in_seconds']
+            try:year = int(video['video_year'])
+            except:year = 0
+            
+            credits = video['credit']
+            try:
+                for credit in credits:
+                    if credit['Key'] == 'Genre':
+                        genre = credit['Value']
+                    #elif credit['Key'] == 'Producer':
+                    #    pass
+                    #elif credit['Key'] == 'Director':
+                    #    pass
+                    #elif credit['Key'] == 'Composer':
+                    #    pass
+                    elif credit['Key'] == 'Record Label':
+                        recordlabel = credit['Value']
+            except:
+                  genre = credits['Genre']
+                  recordlabel = credits['Record Label']      
     
-        if len(video['artists_featured']) > 0:
-            featuredartist = video['artists_featured'][0]
-            featuredartist_id = featuredartist['id']
-            featuredartist_name = featuredartist['name']
-            featuredartist_image = featuredartist['image_url']
-            artist = artist_name+' feat. '+featuredartist_name
+            if len(video['artists_main']) > 0:
+                artistdata = video['artists_main'][0]
+                artist_id = artistdata['id']
+                artist_name = artistdata['name'].encode('utf-8')
+                artist_image = artistdata['image_url']
+            else:
+                artist_name = ''
+                artist_image = ''
+        
+            if len(video['artists_featured']) > 0:
+                feats=''
+                for featuredartist in video['artists_featured']:
+                    #featuredartist_id = featuredartist['id']
+                    #featuredartist_image = featuredartist['image_url']
+                    featuredartist_name = featuredartist['name'].encode('utf-8')
+                    feats= featuredartist_name+', '
+                feats=feats[:-2]
+                artist = artist_name+' feat. '+feats
+            else:
+                artist = artist_name
+            u = sys.argv[0]
+            u += '?url='+urllib.quote_plus(video_id)
+            u += '&mode='+urllib.quote_plus('playVideo')
+            displayname = artist+' - '+title
+            item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
+            item.setInfo( type="Music", infoLabels={ "Title":title,
+                                                     "Artist":artist,
+                                                     "Duration":duration,
+                                                     "Album":recordlabel,
+                                                     "Genre":genre,
+                                                     "Year":year})
+            item.setProperty('fanart_image',artist_image)
+            item.setProperty('IsPlayable', 'true')
+            if playall:
+                playlist.add(url=u, listitem=item)
+            else:
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)#,totalItems=total)
+        if playall:
+            xbmc.Player().play(playlist)
         else:
-            artist = artist_name
-        u = sys.argv[0]
-        u += '?url='+urllib.quote_plus(video_id)
-        u += '&mode='+urllib.quote_plus('playVideo')
-        displayname = artist+' - '+title
-        item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
-        item.setInfo( type="Music", infoLabels={ "Title":title,
-                                                 "Artist":artist,
-                                                 "Duration":duration})
-        item.setProperty('fanart_image',artist_image)
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
-    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+            xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
+def playAll():
+    listVideos(params['url'],playall=True)
+    
 # common genre listing for artists and videos
 def addGenres(url,mode):
     data = getURL('http://api.vevo.com/mobile/v1/genre/list.json?culture=en_US')
@@ -128,9 +183,9 @@ def rootArtists():
 def sortByArtists():
     url = params['url']
     #addDir('Alphabetical',  url+'&order=Alphabetic',      'listAZ')
-    addDir('Most Recent',   url+'&order=MostRecent',      'listArtists')
-    addDir('Most Liked',    url+'&order=MostFavorited',   'sortWhenArtists')
     addDir('Most Viewed',   url+'&order=MostViewed',      'sortWhenArtists')
+    addDir('Most Liked',    url+'&order=MostFavorited',   'sortWhenArtists')
+    addDir('Most Recent',   url+'&order=MostRecent',      'listArtists')
     addDir('Surprise Me',   url+'&order=Random',          'listArtists')
     xbmcplugin.endOfDirectory(pluginhandle)
 
@@ -158,7 +213,7 @@ def listAZ():
 def listArtists(url = False):
     if not url:
         url = params['url']
-    max = 100
+    max = maxperpage
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)
@@ -178,134 +233,48 @@ def listArtists(url = False):
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Playlist listings
-def rootPlaylists():
-    url = params['url']
-    addGenres(url, 'listPlaylists')
-    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True) 
-    
-def myPlaylists():
-    url = params['url']
-    #userfile = open(USERFILE, "r")
-    #userdata = userfile.read()
-    #userfile.close()
-    #userid = demjson.decode(userdata)['userId']
-    #url += str(userid)
-    listPlaylists(url,alloptions=True)
-
-def listPlaylists(url = False,alloptions=False):
-    if not url:
-        url = params['url'].replace('/playlists','/playlists/playlistsbrowse')
-    if alloptions:
-        addDir('(Play All)', url, 'playAllPlaylists',folder=False)
-        addDir('(Queue All)', url, 'queueAllPlaylists',folder=False)
-        addDir('(Shuffle All)', url, 'shufflePlaylist',folder=False)
-    data = getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    playlists = tree.findAll(attrs={'class' : 'listThumb'})
-    for playlist in playlists:
-        url = BASE+playlist.a['href']
-        thumbnail = playlist.find('img')['src'].split('?')[0]
-        title = playlist.find('img')['alt']
-        addDir(title, url, 'playlistRoot', iconimage=thumbnail)
-    if 'Show More Playlists' in data:
-        url2 = params['url'].replace('/playlists','/playlists/playlists')+'?page=2' 
-        listPlaylists(url2)
-    else:
-        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-
-def shufflePlaylist():
-    queueAllPlaylists()
-    playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-    playlist.shuffle()
-    xbmc.Player().play(playlist)
-
-def playAllPlaylists():
-    queueAllPlaylists(play=True)
-    
-def queueAllPlaylists(url = False,play=False):
+def listPlaylists(url = False):
     if not url:
         url = params['url']
-    if play:
-        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        playlist.clear()
+    #max = maxperpage
+    #page = int(params['page'])
+    #offset = (page-1)*max
+    #fetch_url=url+'&offset='+str(offset)+'&max='+str(max)#+'&extended=true'
+    #data = getURL(fetch_url)
     data = getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    playlists = tree.findAll(attrs={'class' : 'listThumb'})
+    playlists = demjson.decode(data)['result']
+    total = len(playlists)
+    #if total >= max:
+    #    addDir('*Next Page*', url,    'listPlaylists', page=str(page+1))
     for playlist in playlists:
-        url = BASE+playlist.a['href']
-        handlePlaylist(url=url)
-    if 'Show More Playlists' in data:
-        url2 = params['url'].replace('/playlists','/playlists/playlists')+'?page=2' 
-        queueAllPlaylists(url=url2,play=play)
-    else:
-        if play:
-            playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-            xbmc.Player().play(playlist)
-
+        try:playlist_id = playlist['playlist_id']
+        except:playlist_id = str(playlist['id'])
+        playlist_name = playlist['title']
+        playlist_image = playlist['image_url']
+        video_count = playlist['videocount']
+        display_name=playlist_name+' ('+str(video_count)+')'
+        addDir(display_name, playlist_id, 'playlistRoot', iconimage=playlist_image, total=total)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def playlistRoot():
-    url = params['url']
-    addDir('Play', url, 'playPlaylist',folder=False)
-    addDir('Queue', url, 'queuePlaylist',folder=False)
-    addDir('List', url, 'listPlaylist',folder=True)
+    playlist_id = params['url']
+    if playlist_id.isdigit():
+        url = 'http://api.vevo.com/mobile/v1/playlist/'+playlist_id+'.json?'
+    else:
+        url = 'http://api.vevo.com/mobile/v2/playlist/'+playlist_id+'.json?'
+    addDir('*Play*', url, 'playPlaylist',folder=False)
+    listVideos(url,playlist=True)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-    
+
 def playPlaylist():
-    handlePlaylist(play=True)
-    
-def queuePlaylist(url=False):
-    handlePlaylist()
+    listVideos(params['url'],playlist=True,playall=True)
 
-def listPlaylist():
-    handlePlaylist(list=True)
-
-def handlePlaylist(url=False,play=False,list=False):
-    if not url:
-        url = params['url']
-    data = getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    videos = tree.findAll('meta',attrs={'property' : 'og:song','content':True})
-    vids = ''
-    for video in videos:
-        vids += video['content'].split('/')[-1]+','
-    vids = vids[:-1]
-    infourl = 'http://www.vevo.com/Proxy/Video/GetData.ashx?isrc='+urllib.quote_plus(vids)
-    data = getURL(infourl)
-    playlistvideos = demjson.decode(data)
-    playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-    if play:
-        playlist.clear()
-    total = len(videos)
-    for video in videos:
-        video = playlistvideos[video['content'].split('/')[-1]]
-        artist = video['byline_text']
-        title = video['video_name']
-        thumbnail = video['image']
-        url = BASE+video['video_url']
-        u = sys.argv[0]
-        u += '?url='+urllib.quote_plus(url)
-        u += '&mode='+urllib.quote_plus('playlistVideo')
-        displayname = artist+' - '+title
-        item=xbmcgui.ListItem(displayname, iconImage=thumbnail, thumbnailImage=thumbnail)
-        item.setInfo( type="Video", infoLabels={ "Title":displayname
-                                                 #"Artist":artist
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        if list:
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
-        else:
-            playlist.add(url=u, listitem=item)
-    if play:
-        xbmc.Player().play(playlist)
-    elif list:
-        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-    
 # Show listings
 def rootShows(url = False):
     xbmcplugin.setContent(pluginhandle, 'shows')
     if not url:
         url = params['url']
-    max = 100
+    max = maxperpage
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)
@@ -318,20 +287,20 @@ def rootShows(url = False):
         show_id = show['id']
         show_name = show['name']
         show_image = show['image_url']
-        #video_count = show['video_count']
+        video_count = show['total_videos_count']
         description = show['description']
         url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'/videos.json?order=MostRecent'
-        display_name=show_name
+        display_name=show_name+' ('+str(video_count)+')'
         addDir(display_name, url, 'listVideos', plot=description, iconimage=show_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Search
 def searchVideos():
-    url = 'http://api.vevo.com/mobile/v1/search/videos.json?extended=false'
+    url = 'http://api.vevo.com/mobile/v1/search/videos.json?'
     Search('Videos',url)
 
 def searchArtists():
-    url = 'http://api.vevo.com/mobile/v1/search/artists.json?extended=false'
+    url = 'http://api.vevo.com/mobile/v1/search/artists.json?'
     Search('Artists',url)
 
 def Search(mode,url):
@@ -350,23 +319,31 @@ def playVideo():
     playlistVideo()
 
 def playlistVideo():
-    try:
-        item = xbmcgui.ListItem(path=getVideo(params['url']))
-        xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
-        if addon.getSetting('unpause') == 'true':
-            import time
-            sleeptime = int(addon.getSetting('unpausetime'))+1
-            time.sleep(sleeptime)
-            xbmc.Player().pause()
-    except:
-        vevoID = params['url'].split('/')[-1]
-        url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % vevoID
-        data = getURL(url)
-        youtubeID = demjson.decode(data)['video']['videoVersions'][0]['id']
-        youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
-        item = xbmcgui.ListItem(path=youtubeurl)
-        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-        
+    if addon.getSetting('defaultyoutube') == 'true':
+        try:YouTube()
+        except:HTTPDynamic()
+    else:  
+        try:HTTPDynamic()
+        except:YouTube()
+
+def HTTPDynamic():
+    item = xbmcgui.ListItem(path=getVideo(params['url']))
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+    if addon.getSetting('unpause') == 'true':
+        import time
+        sleeptime = int(addon.getSetting('unpausetime'))+1
+        time.sleep(sleeptime)
+        xbmc.Player().pause()
+
+def YouTube():
+    vevoID = params['url'].split('/')[-1]
+    url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % vevoID
+    data = getURL(url)
+    youtubeID = demjson.decode(data)['video']['videoVersions'][0]['id']
+    youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
+    item = xbmcgui.ListItem(path=youtubeurl)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+     
 def getVideo(pageurl):
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
     select = int(addon.getSetting('bitrate'))
@@ -397,32 +374,42 @@ def getVideo(pageurl):
     return finalUrl
 
 # Common
-def addDir(name, url, mode, plot='', iconimage='DefaultFolder.png' ,folder=True,total=0,page=1):
+def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)+'&page='+str(page)
     item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-    if iconimage <> 'DefaultFolder.png':
+    if iconimage <> vicon:
         item.setProperty('fanart_image',iconimage)
+    else:
+        item.setProperty('fanart_image',fanart)
     item.setInfo( type="Video", infoLabels={ "Title":name,
                                              "plot":plot
                                            })
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
 
 def getURL( url , extraheader=True):
-    print 'VEVO --> common :: getURL :: url = '+url
-    cj = cookielib.LWPCookieJar()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.load(COOKIEFILE, ignore_discard=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('Referer', 'http://www.vevo.com'),
-                         ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
-    if extraheader:
-        opener.addheaders = [('X-Requested-With', 'XMLHttpRequest')]
-    usock=opener.open(url)
-    response=usock.read()
-    usock.close()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.save(COOKIEFILE, ignore_discard=True)
-    return response
+    try:
+        print 'VEVO --> common :: getURL :: url = '+url
+        cj = cookielib.LWPCookieJar()
+        #if os.path.isfile(COOKIEFILE):
+        #    cj.load(COOKIEFILE, ignore_discard=True)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener.addheaders = [('Referer', 'http://www.vevo.com'),
+                             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
+        if extraheader:
+            opener.addheaders = [('X-Requested-With', 'XMLHttpRequest')]
+        usock=opener.open(url)
+        response=usock.read()
+        usock.close()
+        #if os.path.isfile(COOKIEFILE):
+        #    cj.save(COOKIEFILE, ignore_discard=True)
+        return response
+    except urllib2.URLError, e:
+        print 'Error reason: ', e
+        heading = 'Error'
+        message = e
+        duration = 10000
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        return False
 
 def get_params():
     param=[]

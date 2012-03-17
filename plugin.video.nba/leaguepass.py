@@ -115,7 +115,7 @@ def getGames(fromDate = '', full = True):
                     if pos != -1:
                         idx = y[pos+8:pos+9]
 
-            if date != ''  and idx != '':
+            if date != '' and idx in ['1', '2', '3', '4', '5']:
                 name = date  + ' '  + v + '@' + h
                 url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
                 url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'

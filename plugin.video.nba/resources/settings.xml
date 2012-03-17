@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <!-- General -->
+  <category label="50000">
+    <setting id="username" type="text" label="50001" default=""/>
+    <setting id="password" type="text" label="50002" option="hidden" default=""/>
+    <setting id="quality" type="enum" label="50003" values="SD (800 kbit/s)|SD (1600 kbit/s)" default="1" />
+    </category>
+
+</settings>

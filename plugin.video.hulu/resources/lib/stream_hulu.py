@@ -127,6 +127,7 @@ class Main:
                       'ts'        : str(epoch),
                       'np'        : '1',
                       'vp'        : '1',
+                      'enable_fa' : '1',
                       'device_id' : self.GUID,
                       'pp'        : 'Desktop',
                       'dp_id'     : 'Hulu',

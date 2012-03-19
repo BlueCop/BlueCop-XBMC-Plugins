@@ -18,4 +18,7 @@
 
 	<string id="30016">Per Page</string>
 	<string id="30017">Play from Youtube</string>
+	<string id="30018">Latitude</string>
+	<string id="30019">Longitude</string>
+	<string id="30020">Radius in Miles</string>
 </strings>

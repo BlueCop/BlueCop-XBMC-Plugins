@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib, urllib2, cookielib
-import string, os, re, time, datetime
+import string, os, re, time, datetime, math
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 
@@ -40,6 +40,10 @@ def listCategories():
     addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Staff Picks',        '',                                                                'listStaffPicks')
     addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
+    if (addon.getSetting('latitude') <> '') and (addon.getSetting('latitude') <> ''):
+        addDir('Being Watched',        '',                                                              'watchingRightNowIn')
+        addDir('Trending Now',         '',                                                              'TrendingRightNowIn')
+        addDir('Touring Now',          '',                                                              'toursRightNow')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listStaffPicks():
@@ -104,22 +108,26 @@ def listVideos(url = False,playlist=False,playall=False):
             try:year = int(video['video_year'])
             except:year = 0
             
-            credits = video['credit']
-            try:
-                for credit in credits:
-                    if credit['Key'] == 'Genre':
-                        genre = credit['Value']
-                    #elif credit['Key'] == 'Producer':
-                    #    pass
-                    #elif credit['Key'] == 'Director':
-                    #    pass
-                    #elif credit['Key'] == 'Composer':
-                    #    pass
-                    elif credit['Key'] == 'Record Label':
-                        recordlabel = credit['Value']
-            except:
-                  genre = credits['Genre']
-                  recordlabel = credits['Record Label']      
+            if video.has_key('credit'):
+                credits = video['credit']
+                try:
+                    for credit in credits:
+                        if credit['Key'] == 'Genre':
+                            genre = credit['Value']
+                        #elif credit['Key'] == 'Producer':
+                        #    pass
+                        #elif credit['Key'] == 'Director':
+                        #    pass
+                        #elif credit['Key'] == 'Composer':
+                        #    pass
+                        elif credit['Key'] == 'Record Label':
+                            recordlabel = credit['Value']
+                except:
+                      genre = credits['Genre']
+                      recordlabel = credits['Record Label']
+            else:
+                genre = ''
+                recordlabel = ''
     
             if len(video['artists_main']) > 0:
                 artistdata = video['artists_main'][0]
@@ -240,7 +248,7 @@ def listPlaylists(url = False):
         url = params['url']
     #max = maxperpage
     #page = int(params['page'])
-    #offset = (page-1)*max
+    #offset = (page-1)*max1
     #fetch_url=url+'&offset='+str(offset)+'&max='+str(max)#+'&extended=true'
     #data = getURL(fetch_url)
     data = getURL(url)
@@ -323,6 +331,61 @@ def Search(mode):
                 addDir('*Video Results*',vurl,'researchVideos')
                 listArtists(aurl)
 
+def searchBox(latitude, longitude, radius):
+    lon_min = longitude - radius / abs(math.cos(math.radians(latitude)) * 69)
+    lon_max = longitude + radius / abs(math.cos(math.radians(latitude)) * 69)
+    lat_min = latitude - (radius / 69)
+    lat_max = latitude + (radius / 69)
+    return lat_min,lat_max,lon_min,lon_max
+
+def TrendingRightNowIn():             
+    url  = 'http://api.vevo.com/mobile/v1/video/TrendingRightNowIn.json'
+    latitude = float(addon.getSetting('latitude')) 
+    longitude = float(addon.getSetting('longitude'))
+    miles = (int(addon.getSetting('radius'))+1)*100
+    lat_min,lat_max,lon_min,lon_max = searchBox(latitude, longitude, miles)
+    url += '?s='+str(lat_min)
+    url += '&w='+str(lon_min)
+    url += '&n='+str(lat_max)
+    url += '&e='+str(lon_max)
+    listVideos(url)
+
+def watchingRightNowIn():             
+    url  = 'http://api.vevo.com/mobile/v1/video/watchingRightNowIn.json'
+    latitude = float(addon.getSetting('latitude')) 
+    longitude = float(addon.getSetting('longitude'))
+    miles = (int(addon.getSetting('radius'))+1)*100
+    lat_min,lat_max,lon_min,lon_max = searchBox(latitude, longitude, miles)
+    url += '?s='+str(lat_min)
+    url += '&w='+str(lon_min)
+    url += '&n='+str(lat_max)
+    url += '&e='+str(lon_max)
+    listVideos(url)  
+
+def toursRightNow():    
+    url = 'http://api.vevo.com/mobile/v1/geo/toursrightnow.json'
+    latitude = float(addon.getSetting('latitude')) 
+    longitude = float(addon.getSetting('longitude'))
+    miles = (int(addon.getSetting('radius'))+1)*100
+    lat_min,lat_max,lon_min,lon_max = searchBox(latitude, longitude, miles)
+    url += '?s='+str(lat_min)
+    url += '&w='+str(lon_min)
+    url += '&n='+str(lat_max)
+    url += '&e='+str(lon_max)
+    max = maxperpage
+    fetch_url=url+'&offset=0&max='+str(max)
+    data = getURL(fetch_url)
+    artists = demjson.decode(data)['result']
+    total = len(artists)
+    for artist in artists:
+        artist_id = artist['artistid']
+        event_name = artist['eventname']
+        artist_image = artist['artist']['image_url']
+        url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
+        addDir(event_name, url, 'listVideos', iconimage=artist_image, total=total)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+
+
 def matchedArtists():
     url = 'http://api.vevo.com/mobile/v1/search/artistmatch.json'
     artists = getLibraryArtists()
@@ -346,6 +409,7 @@ def matchedArtists():
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
         display_name=artist_name+' ('+str(video_count)+')'
         addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     
       

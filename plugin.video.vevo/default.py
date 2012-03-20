@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib, urllib2, cookielib
-import string, os, re, time, datetime, math
+import string, os, re, time, datetime, math, time, unicodedata
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 
@@ -31,8 +31,13 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 
 def listCategories():
     addDir('Video Premieres',    'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',   'listVideos')
-    addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                   'rootVideos')
-    addDir('Artists by Genre',            'http://api.vevo.com/mobile/v1/artist/list.json',                  'rootArtists')
+    if (addon.getSetting('latitude') <> '') and (addon.getSetting('latitude') <> ''):
+        addDir('Being Watched',        '',                                                 'watchingRightNowIn')
+        addDir('Trending Now',         '',                                                 'TrendingRightNowIn')
+    addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
+    addDir('Artists by Genre',            'http://api.vevo.com/mobile/v1/artist/list.json',         'rootArtists')
+    if (addon.getSetting('latitude') <> '') and (addon.getSetting('latitude') <> ''):
+        addDir('Artists Touring Nearby',          '',                                               'toursRightNow')
     addDir('My Artists',         '',                                                                'matchedArtists')
     addDir('Search',             '',                                                                'searchArtists')
     #addDir('Search Videos',      '',                                                                'searchVideos')
@@ -40,10 +45,6 @@ def listCategories():
     addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Staff Picks',        '',                                                                'listStaffPicks')
     addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
-    if (addon.getSetting('latitude') <> '') and (addon.getSetting('latitude') <> ''):
-        addDir('Being Watched',        '',                                                              'watchingRightNowIn')
-        addDir('Trending Now',         '',                                                              'TrendingRightNowIn')
-        addDir('Touring Now',          '',                                                              'toursRightNow')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listStaffPicks():
@@ -385,6 +386,10 @@ def toursRightNow():
         addDir(event_name, url, 'listVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
+def cleanartists(name):    
+    try: name = unicodedata.normalize( 'NFKD', _unicode( name ) ).encode( 'ascii', 'ignore' )
+    except: pass
+    return name.replace('"','').replace("'",'').replace('<','').replace('>','').replace('(','').replace(')','').replace('\n',' ').replace('-',' ')
 
 def matchedArtists():
     url = 'http://api.vevo.com/mobile/v1/search/artistmatch.json'
@@ -393,11 +398,12 @@ def matchedArtists():
     json_list = []
     for artist in artists:
         artistjson = {'songCount':1,
-                      'query':artist}
+                      'query':cleanartists(artist)}
         json_list.append(artistjson)
     json_query['query']=json_list
+    json_query['last_batch']='true'
     json_query = dumps(json_query)
-    data = getURL( url , postdata=json_query)
+    data = getURL( url , postdata=json_query, extendTimeout=60)
     artists = demjson.decode(data)['result']
     total = len(artists)
     for artist in artists:
@@ -439,7 +445,6 @@ def HTTPDynamic():
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
     if addon.getSetting('unpause') == 'true':
-        import time
         sleeptime = int(addon.getSetting('unpausetime'))+1
         time.sleep(sleeptime)
         xbmc.Player().pause()
@@ -495,25 +500,23 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
                                            })
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
 
-def getURL( url , extraheader=True, postdata=False):
+
+def getURL( url , postdata=False, extendTimeout=False):
     try:
         print 'VEVO --> common :: getURL :: url = '+url
-        cj = cookielib.LWPCookieJar()
-        #if os.path.isfile(COOKIEFILE):
-        #    cj.load(COOKIEFILE, ignore_discard=True)
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-        opener.addheaders = [('Referer', 'http://www.vevo.com'),
-                             ('User-Agent', 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2;)')]
-        if extraheader:
-            opener.addheaders = [('X-Requested-With', 'XMLHttpRequest')]
+        #us_proxy = 'http://192.168.1.107:8888'
+        #proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+        opener = urllib2.build_opener()#proxy_handler)
+        opener.addheaders = [('User-Agent', 'VEVO')]
         if postdata:
-            usock=opener.open(url,postdata)
+            if extendTimeout <> False:
+                usock=opener.open(url,postdata,extendTimeout)
+            else:
+                usock=opener.open(url,postdata)
         else:
             usock=opener.open(url)
         response=usock.read()
         usock.close()
-        #if os.path.isfile(COOKIEFILE):
-        #    cj.save(COOKIEFILE, ignore_discard=True)
         return response
     except urllib2.URLError, e:
         print 'Error reason: ', e

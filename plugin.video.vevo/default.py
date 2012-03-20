@@ -100,6 +100,7 @@ def listVideos(url = False,playlist=False,playall=False):
                 addDir('*Next Page*', url,    'listVideos', page=str(page+1))
             addDir('*Play All*', url, 'playAll',folder=False)
         for video in videos:
+            cm=[]
             video_id = video['isrc']
             try:title = video['title'].encode('utf-8')
             except: title = ''
@@ -134,6 +135,8 @@ def listVideos(url = False,playlist=False,playall=False):
                 artist_id = artistdata['id']
                 artist_name = artistdata['name'].encode('utf-8')
                 artist_image = artistdata['image_url']
+                artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % artist_id
+                cm.append( ('More %s Videos' % artist_name, "XBMC.RunPlugin(%s?mode='%s'&url=%s)" % ( sys.argv[0],urllib.quote_plus('listVideos'), urllib.quote_plus(artist_url) ) ) ) 
             else:
                 artist_name = ''
                 artist_image = ''
@@ -170,6 +173,7 @@ def listVideos(url = False,playlist=False,playall=False):
             xbmc.Player().play(playlist)
         else:
             xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+            setView()
 
 def playAll():
     listVideos(params['url'],playall=True)
@@ -241,6 +245,7 @@ def listArtists(url = False):
         display_name=artist_name+' ('+str(video_count)+')'
         addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    setView()
 
 # Playlist listings
 def listPlaylists(url = False):
@@ -384,6 +389,7 @@ def toursRightNow():
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
         addDir(event_name, url, 'listVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    xbmc.executebuiltin("Container.SetViewMode(51)")
 
 def _unicode( text, encoding='utf-8' ):
     try: text = unicode( text, encoding )
@@ -421,6 +427,7 @@ def matchedArtists():
         addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    setView()
     
       
 def getLibraryArtists():
@@ -504,6 +511,11 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
                                            })
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
 
+def setView():
+    confluence_views = [50,500,511]
+    if addon.getSetting('viewenable') == 'true':
+        view=int(addon.getSetting('defaultview'))
+        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
 def getURL( url , postdata=False, extendTimeout=False):
     try:

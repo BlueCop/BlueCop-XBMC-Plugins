@@ -8,7 +8,6 @@ import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import demjson
-from json import dumps, loads
 
 import unicodedata 
 
@@ -386,6 +385,11 @@ def toursRightNow():
         addDir(event_name, url, 'listVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
+def _unicode( text, encoding='utf-8' ):
+    try: text = unicode( text, encoding )
+    except: pass
+    return text
+
 def cleanartists(name):    
     try: name = unicodedata.normalize( 'NFKD', _unicode( name ) ).encode( 'ascii', 'ignore' )
     except: pass
@@ -398,11 +402,11 @@ def matchedArtists():
     json_list = []
     for artist in artists:
         artistjson = {'songCount':1,
-                      'query':cleanartists(artist)}
+                      'query':artist}
         json_list.append(artistjson)
     json_query['query']=json_list
     json_query['last_batch']='true'
-    json_query = dumps(json_query)
+    json_query = demjson.encode(json_query) #dumps(json_query)
     data = getURL( url , postdata=json_query, extendTimeout=60)
     artists = demjson.decode(data)['result']
     total = len(artists)
@@ -425,7 +429,7 @@ def getLibraryArtists():
     artistlist = []
     if json_response['result']:
         for item in json_response['result']['artists']:
-            artistname = item['label']
+            artistname = cleanartists(item['label'])
             artistlist.append(artistname)
     return artistlist
     

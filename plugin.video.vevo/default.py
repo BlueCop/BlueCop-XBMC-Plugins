@@ -136,7 +136,8 @@ def listVideos(url = False,playlist=False,playall=False):
                 artist_name = artistdata['name'].encode('utf-8')
                 artist_image = artistdata['image_url']
                 artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % artist_id
-                cm.append( ('More %s Videos' % artist_name, "XBMC.RunPlugin(%s?mode='%s'&url=%s)" % ( sys.argv[0],urllib.quote_plus('listVideos'), urllib.quote_plus(artist_url) ) ) ) 
+                u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
+                cm.append( ('More %s Videos' % artist_name, "Container.Update(%s)" % u) )
             else:
                 artist_name = ''
                 artist_image = ''
@@ -144,10 +145,13 @@ def listVideos(url = False,playlist=False,playall=False):
             if len(video['artists_featured']) > 0:
                 feats=''
                 for featuredartist in video['artists_featured']:
-                    #featuredartist_id = featuredartist['id']
+                    featuredartist_id = featuredartist['id']
                     #featuredartist_image = featuredartist['image_url']
                     featuredartist_name = featuredartist['name'].encode('utf-8')
                     feats= featuredartist_name+', '
+                    artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % featuredartist_id
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
+                    cm.append( ('More %s Videos' % featuredartist_name, "Container.Update(%s)" % u) ) 
                 feats=feats[:-2]
                 artist = artist_name+' feat. '+feats
             else:
@@ -165,6 +169,7 @@ def listVideos(url = False,playlist=False,playall=False):
                                                      "Year":year})
             item.setProperty('fanart_image',artist_image)
             item.setProperty('IsPlayable', 'true')
+            item.addContextMenuItems( cm )
             if playall:
                 playlist.add(url=u, listitem=item)
             else:

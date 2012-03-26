@@ -47,18 +47,21 @@ def PLAYTRAILER(resolve=False):
         PLAY(rtmpurls,swfUrl=swfUrl,Trailer=videoname,resolve=resolve)
         
 def GETSTREAMS(getstream):
+    data = common.getURL(getstream,'atv-ps.amazon.com',useCookie=True)
+    print data
+    rtmpdata = demjson.decode(data)
+    print rtmpdata
     try:
-        data = common.getURL(getstream,'atv-ps.amazon.com',useCookie=True)
-        print data
-        rtmpdata = demjson.decode(data)
-        print rtmpdata
-        sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
-        cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
-        rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
-        title = rtmpdata['message']['body']['metadata']['title'].replace('[HD]','')
-        return rtmpurls, sessionId, cdn, title
-    except:
-        return False, False, False
+        drm = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['drm']
+        if drm <> 'NONE':
+            xbmcgui.Dialog().ok('DRM Detected','This video uses %s DRM' % drm)
+    except:pass
+    sessionId = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['sessionId']
+    cdn = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['cdn']
+    rtmpurls = rtmpdata['message']['body']['urlSets']['streamingURLInfoSet'][0]['streamingURLInfo']
+    title = rtmpdata['message']['body']['metadata']['title'].replace('[HD]','')
+    return rtmpurls, sessionId, cdn, title
+
 
 def PLAYVIDEO():
     try:
@@ -70,7 +73,7 @@ def PLAYVIDEO():
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
     getstream += '?asin='+values['asin']
     getstream += '&deviceTypeID='+values['deviceTypeID']
-    getstream += '&firmware=LNX%2010,3,181,14%20PlugIn'
+    getstream += '&firmware=WIN%2010,0,181,14%20PlugIn'
     getstream += '&customerID='+values['customerID']
     getstream += '&deviceID='+values['deviceID']
     getstream += '&token='+values['token']
@@ -88,9 +91,9 @@ def PLAYVIDEO():
         USurl += '?device_type_id='+values['deviceTypeID']
         USurl += '&deviceTypeID='+values['deviceTypeID']
         USurl += '&streaming_session_id='+streamSessionID
-        USurl += '&operating_system=Linux%202.6.35-28-generic'
+        USurl += '&operating_system='
         USurl += '&timecode=45.003'
-        USurl += '&flash_version=LNX%2010,3,181,14%20PlugIn'
+        USurl += '&flash_version=WIN%2010,3,181,14%20PlugIn'
         USurl += '&asin='+values['asin']
         USurl += '&token='+values['token']
         USurl += '&browser='+urllib.quote_plus(values['userAgent'])
@@ -104,7 +107,7 @@ def PLAYVIDEO():
         USurl += '&start_state=Video'
         USurl += '&amazon_session_id='+values['sessionID']
         USurl += '&event=STOP'
-        USurl += '&firmware=LNX%2010,3,181,14%20PlugIn'
+        USurl += '&firmware=WIN%2010,3,181,14%20PlugIn'
         USurl += '&customerID='+values['customerID']
         USurl += '&deviceID='+values['deviceID']
         USurl += '&source_system=http://www.amazon.com'
@@ -125,7 +128,7 @@ def PLAYVIDEO():
         surl += '&download_bandwidth=9926.295518207282'
         surl += '&device_id='+values['deviceTypeID']
         surl += '&from_mode=purchased'
-        surl += '&operating_system=Linux%202.6.35-28-generic'
+        surl += '&operating_system='
         surl += '&version=1'
         surl += '&flash_version=LNX%2010,3,181,14%20PlugIn'
         surl += '&url='+urllib.quote_plus(basertmp)
@@ -143,7 +146,7 @@ def PLAYVIDEO():
         surl += '&new_streaming_bit_rate=2500'
         surl += '&asin='+values['asin']
         surl += '&deviceTypeID='+values['deviceTypeID']
-        surl += '&firmware=LNX%2010,3,181,14%20PlugIn'
+        surl += '&firmware=WIN%2010,3,181,14%20PlugIn'
         surl += '&customerID='+values['customerID']
         print common.getURL(surl,'atv-ps.amazon.com',useCookie=True)
         if values['pageType'] == 'movie':

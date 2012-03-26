@@ -23,9 +23,9 @@ def SEARCH_PRIME():
         data = common.getURL(url,useCookie=False)
         tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
         #videos = tree.findAll('div',attrs={'class':re.compile("^result.+product$"),'name':True}) 
-        atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False)
+        atf = tree.find(attrs={'id':'atfResults'}).findAll('div',recursive=False,attrs={'name':True})
         try:
-            btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False)
+            btf = tree.find(attrs={'id':'btfResults'}).findAll('div',recursive=False,attrs={'name':True})
             atf.extend(btf)
             del btf
         except:
@@ -40,8 +40,8 @@ def SEARCH_PRIME():
             #print price
             #if (price != None and price.string != None and price.string.strip() == '$0.00'):
             asin = video['name']
-            movietitle = video.find('',attrs={'class':'title'}).a.string
-            url = video.find('div',attrs={'class':'title'}).a['href'] # 
+            movietitle = video.find('',attrs={'class':'data'}).a.string
+            url = video.find('div',attrs={'class':'data'}).a['href'] # 
             thumb = video.find('img')['src'].replace('._AA160_','') # was SS160 for purchased tv/movies, regular search is just this
             fanart = thumb      
             infoLabels = { 'Title':movietitle}

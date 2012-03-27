@@ -72,6 +72,8 @@ site_dict = {'ABC': 'abc',
              'Nickelodeon':'nick',
              'Nick Toons':'nicktoons',
              'Nick Teen':'nickteen',
+             'National Geographic':'natgeo',
+             'Nat Geo Wild':'natgeowild',
              #'HGTV':'hgtv'
              }
 

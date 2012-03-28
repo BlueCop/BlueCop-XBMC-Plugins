@@ -111,6 +111,8 @@ def listVideos(url = False,playlist=False,playall=False):
             
             if video.has_key('credit'):
                 credits = video['credit']
+                genre = ''
+                recordlabel = ''
                 try:
                     for credit in credits:
                         if credit['Key'] == 'Genre':
@@ -415,7 +417,7 @@ def matchedArtists():
         artistjson = {'songCount':1,
                       'query':artist}
         json_list.append(artistjson)
-    json_query['query']=json_list
+    json_query['query']=json_list 
     json_query['last_batch']='true'
     json_query = demjson.encode(json_query) #dumps(json_query)
     data = getURL( url , postdata=json_query, extendTimeout=60)
@@ -464,6 +466,15 @@ def HTTPDynamic():
         sleeptime = int(addon.getSetting('unpausetime'))+1
         time.sleep(sleeptime)
         xbmc.Player().pause()
+
+
+def getLyrics(vevoID):
+    url = 'http://www.vevo.com/data/VideoLyrics/'+vevoID
+    data = getURL(url)
+    json = demjson.decode(data)
+    lyrics = json['Text'].replace('\r','').split('\n')
+    for lyric in lyrics:
+        print lyric.strip()
 
 def YouTube():
     vevoID = params['url'].split('/')[-1]
@@ -525,13 +536,12 @@ def setView():
 def getURL( url , postdata=False, extendTimeout=False):
     try:
         print 'VEVO --> common :: getURL :: url = '+url
-        #us_proxy = 'http://192.168.1.107:8888'
-        #proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-        opener = urllib2.build_opener()#proxy_handler)
+        opener = urllib2.build_opener()
         opener.addheaders = [('User-Agent', 'VEVO')]
         if postdata:
             if extendTimeout <> False:
-                usock=opener.open(url,postdata,extendTimeout)
+                try:usock=opener.open(url,postdata,extendTimeout)
+                except:usock=opener.open(url,postdata)
             else:
                 usock=opener.open(url,postdata)
         else:

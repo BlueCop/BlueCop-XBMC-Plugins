@@ -35,17 +35,12 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 # Root listing
 
 def listCategories():
-    if addon.getSetting('login_name') <> '' and addon.getSetting('login_pass') <> '':
-        if addon.getSetting('getnewtoken') == 'true':
-            if getFBAuth():
-                getVEVOAccount()
-                addon.setSetting(id='getnewtoken',value='false')
     if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
         setLocation()
-    addDir('Video Premieres',    'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',   'listVideos')
+    #addDir('Featured',    'http://api.vevo.com/mobile/v2/featured/carousel.json?extended=true',   '')
+    addDir('Premieres',   'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',        'listVideos')
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
-        addDir('Being Watched',        '',                                                 'watchingRightNowIn')
-        addDir('Trending Now',         '',                                                 'TrendingRightNowIn')
+        addDir('Trending',        '',                                                 'Trending')
     addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
     addDir('Artists by Genre',            'http://api.vevo.com/mobile/v1/artist/list.json',         'rootArtists')
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
@@ -56,22 +51,25 @@ def listCategories():
     u=sys.argv[0]+"?url="+urllib.quote_plus('')+"&mode="+urllib.quote_plus('deletefavArtists')+'&page='+str(1)
     cm.append( ('Delete All Artists', "XBMC.RunPlugin(%s)" % u) )
     addDir('Favorite Artists',         '',                                                          'favArtists' , cm=cm)
+    addDir('Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',            'rootPlaylists')
+    addDir('Staff Picks',        '',                                                                'listStaffPicks')
+    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Search',             '',                                                                'searchArtists')
     #addDir('Search Videos',      '',                                                                'searchVideos')
     #addDir('Search Artists',     '',                                                                'searchArtists')
-    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
-    addDir('Staff Picks',        '',                                                                'listStaffPicks')
-    addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
-    if addon.getSetting('login_name') <> '' and addon.getSetting('login_pass') <> '':
-        if addon.getSetting('session_token'):
-            addDir('My Playlists',         'http://api.vevo.com/mobile/v1/userplaylists.json?',             'userPlaylists')
-            addDir('My Friends',           'http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?',   'friendPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listStaffPicks():
     addDir('Video Picks',        'http://api.vevo.com/mobile/v1/featured/TopVideos.json?',          'listVideos')
     addDir('Playlist Picks',     'http://api.vevo.com/mobile/v3/featured/TopPlaylists.json?',       'listPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle)
+
+def Trending():
+    addDir('Being Watched',        '',                                                 'watchingRightNowIn')
+    addDir('Trending Now',         '',                                                 'TrendingRightNowIn')
+    xbmcplugin.endOfDirectory(pluginhandle)
+  
+
 
 # Video listings
 def rootVideos():
@@ -292,12 +290,26 @@ def listArtists(url = False):
     setView()
 
 # Playlist listings
+def rootPlaylists():
+    addDir('Top Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',        'listPlaylists')
+    if addon.getSetting('login_name') <> '' and addon.getSetting('login_pass') <> '':
+        if addon.getSetting('getnewtoken') == 'true':
+            if getFBAuth():
+                getVEVOAccount()
+                addon.setSetting(id='getnewtoken',value='false')
+        if addon.getSetting('session_token'):
+            addDir('My Playlists',         'http://api.vevo.com/mobile/v1/userplaylists.json?',             'userPlaylists')
+            #friendPlaylists('http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?')
+            addDir('My Friends',           'http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?',   'friendPlaylists')
+    xbmcplugin.endOfDirectory(pluginhandle)
+
 def userPlaylists():
     #url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' %
     listPlaylists(VEVOToken=True)
     
-def friendPlaylists():
-    url = params['url']
+def friendPlaylists(url = False):
+    if not url:
+        url = params['url']
     sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
     data = getURL(url, postdata=sendtoken, VEVOToken=True)
     print data

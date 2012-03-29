@@ -39,6 +39,7 @@ def listCategories():
         setLocation()
     addDir('Featured',    'http://api.vevo.com/mobile/v2/featured/carousel.json?',   'listFeatured')
     addDir('Premieres',   'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',        'listVideos')
+    addDir('Staff Picks',        '',                                                                'listStaffPicks')
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
         addDir('Trending',        '',                                                 'Trending')
     addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
@@ -52,7 +53,6 @@ def listCategories():
     cm.append( ('Delete All Artists', "XBMC.RunPlugin(%s)" % u) )
     addDir('Favorite Artists',         '',                                                          'favArtists' , cm=cm)
     addDir('Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',            'rootPlaylists')
-    addDir('Staff Picks',        '',                                                                'listStaffPicks')
     addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Search',             '',                                                                'searchArtists')
     #addDir('Search Videos',      '',                                                                'searchVideos')

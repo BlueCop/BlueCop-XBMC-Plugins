@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-	<string id="30000">E-Mail</string>
+	<string id="30000">Facebook E-Mail</string>
 	<string id="30001">Password</string>
 
 	<string id="30004">Chosen Bitrate</string>
@@ -18,9 +18,14 @@
 
 	<string id="30016">Per Page</string>
 	<string id="30017">Play from Youtube</string>
-	<string id="30018">Latitude</string>
-	<string id="30019">Longitude</string>
+	<string id="30018">Latitude (Blank to Disable)</string>
+	<string id="30019">Longitude (Blank to Disable)</string>
 	<string id="30020">Radius in Miles</string>
+	
+	<string id="30021">User Data</string>
+	<string id="30022">View</string>
+	<string id="30023">Streaming</string>
+	
 	
 	<string id="30050">Enable Set View</string>
 	<string id="30058">Default View</string>

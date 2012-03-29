@@ -37,7 +37,7 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 def listCategories():
     if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
         setLocation()
-    #addDir('Featured',    'http://api.vevo.com/mobile/v2/featured/carousel.json?extended=true',   '')
+    addDir('Featured',    'http://api.vevo.com/mobile/v2/featured/carousel.json?',   'listFeatured')
     addDir('Premieres',   'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',        'listVideos')
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
         addDir('Trending',        '',                                                 'Trending')
@@ -68,8 +68,47 @@ def Trending():
     addDir('Being Watched',        '',                                                 'watchingRightNowIn')
     addDir('Trending Now',         '',                                                 'TrendingRightNowIn')
     xbmcplugin.endOfDirectory(pluginhandle)
-  
 
+def listFeatured(url=False):
+    if not url:
+        url = params['url']
+    max = maxperpage
+    page = int(params['page'])
+    offset = (page-1)*max
+    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
+    data = getURL(fetch_url)
+    if data:
+        items = demjson.decode(data)['result']
+        for item in items:
+            image_url = item['image_url']
+            primary_text = item['primary_text'].encode('utf-8')
+            secondary_text = item['secondary_text'].encode('utf-8')
+            action_url = item['action_url']
+            is_live_stream = item['is_live_stream']
+            image_wide_url  = item['image_wide_url']
+            if 'vevo://playlist/' in action_url:
+                mode = 'playlistRoot'
+                videoid = action_url.replace('vevo://playlist/','')
+            elif 'vevo://video/' in action_url:
+                mode = 'playVideo'
+                videoid = action_url.replace('vevo://playlist/','')
+            displayname = primary_text+' - '+secondary_text
+            u = sys.argv[0]
+            u += '?url='+urllib.quote_plus(videoid)
+            u += '&mode='+urllib.quote_plus(mode)
+            item=xbmcgui.ListItem(displayname, iconImage=image_url, thumbnailImage=image_url)
+            item.setInfo( type="Music", infoLabels={ "Title":secondary_text,
+                                                     "Artist":primary_text
+                                                     })
+            item.setProperty('fanart_image',image_wide_url)
+            if mode == 'playVideo':
+                item.setProperty('IsPlayable', 'true')
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+            else:
+                u += '&page=1'
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=True)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    setView()
 
 # Video listings
 def rootVideos():

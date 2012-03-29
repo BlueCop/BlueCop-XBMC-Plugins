@@ -36,9 +36,10 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 
 def listCategories():
     if addon.getSetting('login_name') <> '' and addon.getSetting('login_pass') <> '':
-        if not addon.getSetting('session_token'):
+        if addon.getSetting('getnewtoken') == 'true':
             if getFBAuth():
                 getVEVOAccount()
+                addon.setSetting(id='getnewtoken',value='false')
     if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
         setLocation()
     addDir('Video Premieres',    'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',   'listVideos')
@@ -635,11 +636,14 @@ def getFBAuth():
     br = mechanize.Browser()
     br.set_handle_robots(False)
     br.set_cookiejar(cj)
-    br.addheaders = [('User-agent', 'VEVO 1.5 rv:5529 (iPad; iPhone OS 5.0.1; en_US)')]
+    user = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0'
+    #user = 'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9A405'
+    br.addheaders = [('User-agent', user)]
     #redirect = urllib.quote('fbconnect://success')
     redirect = urllib.quote('https://www.vevo.com')
     scope = urllib.quote('email,user_birthday,user_likes,user_interests,publish_actions')
     url = 'https://graph.facebook.com/oauth/authorize?client_id=184548202936&local_client_id=vevo&redirect_uri=%s&type=user_agent&scope=%s&sdk=ios&display=touch' % (redirect,scope)
+    print url
     br.open(url)
     response = br.response()
     headers = response.info()
@@ -651,8 +655,11 @@ def getFBAuth():
     br["pass"] = password
     logged_in = br.submit()
     url = logged_in.geturl()
+    print logged_in.read()
+    print url
     graph = newGraph(email, password)
     token = graph.extractTokenFromURL(url)
+    print token
     if graph.tokenIsValid(token):
         addon.setSetting(id='fbtoken',value=token)
         return True

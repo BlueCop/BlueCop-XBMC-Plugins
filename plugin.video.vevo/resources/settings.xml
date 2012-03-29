@@ -2,6 +2,7 @@
 	<!-- User Info -->
 	<category label="30021">
 	   <setting type="sep" />
+	   <setting id="getnewtoken" type ="bool" label="30024" default="true"/>
 	   <setting id="login_name" type="text" label="30000" default=""/>
 	   <setting id="login_pass" type="text" label="30001" enable="!eq(-1,)" option="hidden" default=""/>
 	   <setting type="sep" />

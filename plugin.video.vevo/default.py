@@ -16,6 +16,11 @@ from facebook import GraphAPIError, GraphWrapAuthError
 
 import mechanize
 
+try:
+    from sqlite3 import dbapi2 as sqlite
+except:
+    from pysqlite2 import dbapi2 as sqlite
+
 pluginhandle = int(sys.argv[1])
 xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
@@ -27,6 +32,7 @@ BASE = 'http://www.vevo.com'
 COOKIEFILE = os.path.join(pluginpath,'resources','vevo-cookies.lwp')
 #USERFILE = os.path.join(pluginpath,'resources','userfile.js')
 FAVFILE = os.path.join(datapath,'favs.json')
+FAVFILESQL = os.path.join(datapath,'favs.sqlite')
 
 fanart = os.path.join(pluginpath,'fanart.jpg')
 vicon = os.path.join(pluginpath,'icon.png')
@@ -35,17 +41,17 @@ maxperpage=(int(addon.getSetting('perpage'))+1)*25
 # Root listing
 
 def listCategories():
-    if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
-        setLocation()
     addDir('Featured',    'http://api.vevo.com/mobile/v2/featured/carousel.json?',   'listFeatured')
     addDir('Premieres',   'http://api.vevo.com/mobile/v1/video/list.json?ispremiere=true',        'listVideos')
     addDir('Staff Picks',        '',                                                                'listStaffPicks')
+    if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
+        setLocation()
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
         addDir('Trending',        '',                                                 'Trending')
-    addDir('Videos by Genre',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
-    addDir('Artists by Genre',            'http://api.vevo.com/mobile/v1/artist/list.json',         'rootArtists')
-    if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
-        addDir('Artists Touring Nearby',          '',                                               'toursRightNow')
+        addDir('Touring',          '',                                               'toursRightNow')
+    addDir('Videos',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
+    addDir('Artists',            'http://api.vevo.com/mobile/v1/artist/list.json',         'rootArtists')
+    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     cm = []
     u=sys.argv[0]+"?url="+urllib.quote_plus('')+"&mode="+urllib.quote_plus('rematchArtists')+'&page='+str(1)
     cm.append( ('Rematch Library Artists', "XBMC.RunPlugin(%s)" % u) )
@@ -53,7 +59,6 @@ def listCategories():
     cm.append( ('Delete All Artists', "XBMC.RunPlugin(%s)" % u) )
     addDir('Favorite Artists',         '',                                                          'favArtists' , cm=cm)
     addDir('Playlists',        'http://api.vevo.com/mobile/v1/featured/staffpicks.json',            'rootPlaylists')
-    addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
     addDir('Search',             '',                                                                'searchArtists')
     #addDir('Search Videos',      '',                                                                'searchVideos')
     #addDir('Search Artists',     '',                                                                'searchArtists')
@@ -91,14 +96,21 @@ def listFeatured(url=False):
                 videoid = action_url.replace('vevo://playlist/','')
             elif 'vevo://video/' in action_url:
                 mode = 'playVideo'
-                videoid = action_url.replace('vevo://playlist/','')
+                videoid = action_url.replace('vevo://video/','')
             displayname = primary_text+' - '+secondary_text
+            if ':' in primary_text:
+                primary_split = primary_text.split(':')
+                primary_text = primary_split[1].strip()
+                albumtext = primary_split[0].strip()
+            else:
+                albumtext = ''
             u = sys.argv[0]
             u += '?url='+urllib.quote_plus(videoid)
             u += '&mode='+urllib.quote_plus(mode)
             item=xbmcgui.ListItem(displayname, iconImage=image_url, thumbnailImage=image_url)
             item.setInfo( type="Music", infoLabels={ "Title":secondary_text,
-                                                     "Artist":primary_text
+                                                     "Artist":primary_text,
+                                                     "Album":albumtext,
                                                      })
             item.setProperty('fanart_image',image_wide_url)
             if mode == 'playVideo':
@@ -349,15 +361,16 @@ def userPlaylists():
 def friendPlaylists(url = False):
     if not url:
         url = params['url']
-    sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
-    data = getURL(url, postdata=sendtoken, VEVOToken=True)
-    print data
-    friends = demjson.decode(data)['result']['friends_on_vevo']
-    total = len(friends)
-    for friend in friends:
-        url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' % friend['vevo_id']
-        name = friend['name']
-        addDir(name, url, 'listPlaylistsToken', total=total)
+    if getFBAuth():
+        sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
+        data = getURL(url, postdata=sendtoken, VEVOToken=True)
+        print data
+        friends = demjson.decode(data)['result']['friends_on_vevo']
+        total = len(friends)
+        for friend in friends:
+            url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' % friend['vevo_id']
+            name = friend['name']
+            addDir(name, url, 'listPlaylistsToken', total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     
 def listPlaylistsToken():
@@ -422,6 +435,7 @@ def rootShows(url = False):
         url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'/videos.json?order=MostRecent'
         display_name=show_name+' ('+str(video_count)+')'
         addDir(display_name, url, 'listVideos', plot=description, iconimage=show_image, total=total)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 # Search
@@ -493,7 +507,6 @@ def toursRightNow():
         venuename = artist['venuename'].encode('utf-8')
         startdate = artist['startdate']
         event_name = artist['eventname'].encode('utf-8')
-        print event_name
         try:date = event_name.split('(')[1].strip(')')
         except:date = event_name.split(' ')[-1]
         final_name = date+' : '+city+' - '+artist_name+' @ '+venuename
@@ -501,67 +514,86 @@ def toursRightNow():
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     xbmc.executebuiltin("Container.SetViewMode(51)")
 
+def createTVdb():
+    if not os.path.isfile(FAVFILESQL):
+        db = sqlite.connect(FAVFILESQL)
+        db.text_factory = str
+        c = db.cursor()
+        c.execute('''CREATE TABLE artists(
+                     id TEXT,
+                     name TEXT,
+                     image TEXT,
+                     count INTEGER,
+                     PRIMARY KEY(id)
+                     );''')
+        db.commit()
+        c.close()
+        rematchArtists()
+        try:convertJSONfavs()
+        except:pass
 
-def favArtists():
-    if not os.path.isfile(FAVFILE):
-        SaveFile( FAVFILE, demjson.encode( matchedArtists() ) )
-    if os.path.isfile(FAVFILE):
-        artists = demjson.decode(OpenFile(FAVFILE))
-        total = len(artists)
-        for artist in artists:
-            artist_id = artist['id']
-            artist_name = artist['name']
-            artist_image = artist['image_url']
-            video_count = artist['video_count']
-            url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
-            display_name=artist_name+' ('+str(video_count)+')'
-            cm = []
-            u=sys.argv[0]+"?url="+urllib.quote_plus(artist_id)+"&mode="+urllib.quote_plus('removefavArtists')+'&page='+str(1)
-            cm.append( ('Remove %s from Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
-            addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total, cm=cm)
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-        setView()
-        
+def addArtistdb(artist):
+    createTVdb()
+    db = sqlite.connect(FAVFILESQL)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute('insert or ignore into artists values (?,?,?,?)', [artist['id'],artist['name'],artist['image_url'],artist['video_count']])
+    db.commit()
+    c.close()
+
 def addfavArtists():
-    artists = demjson.decode(OpenFile(FAVFILE))
-    add = demjson.decode(getURL(params['url']))['result']
-    for artist in artists:
-        if artist['id'] == add['id']:
-            return xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Duplicate', 'Duplicate Artist', 5000) )
-    artists.append(add)
-    SaveFile( FAVFILE, demjson.encode( artists ) )
+    artist = demjson.decode(getURL(params['url']))['result']
+    addArtistdb(artist)
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Added Artist', 5000) )
 
 def removefavArtists():
-    artists = demjson.decode(OpenFile(FAVFILE))
-    for artist in artists:
-        if params['url'] == artist['id']:
-            artists.pop(artists.index(artist))
-            SaveFile( FAVFILE, demjson.encode( artists ) )
-            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Deleted Artist', 5000) )
-            xbmc.executebuiltin("Container.Refresh()")
+    db = sqlite.connect(FAVFILESQL)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute('delete from artists where id = (?)', (params['url'],) )
+    db.commit()
+    c.close()
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Deleted Artist', 5000) )
+    xbmc.executebuiltin("Container.Refresh()")
     
 def deletefavArtists():
-    os.remove(FAVFILE)
-    # FORCE BLANK FAV
-    #artists = []
-    #SaveFile( FAVFILE, demjson.encode( artists ) )
+    db = sqlite.connect(FAVFILESQL)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute('delete from artists')
+    db.commit()
+    c.close()
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Deleted Favorite Artists', 10000) )
-    
+
 def rematchArtists():
-    if os.path.isfile(FAVFILE):
-        artists = demjson.decode(OpenFile(FAVFILE))
-    else:
-        artists = []
-    aids = []
-    for artist in artists:
-        aids.append(artist['id']) 
-    for martist in matchedArtists():
-        if martist['id'] not in aids:
-            artists.append(martist)
-    SaveFile( FAVFILE, demjson.encode( artists ) )
+    for artist in matchedArtists():
+        addArtistdb(artist)
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Library Artists Added', 10000) )
+
+def convertJSONfavs():
+    if os.path.isfile(FAVFILE): 
+        for artist in demjson.decode(OpenFile(FAVFILE)):
+            addArtistdb(artist)
+        os.remove(FAVFILE)
+
+def favArtists():
+    db = sqlite.connect(FAVFILESQL)
+    db.text_factory = str
+    c = db.cursor()
+    for artist in c.execute('select distinct * from artists'):
+        artist_id = artist[0]
+        artist_name = artist[1]
+        artist_image = artist[2]
+        video_count = artist[3]
+        url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
+        display_name=artist_name+' ('+str(video_count)+')'
+        cm = []
+        u=sys.argv[0]+"?url="+urllib.quote_plus(artist_id)+"&mode="+urllib.quote_plus('removefavArtists')+'&page='+str(1)
+        cm.append( ('Remove %s from Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        addDir(display_name, url, 'listVideos', iconimage=artist_image, cm=cm)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    setView()
 
 def matchedArtists():
     url = 'http://api.vevo.com/mobile/v1/search/artistmatch.json'
@@ -711,7 +743,6 @@ def getFBAuth():
     redirect = urllib.quote('https://www.vevo.com')
     scope = urllib.quote('email,user_birthday,user_likes,user_interests,publish_actions')
     url = 'https://graph.facebook.com/oauth/authorize?client_id=184548202936&local_client_id=vevo&redirect_uri=%s&type=user_agent&scope=%s&sdk=ios&display=touch' % (redirect,scope)
-    print url
     br.open(url)
     response = br.response()
     headers = response.info()
@@ -723,11 +754,8 @@ def getFBAuth():
     br["pass"] = password
     logged_in = br.submit()
     url = logged_in.geturl()
-    print logged_in.read()
-    print url
     graph = newGraph(email, password)
     token = graph.extractTokenFromURL(url)
-    print token
     if graph.tokenIsValid(token):
         addon.setSetting(id='fbtoken',value=token)
         return True

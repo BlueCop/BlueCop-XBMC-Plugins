@@ -361,16 +361,16 @@ def userPlaylists():
 def friendPlaylists(url = False):
     if not url:
         url = params['url']
-    if getFBAuth():
-        sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
-        data = getURL(url, postdata=sendtoken, VEVOToken=True)
-        print data
-        friends = demjson.decode(data)['result']['friends_on_vevo']
-        total = len(friends)
-        for friend in friends:
-            url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' % friend['vevo_id']
-            name = friend['name']
-            addDir(name, url, 'listPlaylistsToken', total=total)
+    #if getFBAuth():
+    sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
+    data = getURL(url, postdata=sendtoken, VEVOToken=True)
+    print data
+    friends = demjson.decode(data)['result']['friends_on_vevo']
+    total = len(friends)
+    for friend in friends:
+        url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' % friend['vevo_id']
+        name = friend['name']
+        addDir(name, url, 'listPlaylistsToken', total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     
 def listPlaylistsToken():

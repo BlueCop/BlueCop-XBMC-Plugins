@@ -514,7 +514,7 @@ def toursRightNow():
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     xbmc.executebuiltin("Container.SetViewMode(51)")
 
-def createTVdb():
+def createArtistdb():
     if not os.path.isfile(FAVFILESQL):
         db = sqlite.connect(FAVFILESQL)
         db.text_factory = str
@@ -533,7 +533,7 @@ def createTVdb():
         except:pass
 
 def addArtistdb(artist):
-    createTVdb()
+    createArtistdb()
     db = sqlite.connect(FAVFILESQL)
     db.text_factory = str
     c = db.cursor()
@@ -577,6 +577,7 @@ def convertJSONfavs():
         os.remove(FAVFILE)
 
 def favArtists():
+    createArtistdb()
     db = sqlite.connect(FAVFILESQL)
     db.text_factory = str
     c = db.cursor()

@@ -47,8 +47,11 @@ def listCategories():
     if (addon.getSetting('latitude') == 'Lookup by IP') and (addon.getSetting('latitude') == 'Lookup by IP'):
         setLocation()
     if (addon.getSetting('latitude') <> '') or (addon.getSetting('latitude') <> ''):
-        addDir('Trending',        '',                                                 'Trending')
-        addDir('Touring',          '',                                               'toursRightNow')
+        cm = []
+        u=sys.argv[0]+"?url="+urllib.quote_plus('')+"&mode="+urllib.quote_plus('setLocation')+'&page='+str(1)
+        cm.append( ('Set Location by IP', "XBMC.RunPlugin(%s)" % u) )
+        addDir('Trending',        '',                                                 'Trending', cm=cm)
+        addDir('Touring',          '',                                               'toursRightNow', cm=cm)
     addDir('Videos',       'http://api.vevo.com/mobile/v1/video/list.json',                'rootVideos')
     addDir('Artists',            'http://api.vevo.com/mobile/v1/artist/list.json',         'rootArtists')
     addDir('Shows',               'http://api.vevo.com/mobile/v1/show/list.json?',                  'rootShows')
@@ -242,6 +245,7 @@ def listVideos(url = False,playlist=False,playall=False):
             u = sys.argv[0]
             u += '?url='+urllib.quote_plus(video_id)
             u += '&mode='+urllib.quote_plus('playVideo')
+            u += '&duration='+urllib.quote_plus(str(duration))
             displayname = artist+' - '+title
             item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
             item.setInfo( type="Music", infoLabels={ "Title":title,
@@ -595,6 +599,7 @@ def favArtists():
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     setView()
+    c.close()
 
 def matchedArtists():
     url = 'http://api.vevo.com/mobile/v1/search/artistmatch.json'
@@ -638,21 +643,60 @@ def playlistVideo():
         except:YouTube()
 
 def HTTPDynamic():
+    if addon.getSetting('lyricsubs') == 'true':
+        if params['duration']:
+            getLyrics(params['url'],params['duration'])
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
     if addon.getSetting('unpause') == 'true':
         sleeptime = int(addon.getSetting('unpausetime'))+1
         time.sleep(sleeptime)
         xbmc.Player().pause()
+    subtitles = os.path.join(datapath,params['url']+'.srt')
+    if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
+        xbmc.Player().setSubtitles(subtitles)
 
+def convert_time(milliseconds):
+    seconds = int(float(milliseconds)/1000)
+    milliseconds -= (seconds*1000)
+    hours = seconds / 3600
+    seconds -= 3600*hours
+    minutes = seconds / 60
+    seconds -= 60*minutes
+    return "%02d:%02d:%02d,%3d" % (hours, minutes, seconds, milliseconds)
 
-def getLyrics(vevoID):
+def getLyrics(vevoID,duration):
+    subtitles = os.path.join(datapath,vevoID+'.srt')
+    #if not os.path.isfile(subtitles):
     url = 'http://www.vevo.com/data/VideoLyrics/'+vevoID
-    data = getURL(url)
-    json = demjson.decode(data)
-    lyrics = json['Text'].replace('\r','').split('\n')
-    for lyric in lyrics:
-        print lyric.strip()
+    data = getURL(url,browser=True,alert=False)
+    if data:
+        json = demjson.decode(data)
+        lyrics = json['Text'].replace('\r','').split('\n')
+        sets = []
+        set=''
+        for lyric in lyrics:
+            sub = lyric.strip()
+            if sub == '':
+                sets.append(set)
+                set=''
+            else:
+                set += sub+'\n'
+        sets.append(set)
+        lines = len(sets)
+        duration = float(duration)*1000
+        offset = duration*0.05
+        rate = (duration*0.90)/lines
+        count = 0
+        srt_output = ''      
+        for set in sets:
+            start = convert_time( (count*rate)+offset )
+            end = convert_time( ( (count+1)*rate ) + offset - 1)
+            count += 1
+            line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n\n"
+            srt_output += line
+        if srt_output <> '':
+            SaveFile(subtitles, srt_output)
 
 def YouTube():
     vevoID = params['url'].split('/')[-1]
@@ -718,11 +762,15 @@ def setLocation():
         url = 'http://www.geobytes.com/IpLocator.htm?GetLocation&template=json.txt'
         data = getURL(url)
         locationdata = demjson.decode(data)['geobytes']
-        addon.setSetting(id='latitude',value=str(locationdata['latitude']))
-        addon.setSetting(id='longitude',value=str(locationdata['longitude']))
+        latitude=str(locationdata['latitude'])
+        longitude=str(locationdata['longitude'])
+        addon.setSetting(id='latitude',value=latitude)
+        addon.setSetting(id='longitude',value=longitude)
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Set Location', '%s , %s' % (latitude, longitude), 8000) )
     except:
         addon.setSetting(id='latitude',value='')
         addon.setSetting(id='longitude',value='')
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Failed', 'No Location Set', 10000) )
 
 def newGraph(email,password,uid=None,token=None,new_token_callback=None):
     graph = facebook.GraphWrap(token,new_token_callback=new_token_callback)
@@ -772,11 +820,14 @@ def getVEVOAccount():
     addon.setSetting(id='vevo_user_id',value=json['user_id'])
     addon.setSetting(id='session_token',value=json['session_token'])
 
-def getURL( url , postdata=False, extendTimeout=False, VEVOToken=False, VEVOKey=False):
+def getURL( url , postdata=False, extendTimeout=False, VEVOToken=False, VEVOKey=False, browser=False, alert=True):
     try:
         print 'VEVO --> common :: getURL :: url = '+url
         opener = urllib2.build_opener()
-        opener.addheaders = [('User-Agent', 'VEVO 1.5 rv:5529 (iPad; iPhone OS 5.0.1; en_US)')]
+        if browser:
+            opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0')]
+        else:
+            opener.addheaders = [('User-Agent', 'VEVO 1.5 rv:5529 (iPad; iPhone OS 5.0.1; en_US)')]
         if VEVOToken:
             opener.addheaders = [('X-VEVO-Session-Token', addon.getSetting('session_token') )]
         if VEVOKey:
@@ -797,7 +848,8 @@ def getURL( url , postdata=False, extendTimeout=False, VEVOToken=False, VEVOKey=
         heading = 'Error'
         message = e
         duration = 10000
-        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
+        if alert:
+            xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( heading, message, duration) )
         return False
 
 def _unicode( text, encoding='utf-8' ):

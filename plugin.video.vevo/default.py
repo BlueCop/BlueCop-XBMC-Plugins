@@ -151,7 +151,7 @@ def sortWhenVideo():
     addDir(name+' All-Time',      url+'AllTime',    'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
     
-def listVideos(url = False,playlist=False,playall=False):
+def listVideos(url = False,playlist=False,playall=False,VEVOToken=False):
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_UNSORTED)
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
@@ -162,7 +162,7 @@ def listVideos(url = False,playlist=False,playall=False):
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
-    data = getURL(fetch_url)
+    data = getURL(fetch_url,VEVOToken=VEVOToken)
     if data:
         if playlist:
             videos = demjson.decode(data)['result']['videos']
@@ -178,10 +178,19 @@ def listVideos(url = False,playlist=False,playall=False):
                 addDir('*Next Page*', url,    'listVideos', page=str(page+1))
             addDir('*Play All*', url, 'playAll',folder=False)
         for video in videos:
-            cm=[]
             video_id = video['isrc']
             try:title = video['title'].encode('utf-8')
             except: title = ''
+            cm=[]
+            if addon.getSetting('session_token'):
+                if VEVOToken:
+                    playlist_id = fetch_url.split('userplaylist/')[1].split('.')[0]
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('removeVideo2Playlist')+'&page='+urllib.quote_plus(playlist_id)
+                    cm.append( ('Remove from Playlist', "XBMC.RunPlugin(%s)" % u) )
+                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('addVideo2Playlist')+'&page='+str(1)
+                cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
+                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('newVideoPlaylist')+'&page='+str(1)
+                cm.append( ('Start New Playlist', "XBMC.RunPlugin(%s)" % u) )                    
             video_image = video['image_url']
             duration = video['duration_in_seconds']
             try:year = int(video['video_year'])
@@ -217,10 +226,10 @@ def listVideos(url = False,playlist=False,playall=False):
                 artist_image = artistdata['image_url']
                 artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % artist_id
                 u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
-                cm.append( ('More %s Videos' % artist_name, "Container.Update(%s)" % u) )
+                cm.append( ('More %s' % artist_name, "Container.Update(%s)" % u) )
                 artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
                 u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-                cm.append( ('Add %s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+                cm.append( ('%s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
             else:
                 artist_name = ''
                 artist_image = ''
@@ -353,14 +362,65 @@ def rootPlaylists():
                 getVEVOAccount()
                 addon.setSetting(id='getnewtoken',value='false')
         if addon.getSetting('session_token'):
-            addDir('My Playlists',         'http://api.vevo.com/mobile/v1/userplaylists.json?',             'userPlaylists')
+            addDir('My Playlists',         'http://api.vevo.com/mobile/v1/userplaylists.json?',             'listPlaylistsToken')
             #friendPlaylists('http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?')
             addDir('My Friends',           'http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?',   'friendPlaylists')
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def userPlaylists():
-    #url = 'http://api.vevo.com/mobile/v1/userplaylists/%s/list.json' %
-    listPlaylists(VEVOToken=True)
+def removeVideo2Playlist(playlist_id=False,isrc=False):
+    if not isrc:
+        isrc = params['url']
+    if not playlist_id:
+        playlist_id = params['page']
+    url = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json'%(playlist_id)
+    data = getURL(url,VEVOToken=True)
+    playlist = demjson.decode(data)['result']
+    title=playlist['title'].replace(' ','%20')
+    videos = playlist['videos']
+    ids=''
+    for video in videos:
+        id = video['isrc']
+        if isrc <> id:
+            ids += id+','
+    addurl = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json?title=%s&description=&isrcs=%s&append=false'%(playlist_id,title,ids)
+    getURL(addurl,postdata=':)',method='POST',VEVOToken=True)
+    xbmc.executebuiltin("Container.Refresh()")
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Removed from Playlist', 5000) )
+
+def addVideo2Playlist(isrc=False):
+    if not isrc:
+        isrc = params['url']
+    url = 'http://api.vevo.com/mobile/v1/userplaylists.json?'
+    data = getURL(url,VEVOToken=True)
+    playlists = demjson.decode(data)['result']
+    selected=xbmcgui.Dialog().select('Add Video to Playlist',
+                                     [playlist['title']+' ('+str(playlist['videocount'])+')' for playlist in playlists])
+    playlist=playlists[selected]
+    title=playlist['title'].replace(' ','%20')
+    playlist_id=playlist['playlist_id']
+    addurl = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json?title=%s&description=&isrcs=%s&append=true'%(playlist_id,title,isrc)
+    getURL(addurl,postdata=':)',method='POST',VEVOToken=True)
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Added to Playlist', 5000) )
+
+def newVideoPlaylist(isrc=False):
+    if not isrc:
+        isrc = params['url']
+    keyb = xbmc.Keyboard('', 'Playlist Name')
+    keyb.doModal()
+    if keyb.isConfirmed():
+        name = urllib.quote_plus(keyb.getText())
+        addurl = 'http://api.vevo.com/mobile/v1/userplaylist.json?title=%s&description=&isrcs=%s' % (name,isrc)
+        #require PUT
+        getURL(addurl,postdata=':)',method='PUT',VEVOToken=True)
+        xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'New Playlist', 5000) )
+
+def deleteVideoPlaylist(id=False):
+    if not id:
+        id = params['url']
+    url = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json?' % id
+    getURL(url,postdata=':)',method='DELETE',VEVOToken=True)
+    xbmc.executebuiltin("Container.Refresh()")
+    xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Deleted Playlist', 5000) )
     
 def friendPlaylists(url = False):
     if not url:
@@ -368,7 +428,6 @@ def friendPlaylists(url = False):
     #if getFBAuth():
     sendtoken = 'accessToken='+addon.getSetting(id='fbtoken')
     data = getURL(url, postdata=sendtoken, VEVOToken=True)
-    print data
     friends = demjson.decode(data)['result']['friends_on_vevo']
     total = len(friends)
     for friend in friends:
@@ -396,23 +455,42 @@ def listPlaylists(url = False, VEVOToken=False):
     for playlist in playlists:
         try:playlist_id = playlist['playlist_id']
         except:playlist_id = str(playlist['id'])
+        cm=[]
+        if addon.getSetting('session_token') and VEVOToken:
+            u=sys.argv[0]+"?url="+urllib.quote_plus(playlist_id)+"&mode="+urllib.quote_plus('deleteVideoPlaylist')+'&page='+str(1)
+            cm.append( ('Delete Playlist', "XBMC.RunPlugin(%s)" % u) )
         playlist_name = playlist['title']
         playlist_image = playlist['image_url']
         video_count = playlist['videocount']
         display_name=playlist_name+' ('+str(video_count)+')'
-        addDir(display_name, playlist_id, 'playlistRoot', iconimage=playlist_image, total=total)
+        if VEVOToken:
+            mode = 'playlistUserRoot'
+        else:
+            mode = 'playlistRoot'
+        addDir(display_name, playlist_id, mode, iconimage=playlist_image, total=total,cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
-def playlistRoot():
+def playlistUserRoot():
+    playlistRoot(VEVOToken=True)
+  
+def playlistRoot(VEVOToken=False):
     playlist_id = params['url']
-    if playlist_id.isdigit():
-        url = 'http://api.vevo.com/mobile/v1/playlist/'+playlist_id+'.json?'
+    if VEVOToken:
+        url = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json?' % playlist_id
+        mode = 'playUserPlaylist'
+    elif playlist_id.isdigit():
+        url = 'http://api.vevo.com/mobile/v1/playlist/%s.json?' % playlist_id
+        mode = 'playPlaylist'
     else:
-        url = 'http://api.vevo.com/mobile/v2/playlist/'+playlist_id+'.json?'
+        url = 'http://api.vevo.com/mobile/v2/playlist/%s.json?' % playlist_id
+        mode = 'playPlaylist'
     addDir('*Play*', url, 'playPlaylist',folder=False)
-    listVideos(url,playlist=True)
+    listVideos(url,playlist=True,VEVOToken=VEVOToken)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
+def playUserPlaylist():
+    listVideos(params['url'],playlist=True,playall=True,VEVOToken=False)
+  
 def playPlaylist():
     listVideos(params['url'],playlist=True,playall=True)
 
@@ -558,7 +636,7 @@ def removefavArtists():
     db.commit()
     c.close()
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Deleted Artist', 5000) )
-    xbmc.executebuiltin("Container.Refresh()")
+    #xbmc.executebuiltin("Container.Refresh()")
     
 def deletefavArtists():
     db = sqlite.connect(FAVFILESQL)
@@ -690,11 +768,12 @@ def getLyrics(vevoID,duration):
             elif sub <> '':
                 set += sub+'\n'
                 setlength += 1 
-        sets.append(set)
+        if set <> '':
+            sets.append(set)
         lines = len(sets)
         duration = float(duration)*1000
-        offset = duration*0.05
-        rate = (duration*0.90)/lines
+        offset = duration*0.025
+        rate = (duration*0.95)/lines
         count = 0
         srt_output = ''      
         for set in sets:
@@ -828,10 +907,12 @@ def getVEVOAccount():
     addon.setSetting(id='vevo_user_id',value=json['user_id'])
     addon.setSetting(id='session_token',value=json['session_token'])
 
-def getURL( url , postdata=False, extendTimeout=False, VEVOToken=False, VEVOKey=False, browser=False, alert=True):
+def getURL( url , postdata=False, method=False, extendTimeout=False, VEVOToken=False, VEVOKey=False, browser=False, alert=True):
     try:
         print 'VEVO --> common :: getURL :: url = '+url
-        opener = urllib2.build_opener()
+        #proxy = 'http://localhost:8888'
+        #proxy_handler = urllib2.ProxyHandler({'http':proxy})
+        opener = urllib2.build_opener()#proxy_handler)
         if browser:
             opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0')]
         else:
@@ -841,11 +922,15 @@ def getURL( url , postdata=False, extendTimeout=False, VEVOToken=False, VEVOKey=
         if VEVOKey:
             opener.addheaders = [('X-VEVO-Private-Key', 'G05bmz9x--_6-J-qpR4_' )]
         if postdata:
-            if extendTimeout <> False:
-                try:usock=opener.open(url,postdata,extendTimeout)
-                except:usock=opener.open(url,postdata)
-            else:
-                usock=opener.open(url,postdata)
+            request = urllib2.Request(url, data=postdata)
+            if method:
+                #request.add_header('Content-Type', 'your/contenttype')
+                request.get_method = lambda: method
+            #if extendTimeout <> False:
+            #    try:usock=opener.open(url,postdata,extendTimeout)
+            #    except:usock=opener.open(request)
+            #else:
+            usock=opener.open(request)
         else:
             usock=opener.open(url)
         response=usock.read()

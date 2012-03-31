@@ -361,7 +361,10 @@ def listArtists(url = False):
         cm = []
         artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-        cm.append( ('Add %s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        cm.append( ('%s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
+        u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
+        cm.append( ('List Tours', "Container.Update(%s)" % u) )
         addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total, cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     setView()
@@ -624,7 +627,12 @@ def toursRightNow():
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)#+'&extended=true'
-    data = getURL(fetch_url)
+    listTours(fetch_url)
+
+def listTours(url=False):
+    if not url:
+        url = params['url']
+    data = getURL(url)
     artists = demjson.decode(data)['result']
     total = len(artists)
     #if total >= max:
@@ -632,12 +640,16 @@ def toursRightNow():
     for artist in artists:
         artist_id = artist['artistid']
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
-        artist_name = artist['artist']['name'].encode('utf-8')
-        artist_image = artist['artist']['image_url']
+        event_name = artist['eventname'].encode('utf-8')
+        try:
+            artist_name = artist['artist']['name'].encode('utf-8')
+            artist_image = artist['artist']['image_url']
+        except:
+            artist_name = event_name.split(' at ')[0].strip()
+            artist_image = ''
         city = artist['city'].encode('utf-8')
         venuename = artist['venuename'].encode('utf-8')
         startdate = artist['startdate']
-        event_name = artist['eventname'].encode('utf-8')
         try:date = event_name.split('(')[1].strip(')')
         except:date = event_name.split(' ')[-1]
         final_name = date+' : '+city+' - '+artist_name+' @ '+venuename
@@ -720,8 +732,11 @@ def favArtists():
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
         display_name=artist_name+' ('+str(video_count)+')'
         cm = []
+        tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
+        u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
+        cm.append( ('List Tours', "Container.Update(%s)" % u) )
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_id)+"&mode="+urllib.quote_plus('removefavArtists')+'&page='+str(1)
-        cm.append( ('Remove %s from Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        cm.append( ('Remove %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
         addDir(display_name, url, 'listVideos', iconimage=artist_image, cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)

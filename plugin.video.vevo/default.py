@@ -645,7 +645,8 @@ def playlistVideo():
 def HTTPDynamic():
     if addon.getSetting('lyricsubs') == 'true':
         if params['duration']:
-            getLyrics(params['url'],params['duration'])
+            try:getLyrics(params['url'],params['duration'])
+            except: print "Subtitles Failed"
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
     if addon.getSetting('unpause') == 'true':
@@ -676,7 +677,7 @@ def getLyrics(vevoID,duration):
         sets = []
         set=''
         for lyric in lyrics:
-            sub = lyric.strip()
+            sub = lyric.strip().encode('utf-8')
             if sub == '':
                 sets.append(set)
                 set=''

@@ -676,13 +676,20 @@ def getLyrics(vevoID,duration):
         lyrics = json['Text'].replace('\r','').split('\n')
         sets = []
         set=''
+        setlength = 0
         for lyric in lyrics:
             sub = lyric.strip().encode('utf-8')
-            if sub == '':
+            if setlength > 5 and set <> '':
                 sets.append(set)
                 set=''
-            else:
+                setlength = 0
+            if sub == '' and set <> '':
+                sets.append(set)
+                set=''
+                setlength = 0
+            elif sub <> '':
                 set += sub+'\n'
+                setlength += 1 
         sets.append(set)
         lines = len(sets)
         duration = float(duration)*1000
@@ -694,7 +701,7 @@ def getLyrics(vevoID,duration):
             start = convert_time( (count*rate)+offset )
             end = convert_time( ( (count+1)*rate ) + offset - 1)
             count += 1
-            line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n\n"
+            line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n"
             srt_output += line
         if srt_output <> '':
             SaveFile(subtitles, srt_output)

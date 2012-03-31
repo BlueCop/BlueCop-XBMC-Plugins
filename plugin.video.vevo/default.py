@@ -151,7 +151,7 @@ def sortWhenVideo():
     addDir(name+' All-Time',      url+'AllTime',    'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
     
-def listVideos(url = False,playlist=False,playall=False,VEVOToken=False):
+def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=False):
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_UNSORTED)
     #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
@@ -169,14 +169,22 @@ def listVideos(url = False,playlist=False,playall=False,VEVOToken=False):
         else:
             videos = demjson.decode(data)['result']
         total = len(videos)
-        if playall:
+        if playall or queue:
             playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-            playlist.clear()        
+            if playall:
+                playlist.clear()   
         elif playlist is False:
             total = len(videos)
             if total >= max:
                 addDir('*Next Page*', url,    'listVideos', page=str(page+1))
-            addDir('*Play All*', url, 'playAll',folder=False)
+            cm=[]
+            u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('queueAll')+'&page='+urllib.quote_plus('1')
+            cm.append( ('Queue All', "XBMC.RunPlugin(%s)" % u) )
+            if addon.getSetting('session_token'):
+                #if VEVOToken:
+                u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('newVideoPlaylistURL')+'&page='+urllib.quote_plus('1')
+                cm.append( ('Save Playlist', "XBMC.RunPlugin(%s)" % u) )
+            addDir('*Play All*', url, 'playAll',folder=False,cm=cm)
         for video in videos:
             video_id = video['isrc']
             try:title = video['title'].encode('utf-8')
@@ -267,18 +275,23 @@ def listVideos(url = False,playlist=False,playall=False,VEVOToken=False):
             item.setProperty('fanart_image',artist_image)
             item.setProperty('IsPlayable', 'true')
             item.addContextMenuItems( cm )
-            if playall:
+            if playall or queue:
                 playlist.add(url=u, listitem=item)
             else:
                 xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)#,totalItems=total)
         if playall:
             xbmc.Player().play(playlist)
+        elif queue:
+            pass
         else:
             xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
             setView()
 
 def playAll():
     listVideos(params['url'],playall=True)
+
+def queueAll():
+    listVideos(params['url'],queue=True)
     
 # common genre listing for artists and videos
 def addGenres(url,mode):
@@ -402,10 +415,30 @@ def addVideo2Playlist(isrc=False):
     getURL(addurl,postdata=':)',method='POST',VEVOToken=True)
     xbmc.executebuiltin('XBMC.Notification("%s", "%s", %s)' % ( 'Success', 'Added to Playlist', 5000) )
 
-def newVideoPlaylist(isrc=False):
+def newVideoPlaylistURLPLToken():
+    newVideoPlaylistURL(playlist=True,VEVOToken=True)
+    
+def newVideoPlaylistURLPL():
+    newVideoPlaylistURL(playlist=True)
+
+def newVideoPlaylistURL(url=False,playlist=False,VEVOToken=False):
+    if not url:
+        url = params['url']
+    data = getURL(url,VEVOToken=VEVOToken)
+    if data:
+        if playlist:
+            videos = demjson.decode(data)['result']['videos']
+        else:
+            videos = demjson.decode(data)['result']
+        isrcs=''
+        for video in videos:
+            isrcs+=video['isrc']+','
+    newVideoPlaylist(isrc=isrcs)
+    
+def newVideoPlaylist(name='',isrc=False):
     if not isrc:
         isrc = params['url']
-    keyb = xbmc.Keyboard('', 'Playlist Name')
+    keyb = xbmc.Keyboard(name, 'Playlist Name')
     keyb.doModal()
     if keyb.isConfirmed():
         name = urllib.quote_plus(keyb.getText())
@@ -475,24 +508,40 @@ def playlistUserRoot():
   
 def playlistRoot(VEVOToken=False):
     playlist_id = params['url']
+    mode = 'playPlaylist'
+    smode = 'newVideoPlaylistURLPL'
+    qmode = 'queuePlaylist'
     if VEVOToken:
         url = 'http://api.vevo.com/mobile/v1/userplaylist/%s.json?' % playlist_id
         mode = 'playUserPlaylist'
+        smode = 'newVideoPlaylistURLPLToken'
+        qmode = 'queueUserPlaylist'
     elif playlist_id.isdigit():
         url = 'http://api.vevo.com/mobile/v1/playlist/%s.json?' % playlist_id
-        mode = 'playPlaylist'
     else:
         url = 'http://api.vevo.com/mobile/v2/playlist/%s.json?' % playlist_id
-        mode = 'playPlaylist'
-    addDir('*Play*', url, 'playPlaylist',folder=False)
+    cm=[]
+    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(qmode)+'&page='+urllib.quote_plus('1')
+    cm.append( ('Queue', "XBMC.RunPlugin(%s)" % u) )
+    if addon.getSetting('session_token'):
+        #if VEVOToken:
+        u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(smode)+'&page='+urllib.quote_plus('1')
+        cm.append( ('Save Playlist', "XBMC.RunPlugin(%s)" % u) )
+    addDir('*Play*', url, mode,folder=False,cm=cm)
     listVideos(url,playlist=True,VEVOToken=VEVOToken)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
 
 def playUserPlaylist():
-    listVideos(params['url'],playlist=True,playall=True,VEVOToken=False)
+    listVideos(params['url'],playlist=True,playall=True,VEVOToken=True)
   
 def playPlaylist():
     listVideos(params['url'],playlist=True,playall=True)
+
+def queueUserPlaylist():
+    listVideos(params['url'],playlist=True,queue=True,VEVOToken=True)
+
+def queuePlaylist():
+    listVideos(params['url'],playlist=True,queue=True)
 
 # Show listings
 def rootShows(url = False):
@@ -537,15 +586,15 @@ def Search(mode):
     keyb = xbmc.Keyboard('', 'Search '+mode)
     keyb.doModal()
     if keyb.isConfirmed():
-            search = urllib.quote_plus(keyb.getText())
-            vurl = 'http://api.vevo.com/mobile/v1/search/videos.json?q='+search
-            aurl = 'http://api.vevo.com/mobile/v1/search/artists.json?q='+search
-            if mode == 'Videos':
-                addDir('*Artist Results*',aurl,'researchArtists')
-                listVideos(vurl)
-            elif mode == 'Artists':
-                addDir('*Video Results*',vurl,'researchVideos')
-                listArtists(aurl)
+        search = urllib.quote_plus(keyb.getText())
+        vurl = 'http://api.vevo.com/mobile/v1/search/videos.json?q='+search
+        aurl = 'http://api.vevo.com/mobile/v1/search/artists.json?q='+search
+        if mode == 'Videos':
+            addDir('*Artist Results*',aurl,'researchArtists')
+            listVideos(vurl)
+        elif mode == 'Artists':
+            addDir('*Video Results*',vurl,'researchVideos')
+            listArtists(aurl)
 
 def searchBox():
     latitude = float(addon.getSetting('latitude')) 
@@ -731,9 +780,11 @@ def HTTPDynamic():
         sleeptime = int(addon.getSetting('unpausetime'))+1
         time.sleep(sleeptime)
         xbmc.Player().pause()
+    #time.sleep(1)
     subtitles = os.path.join(datapath,params['url']+'.srt')
-    if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
-        xbmc.Player().setSubtitles(subtitles)
+    if addon.getSetting('lyricsubs') == 'true':
+        if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
+            xbmc.Player().setSubtitles(subtitles)
 
 def convert_time(milliseconds):
     seconds = int(float(milliseconds)/1000)
@@ -757,7 +808,7 @@ def getLyrics(vevoID,duration):
         setlength = 0
         for lyric in lyrics:
             sub = lyric.strip().encode('utf-8')
-            if setlength > 5 and set <> '':
+            if setlength > 7 and set <> '':
                 sets.append(set)
                 set=''
                 setlength = 0
@@ -778,7 +829,7 @@ def getLyrics(vevoID,duration):
         srt_output = ''      
         for set in sets:
             start = convert_time( (count*rate)+offset )
-            end = convert_time( ( (count+1)*rate ) + offset - 1)
+            end = convert_time( ( (count+1)*rate ) + offset)
             count += 1
             line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n"
             srt_output += line

@@ -838,23 +838,25 @@ def playVideo():
     playlistVideo()
 
 def playlistVideo():
+    subtitles = os.path.join(datapath,params['url']+'.srt')
+    if addon.getSetting('lyricsubs') == 'true':
+        if params['duration']:
+            try:getLyrics(params['url'],params['duration'],subtitles)
+            except: print "Subtitles Failed"
     if addon.getSetting('enabled-cache') == 'true':   
+        #try:
         HTTPDynamicCache()
+        #except:YouTube()
     elif addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
         except:HTTPDynamic()
     else:
-        subtitles = os.path.join(datapath,params['url']+'.srt')
-        if addon.getSetting('lyricsubs') == 'true':
-            if params['duration']:
-                try:getLyrics(params['url'],params['duration'],subtitles)
-                except: print "Subtitles Failed"
         try:HTTPDynamic()
         except:YouTube()
-        xbmc.sleep(250)
-        if addon.getSetting('lyricsubs') == 'true':
-            if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
-                xbmc.Player().setSubtitles(subtitles)
+    xbmc.sleep(250)
+    if addon.getSetting('lyricsubs') == 'true':
+        if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
+            xbmc.Player().setSubtitles(subtitles)
 
 class DownloadThread (threading.Thread):
     def __init__(self, url, dest, artist, title, id):
@@ -873,7 +875,6 @@ class DownloadThread (threading.Thread):
             statusUpdatedb(self.id,'completed')
         except:
             statusUpdatedb(self.id,'failed')
-            pass
 
 def createCachedb():
     if not os.path.isfile(CACHEDB):
@@ -913,6 +914,10 @@ def addCachedb(id,artist,title,status='started'):
     c.execute('insert or ignore into videos values (?,?,?,?)', [id,artist,title,status])
     db.commit()
     c.close()
+    
+def cleanfilename(name):
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    return ''.join(c for c in name if c in valid_chars)    
   
 def HTTPDynamicCache():
     vevoID = params['url'].split('/')[-1]
@@ -926,7 +931,7 @@ def HTTPDynamicCache():
         artist = video[1]
         title = video[2]
         status = video[3]
-        filename=artist+' - '+title
+        filename=cleanfilename(artist+' - '+title)
         videofile = os.path.join(cachepath,filename+'.flv')
         if os.path.exists(videofile):
             if status == 'failed':
@@ -947,6 +952,39 @@ def HTTPDynamicCacheSubtitles(filename):
     subtitles = os.path.join(cachepath,filename+'.srt')
     try:getLyrics(params['url'],params['duration'],subtitles)
     except:print 'subtitles failed'
+    
+def HTTPDynamicCacheNFO(video,nfofile):
+    try:
+        title = video['title'].encode('utf-8')
+        image_url = video['imageUrl']
+        artist = video['mainArtists'][0]['artistName'].encode('utf-8')
+        duration = str(video['duration'])
+        genre=''
+        for item in video['genres']:
+            genre+=item+','
+        genre=genre[:-1]
+        releaseDate=int(video['releaseDate'].replace('/Date(','').replace(')/','')[:-3])
+        year = time.strftime("%Y",time.localtime(releaseDate))
+        metadict={}
+        plot=''
+        for meta in video['metadata']:
+            metadict[meta['keyType']]=meta['keyValue']
+            plot+=meta['keyType']+' : '+meta['keyValue']+'\n'
+        nfo ='<musicvideo>'
+        nfo+='<title>'+title+'</title>'
+        nfo+='<artist>'+artist+'</artist>'
+        #nfo+='<album>'+album+'</album>'
+        nfo+='<genre>'+genre+'</genre>'
+        nfo+='<runtime>'+duration+'</runtime>'
+        nfo+='<thumb>'+image_url+'</thumb>'
+        nfo+='<plot>'+plot+'</plot>'
+        nfo+='<year>'+year+'</year>'
+        nfo+='<director>'+metadict['Director']+'</director>'
+        #nfo+='<composer>'+metadict['Composer']+'</composer>'
+        nfo+='<studio>'+metadict['Label']+'</studio>'
+        nfo+='</musicvideo>'
+        SaveFile(nfofile, nfo)
+    except: pass
 
 def HTTPDynamicCacheDownload(vevoID):
     print "Cacheing %s" % vevoID
@@ -956,7 +994,11 @@ def HTTPDynamicCacheDownload(vevoID):
     title = video['title'].encode('utf-8')
     image_url = video['imageUrl']
     artist = video['mainArtists'][0]['artistName'].encode('utf-8')
-    filename=artist+' - '+title
+    filename=cleanfilename(artist+' - '+title)
+    jpgfile = os.path.join(cachepath,filename+'.jpg')
+    SaveFile(jpgfile, getURL(image_url))
+    nfofile = os.path.join(cachepath,filename+'.nfo')
+    HTTPDynamicCacheNFO(video,nfofile)
     videofile = os.path.join(cachepath,filename+'.flv')
     mp4_url = getVideo(params['url'])
     dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)

@@ -968,22 +968,25 @@ def HTTPDynamicCacheNFO(video,nfofile):
         plot=''
         for meta in video['metadata']:
             metadict[meta['keyType']]=meta['keyValue']
-            plot+=meta['keyType']+' : '+meta['keyValue']+'\n'
-        nfo ='<musicvideo>'
-        nfo+='<title>'+title+'</title>'
-        nfo+='<artist>'+artist+'</artist>'
+            if meta['keyType'] == 'Credit':
+                plot+=meta['keyValue'].replace('=>',':')+'\n'
+            else:
+                plot+=meta['keyType']+' : '+meta['keyValue']+'\n'
+        nfo ='<musicvideo>'+'\n'
+        nfo+='<title>'+title+'</title>'+'\n'
+        nfo+='<artist>'+artist+'</artist>'+'\n'
         #nfo+='<album>'+album+'</album>'
-        nfo+='<genre>'+genre+'</genre>'
-        nfo+='<runtime>'+duration+'</runtime>'
-        nfo+='<thumb>'+image_url+'</thumb>'
-        nfo+='<plot>'+plot+'</plot>'
-        nfo+='<year>'+year+'</year>'
+        nfo+='<genre>'+genre+'</genre>'+'\n'
+        nfo+='<runtime>'+duration+'</runtime>'+'\n'
+        nfo+='<thumb>'+image_url+'</thumb>'+'\n'
+        nfo+='<plot>'+plot+'</plot>'+'\n'
+        nfo+='<year>'+year+'</year>'+'\n'
         try:director = metadict['Director']
         except:director = ''
-        nfo+='<director>'+director+'</director>'
+        nfo+='<director>'+director+'</director>'+'\n'
         try:studio = metadict['Label']
         except:studio = ''
-        nfo+='<studio>'+studio+'</studio>'
+        nfo+='<studio>'+studio+'</studio>'+'\n'
         nfo+='</musicvideo>'
         SaveFile(nfofile, nfo)
     except: pass

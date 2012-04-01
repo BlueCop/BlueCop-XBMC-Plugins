@@ -844,9 +844,8 @@ def playlistVideo():
             try:getLyrics(params['url'],params['duration'],subtitles)
             except: print "Subtitles Failed"
     if addon.getSetting('enabled-cache') == 'true':   
-        #try:
-        HTTPDynamicCache()
-        #except:YouTube()
+        try:HTTPDynamicCache()
+        except:YouTube()
     elif addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
         except:HTTPDynamic()
@@ -979,9 +978,12 @@ def HTTPDynamicCacheNFO(video,nfofile):
         nfo+='<thumb>'+image_url+'</thumb>'
         nfo+='<plot>'+plot+'</plot>'
         nfo+='<year>'+year+'</year>'
-        nfo+='<director>'+metadict['Director']+'</director>'
-        #nfo+='<composer>'+metadict['Composer']+'</composer>'
-        nfo+='<studio>'+metadict['Label']+'</studio>'
+        try:director = metadict['Director']
+        except:director = ''
+        nfo+='<director>'+director+'</director>'
+        try:studio = metadict['Label']
+        except:studio = ''
+        nfo+='<studio>'+studio+'</studio>'
         nfo+='</musicvideo>'
         SaveFile(nfofile, nfo)
     except: pass

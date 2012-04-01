@@ -100,6 +100,12 @@ def listFeatured(url=False):
             elif 'vevo://video/' in action_url:
                 mode = 'playVideo'
                 videoid = action_url.replace('vevo://video/','')
+                cm=[]
+                if addon.getSetting('session_token'):
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(videoid)+"&mode="+urllib.quote_plus('addVideo2Playlist')+'&page='+str(1)
+                    cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(videoid)+"&mode="+urllib.quote_plus('newVideoPlaylist')+'&page='+str(1)
+                    cm.append( ('Start New Playlist', "XBMC.RunPlugin(%s)" % u) )   
             displayname = primary_text+' - '+secondary_text
             if ':' in primary_text:
                 primary_split = primary_text.split(':')
@@ -118,6 +124,7 @@ def listFeatured(url=False):
             item.setProperty('fanart_image',image_wide_url)
             if mode == 'playVideo':
                 item.setProperty('IsPlayable', 'true')
+                item.addContextMenuItems( cm )
                 xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
             else:
                 u += '&page=1'

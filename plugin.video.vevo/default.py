@@ -9,8 +9,6 @@ from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import demjson
 
-import unicodedata
-
 import facebook
 from facebook import GraphAPIError, GraphWrapAuthError
 
@@ -158,11 +156,16 @@ def sortWhenVideo():
     addDir(name+' All-Time',      url+'AllTime',    'listVideos')
     xbmcplugin.endOfDirectory(pluginhandle)
     
-def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=False):
-    #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-    #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_UNSORTED)
-    #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
-    #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_ALBUM)
+def listArtistVideos():
+    listVideos(artistlist=True)
+               
+def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=False,artistlist=False):
+    if artistlist:
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_ALBUM)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     if not url:
         url = params['url']
     max = maxperpage
@@ -194,6 +197,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                 u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('newVideoPlaylistURL')+'&page='+urllib.quote_plus('1')
                 cm.append( ('New Playlist', "XBMC.RunPlugin(%s)" % u) )
             addDir('*Play All*', url, 'playAll',folder=False,cm=cm)
+        count = 0
         for video in videos:
             video_id = video['isrc']
             try:title = video['title'].encode('utf-8')
@@ -266,7 +270,8 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                     u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
                     cm.append( ('Add %s to Favorites' % featuredartist_name, "XBMC.RunPlugin(%s)" % u) )
                 feats=feats[:-2]
-                artist = artist_name+' feat. '+feats
+                artist = artist_name
+                title += ' (ft. '+feats+')'
             else:
                 artist = artist_name
             u = sys.argv[0]
@@ -281,7 +286,9 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                                                      "Album":recordlabel,
                                                      "Studio":recordlabel,
                                                      "Genre":genre,
-                                                     "Year":year})
+                                                     "Year":year,
+                                                     "Count":count})
+            count +=1
             item.setProperty('fanart_image',artist_image)
             item.setProperty('IsPlayable', 'true')
             item.addContextMenuItems( cm )
@@ -375,7 +382,7 @@ def listArtists(url = False):
         tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
         cm.append( ('List Tours', "Container.Update(%s)" % u) )
-        addDir(display_name, url, 'listVideos', iconimage=artist_image, total=total, cm=cm)
+        addDir(display_name, url, 'listArtistVideos', iconimage=artist_image, total=total, cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     setView()
 
@@ -676,19 +683,27 @@ def listTours(url=False):
         artist_id = artist['artistid']
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
         event_name = artist['eventname'].encode('utf-8')
-        try:
-            artist_name = artist['artist']['name'].encode('utf-8')
-            artist_image = artist['artist']['image_url']
-        except:
-            artist_name = event_name.split(' at ')[0].strip()
-            artist_image = ''
         city = artist['city'].encode('utf-8')
         venuename = artist['venuename'].encode('utf-8')
         startdate = artist['startdate']
-        try:date = event_name.split('(')[1].strip(')')
-        except:date = event_name.split(' ')[-1]
-        final_name = date+' : '+city+' - '+artist_name+' @ '+venuename
-        addDir(final_name, url, 'listVideos', iconimage=artist_image, total=total)
+        type = artist['type']
+        date = time.strftime("%B %d, %Y %I:%M%p", time.strptime(startdate[:-5], "%Y-%m-%dT%H:%M:%S") )
+        if artist.has_key('artist'):
+            artist_name = artist['artist']['name'].encode('utf-8')
+            artist_image = artist['artist']['image_url']
+        else:
+            artist_name = event_name.split(' at ')[0].strip()
+            artist_image = ''
+        if type == 'Festival':
+            if '@' in event_name:
+                event_name = event_name.split('@')[1]
+            if artist_name == event_name:
+                final_name = date +' : '+city+' - '+event_name+' @ '+venuename
+            else:    
+                final_name = date +' : '+city+' - '+artist_name+' @ '+event_name
+        elif type == 'Concert':
+            final_name = date+' : '+city+' - '+artist_name+' @ '+venuename
+        addDir(final_name, url, 'listArtistVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     xbmc.executebuiltin("Container.SetViewMode(51)")
 
@@ -772,7 +787,7 @@ def favArtists():
         cm.append( ('List Tours', "Container.Update(%s)" % u) )
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_id)+"&mode="+urllib.quote_plus('removefavArtists')+'&page='+str(1)
         cm.append( ('Remove %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
-        addDir(display_name, url, 'listVideos', iconimage=artist_image, cm=cm)
+        addDir(display_name, url, 'listArtistVideos', iconimage=artist_image, cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
     setView()

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import urllib, urllib2, cookielib
 import string, os, re, time, datetime, math, time, unicodedata
+import threading
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 
@@ -25,12 +26,14 @@ xbmcplugin.setContent(pluginhandle, 'musicvideos')
 addon = xbmcaddon.Addon('plugin.video.vevo')
 pluginpath = addon.getAddonInfo('path')
 datapath = xbmc.translatePath('special://profile/addon_data/plugin.video.vevo/')
+cachepath = xbmc.translatePath(addon.getSetting('cache-folder'))
 
 BASE = 'http://www.vevo.com'
 COOKIEFILE = os.path.join(pluginpath,'resources','vevo-cookies.lwp')
 #USERFILE = os.path.join(pluginpath,'resources','userfile.js')
 FAVFILE = os.path.join(datapath,'favs.json')
 FAVFILESQL = os.path.join(datapath,'favs.sqlite')
+CACHEDB = os.path.join(datapath,'cache.sqlite')
 
 fanart = os.path.join(pluginpath,'fanart.jpg')
 vicon = os.path.join(pluginpath,'icon.png')
@@ -115,9 +118,10 @@ def listFeatured(url=False):
             u += '?url='+urllib.quote_plus(videoid)
             u += '&mode='+urllib.quote_plus(mode)
             item=xbmcgui.ListItem(displayname, iconImage=image_url, thumbnailImage=image_url)
-            item.setInfo( type="Music", infoLabels={ "Title":secondary_text,
+            item.setInfo( type="Video", infoLabels={ "Title":secondary_text,
                                                      "Artist":primary_text,
-                                                     "Album":albumtext,
+                                                     "Album":primary_text,
+                                                     "Studio":albumtext,
                                                      })
             item.setProperty('fanart_image',image_wide_url)
             if mode == 'playVideo':
@@ -163,9 +167,9 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
     if artistlist:
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_ALBUM)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     if not url:
         url = params['url']
     max = maxperpage
@@ -217,30 +221,34 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             duration = video['duration_in_seconds']
             try:year = int(video['video_year'])
             except:year = 0
-            
+
+
+            genre = ''
+            recordlabel = ''
+            director = ''
+            producer = ''
+            composer = ''
             if video.has_key('credit'):
                 credits = video['credit']
-                genre = ''
-                recordlabel = ''
                 try:
                     for credit in credits:
                         if credit['Key'] == 'Genre':
                             genre = credit['Value']
-                        #elif credit['Key'] == 'Producer':
-                        #    pass
-                        #elif credit['Key'] == 'Director':
-                        #    pass
-                        #elif credit['Key'] == 'Composer':
-                        #    pass
+                        elif credit['Key'] == 'Producer':
+                            producer = credit['Value']
+                        elif credit['Key'] == 'Director':
+                            director = credit['Value']
+                        elif credit['Key'] == 'Composer':
+                            composer = credit['Value']
                         elif credit['Key'] == 'Record Label':
                             recordlabel = credit['Value']
                 except:
-                      genre = credits['Genre']
-                      recordlabel = credits['Record Label']
-            else:
-                genre = ''
-                recordlabel = ''
-    
+                    genre = credits['Genre']
+                    recordlabel = credits['Record Label']
+                    #director = credit['Director']
+                    #producer = credit['Producer']
+                    #composer = credit['Composer']
+       
             if len(video['artists_main']) > 0:
                 artistdata = video['artists_main'][0]
                 artist_id = artistdata['id']
@@ -280,11 +288,14 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             u += '&duration='+urllib.quote_plus(str(duration))
             displayname = artist+' - '+title
             item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
-            item.setInfo( type="Music", infoLabels={ "Title":title,
+            item.setInfo( type="Video", infoLabels={ "Title":title,
                                                      "Artist":artist,
-                                                     "Duration":duration,
-                                                     "Album":recordlabel,
+                                                     "Album":artist,
+                                                     "Duration":str(duration),
                                                      "Studio":recordlabel,
+                                                     "Director":director,
+                                                     "Writer":composer,
+                                                     #"Producer":producer,
                                                      "Genre":genre,
                                                      "Year":year,
                                                      "Count":count})
@@ -590,7 +601,7 @@ def queuePlaylist():
 
 # Show listings
 def rootShows(url = False):
-    xbmcplugin.setContent(pluginhandle, 'shows')
+    #xbmcplugin.setContent(pluginhandle, 'shows')
     if not url:
         url = params['url']
     max = maxperpage
@@ -827,29 +838,151 @@ def playVideo():
     playlistVideo()
 
 def playlistVideo():
-    if addon.getSetting('defaultyoutube') == 'true':
+    if addon.getSetting('enabled-cache') == 'true':   
+        HTTPDynamicCache()
+    elif addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
         except:HTTPDynamic()
-    else:  
+    else:
+        subtitles = os.path.join(datapath,params['url']+'.srt')
+        if addon.getSetting('lyricsubs') == 'true':
+            if params['duration']:
+                try:getLyrics(params['url'],params['duration'],subtitles)
+                except: print "Subtitles Failed"
         try:HTTPDynamic()
         except:YouTube()
+        xbmc.sleep(250)
+        if addon.getSetting('lyricsubs') == 'true':
+            if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
+                xbmc.Player().setSubtitles(subtitles)
+
+class DownloadThread (threading.Thread):
+    def __init__(self, url, dest, artist, title, id):
+        self.url = url
+        self.dest = dest
+        self.artist = artist
+        self.title = title
+        self.id = id
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        start_time = time.time()
+        try:
+            addCachedb(self.id,self.artist,self.title)
+            urllib.urlretrieve(self.url, self.dest)
+            statusUpdatedb(self.id,'completed')
+        except:
+            statusUpdatedb(self.id,'failed')
+            pass
+
+def createCachedb():
+    if not os.path.isfile(CACHEDB):
+        db = sqlite.connect(CACHEDB)
+        db.text_factory = str
+        c = db.cursor()
+        c.execute('''CREATE TABLE videos(
+                     id TEXT,
+                     artist TEXT,
+                     title TEXT,
+                     status TEXT,
+                     PRIMARY KEY(id)
+                     );''')
+        db.commit()
+        c.close()
+
+def statusUpdatedb(id,status):
+    db = sqlite.connect(CACHEDB)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute("update videos set status=? where id=?", (status,id))
+    db.commit()
+    c.close()
+
+def deleteCachedb(id):
+    db = sqlite.connect(CACHEDB)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute("delete from videos where id=?", (id,))
+    db.commit()
+    c.close()
+
+def addCachedb(id,artist,title,status='started'):
+    db = sqlite.connect(CACHEDB)
+    db.text_factory = str
+    c = db.cursor()
+    c.execute('insert or ignore into videos values (?,?,?,?)', [id,artist,title,status])
+    db.commit()
+    c.close()
+  
+def HTTPDynamicCache():
+    vevoID = params['url'].split('/')[-1]
+    createCachedb()
+    db = sqlite.connect(CACHEDB)
+    db.text_factory = str
+    c = db.cursor()
+    video = c.execute('select distinct * from videos where id = (?)', (vevoID,)).fetchone()
+    if video:
+        id = video[0]
+        artist = video[1]
+        title = video[2]
+        status = video[3]
+        filename=artist+' - '+title
+        videofile = os.path.join(cachepath,filename+'.flv')
+        if os.path.exists(videofile):
+            if status == 'failed':
+                os.remove(videofile)
+                deleteCachedb(vevoID)
+                HTTPDynamicCacheDownload(vevoID)
+            else:
+                print "Playing %s from Cache" % filename
+                item = xbmcgui.ListItem(path=videofile)
+                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        else:
+            deleteCachedb(vevoID)
+            HTTPDynamicCacheDownload(vevoID)
+    else:
+        HTTPDynamicCacheDownload(vevoID)
+
+def HTTPDynamicCacheSubtitles(filename):
+    subtitles = os.path.join(cachepath,filename+'.srt')
+    try:getLyrics(params['url'],params['duration'],subtitles)
+    except:print 'subtitles failed'
+
+def HTTPDynamicCacheDownload(vevoID):
+    print "Cacheing %s" % vevoID
+    url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % vevoID
+    data = getURL(url)
+    video = demjson.decode(data)['video']
+    title = video['title'].encode('utf-8')
+    image_url = video['imageUrl']
+    artist = video['mainArtists'][0]['artistName'].encode('utf-8')
+    filename=artist+' - '+title
+    videofile = os.path.join(cachepath,filename+'.flv')
+    mp4_url = getVideo(params['url'])
+    dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)
+    dlThread.start()
+    HTTPDynamicCacheSubtitles(filename)
+    count=0
+    while not os.path.exists(videofile):
+        count+=1
+        if count > 6:
+            break
+        xbmc.sleep(2500)
+    if os.path.exists(videofile):
+        if dlThread.isAlive():
+            sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
+            xbmc.sleep(sleeptime+2000)
+            print "Playing %s while downloading" % filename
+            item = xbmcgui.ListItem(path=videofile) 
+            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def HTTPDynamic():
-    if addon.getSetting('lyricsubs') == 'true':
-        if params['duration']:
-            try:getLyrics(params['url'],params['duration'])
-            except: print "Subtitles Failed"
     item = xbmcgui.ListItem(path=getVideo(params['url']))
     xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
     if addon.getSetting('unpause') == 'true':
-        sleeptime = int(addon.getSetting('unpausetime'))+1
-        time.sleep(sleeptime)
+        sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
+        xbmc.sleep(sleeptime)
         xbmc.Player().pause()
-    #time.sleep(1)
-    subtitles = os.path.join(datapath,params['url']+'.srt')
-    if addon.getSetting('lyricsubs') == 'true':
-        if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
-            xbmc.Player().setSubtitles(subtitles)
 
 def convert_time(milliseconds):
     seconds = int(float(milliseconds)/1000)
@@ -860,8 +993,7 @@ def convert_time(milliseconds):
     seconds -= 60*minutes
     return "%02d:%02d:%02d,%3d" % (hours, minutes, seconds, milliseconds)
 
-def getLyrics(vevoID,duration):
-    subtitles = os.path.join(datapath,vevoID+'.srt')
+def getLyrics(vevoID,duration,subtitles):
     #if not os.path.isfile(subtitles):
     url = 'http://www.vevo.com/data/VideoLyrics/'+vevoID
     data = getURL(url,browser=True,alert=False)
@@ -918,6 +1050,7 @@ def getVideo(pageurl):
     url = 'http://smilstream.vevo.com/HDFlash/v1/smil/%s/%s.smil' % (vevoID,vevoID.lower())
     data = getURL(url)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    print tree.prettify()
     videobase = tree.find(attrs={'name':'httpBase'})['content']
     videos = tree.findAll('video')
     filenames = ''
@@ -947,9 +1080,9 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
         item.setProperty('fanart_image',iconimage)
     else:
         item.setProperty('fanart_image',fanart)
-    item.setInfo( type="Video", infoLabels={ "Title":name,
-                                             "plot":plot
-                                           })
+    #item.setInfo( type="Video", infoLabels={ "Title":name,
+    #                                         "plot":plot
+    #                                       })
     if cm:
         item.addContextMenuItems( cm )
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
@@ -1111,3 +1244,4 @@ if mode==None:
     listCategories()
 else:
     exec '%s()' % mode
+xbmcplugin.setContent(pluginhandle, 'musicvideos')

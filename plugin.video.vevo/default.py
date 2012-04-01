@@ -190,7 +190,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             if addon.getSetting('session_token'):
                 #if VEVOToken:
                 u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('addVideoPlaylistURL')+'&page='+urllib.quote_plus('1')
-                cm.append( ('Save to Playlist', "XBMC.RunPlugin(%s)" % u) )
+                #cm.append( ('Save to Playlist', "XBMC.RunPlugin(%s)" % u) )
                 u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('newVideoPlaylistURL')+'&page='+urllib.quote_plus('1')
                 cm.append( ('New Playlist', "XBMC.RunPlugin(%s)" % u) )
             addDir('*Play All*', url, 'playAll',folder=False,cm=cm)
@@ -562,7 +562,7 @@ def playlistRoot(VEVOToken=False):
     if addon.getSetting('session_token'):
         #if VEVOToken:
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(amode)+'&page='+urllib.quote_plus('1')
-        cm.append( ('Save to Playlist', "XBMC.RunPlugin(%s)" % u) )
+        #cm.append( ('Save to Playlist', "XBMC.RunPlugin(%s)" % u) )
         u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(smode)+'&page='+urllib.quote_plus('1')
         cm.append( ('New Playlist', "XBMC.RunPlugin(%s)" % u) )
     addDir('*Play*', url, mode,folder=False,cm=cm)

@@ -843,16 +843,16 @@ def playlistVideo():
         if params['duration']:
             try:getLyrics(params['url'],params['duration'],subtitles)
             except: print "Subtitles Failed"
-    if addon.getSetting('enabled-cache') == 'true':   
-        try:HTTPDynamicCache()
-        except:YouTube()
-    elif addon.getSetting('defaultyoutube') == 'true':
+    if addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
         except:HTTPDynamic()
+    elif addon.getSetting('enabled-cache') == 'true':   
+        try:HTTPDynamicCache()
+        except:YouTube()
     else:
         try:HTTPDynamic()
         except:YouTube()
-    xbmc.sleep(250)
+    xbmc.sleep(5000)
     if addon.getSetting('lyricsubs') == 'true':
         if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
             xbmc.Player().setSubtitles(subtitles)
@@ -1038,7 +1038,7 @@ def convert_time(milliseconds):
     seconds -= 3600*hours
     minutes = seconds / 60
     seconds -= 60*minutes
-    return "%02d:%02d:%02d,%3d" % (hours, minutes, seconds, milliseconds)
+    return "%02d:%02d:%02d,%03d" % (hours, minutes, seconds, milliseconds)
 
 def getLyrics(vevoID,duration,subtitles):
     #if not os.path.isfile(subtitles):

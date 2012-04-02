@@ -847,8 +847,9 @@ def playlistVideo():
         try:YouTube()
         except:HTTPDynamic()
     elif addon.getSetting('enabled-cache') == 'true':   
-        try:HTTPDynamicCache()
-        except:YouTube()
+        #try:
+        HTTPDynamicCache()
+        #except:YouTube()
     else:
         try:HTTPDynamic()
         except:YouTube()
@@ -929,6 +930,9 @@ def HTTPDynamicCache():
         id,artist,title,status = video
         filename=cleanfilename(artist+' - '+title)
         videofile = os.path.join(cachepath,filename+'.flv')
+        #jpgfile = os.path.join(cachepath,filename+'.jpg')
+        #nfofile = os.path.join(cachepath,filename+'.nfo')
+        #subfile = os.path.join(cachepath,filename+'.srt')
         if os.path.exists(videofile):
             if status == 'failed':
                 os.remove(videofile)
@@ -938,6 +942,15 @@ def HTTPDynamicCache():
                 print "Playing %s from Cache" % filename
                 item = xbmcgui.ListItem(path=videofile)
                 xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+                #if not os.path.exists(jpgfile):
+                #    SaveFile(jpgfile, getURL(image_url))
+                #if not os.path.exists(nfofile):
+                #    url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % vevoID
+                #    data = getURL(url)
+                #    video = demjson.decode(data)['video']
+                #    HTTPDynamicCacheNFO(video,nfofile)
+                #if not os.path.exists(subfile):
+                #    HTTPDynamicCacheSubtitles(subfile)
         else:
             deleteCachedb(vevoID)
             HTTPDynamicCacheDownload(vevoID)
@@ -971,7 +984,7 @@ def HTTPDynamicCacheNFO(video,nfofile):
         nfo ='<musicvideo>'+'\n'
         nfo+='<title>'+title+'</title>'+'\n'
         nfo+='<artist>'+artist+'</artist>'+'\n'
-        #nfo+='<album>'+album+'</album>'
+        nfo+='<album>'+'Music Video'+'</album>'
         nfo+='<genre>'+genre+'</genre>'+'\n'
         nfo+='<runtime>'+duration+'</runtime>'+'\n'
         nfo+='<thumb>'+image_url+'</thumb>'+'\n'
@@ -1010,7 +1023,6 @@ def HTTPDynamicCacheDownload(vevoID):
         if not os.path.exists(nfofile):
             HTTPDynamicCacheNFO(video,nfofile)
         if not os.path.exists(subfile):
-            subtitles = os.path.join(cachepath,filename+'.srt')
             HTTPDynamicCacheSubtitles(subfile)
     else:
         mp4_url = getVideo(params['url'])
@@ -1029,7 +1041,7 @@ def HTTPDynamicCacheDownload(vevoID):
         if os.path.exists(videofile):
             if dlThread.isAlive():
                 sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
-                xbmc.sleep(sleeptime+2000)
+                xbmc.sleep(sleeptime+5000)
                 print "Playing %s while downloading" % filename
                 item = xbmcgui.ListItem(path=videofile) 
                 xbmcplugin.setResolvedUrl(pluginhandle, True, item)

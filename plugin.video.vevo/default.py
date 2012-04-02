@@ -926,10 +926,7 @@ def HTTPDynamicCache():
     c = db.cursor()
     video = c.execute('select distinct * from videos where id = (?)', (vevoID,)).fetchone()
     if video:
-        id = video[0]
-        artist = video[1]
-        title = video[2]
-        status = video[3]
+        id,artist,title,status = video
         filename=cleanfilename(artist+' - '+title)
         videofile = os.path.join(cachepath,filename+'.flv')
         if os.path.exists(videofile):
@@ -948,8 +945,7 @@ def HTTPDynamicCache():
         HTTPDynamicCacheDownload(vevoID)
 
 def HTTPDynamicCacheSubtitles(filename):
-    subtitles = os.path.join(cachepath,filename+'.srt')
-    try:getLyrics(params['url'],params['duration'],subtitles)
+    try:getLyrics(params['url'],params['duration'],filename)
     except:print 'subtitles failed'
     
 def HTTPDynamicCacheNFO(video,nfofile):
@@ -989,7 +985,7 @@ def HTTPDynamicCacheNFO(video,nfofile):
         nfo+='<studio>'+studio+'</studio>'+'\n'
         nfo+='</musicvideo>'
         SaveFile(nfofile, nfo)
-    except: pass
+    except: print 'nfo failed'
 
 def HTTPDynamicCacheDownload(vevoID):
     print "Cacheing %s" % vevoID
@@ -1000,28 +996,43 @@ def HTTPDynamicCacheDownload(vevoID):
     image_url = video['imageUrl']
     artist = video['mainArtists'][0]['artistName'].encode('utf-8')
     filename=cleanfilename(artist+' - '+title)
-    jpgfile = os.path.join(cachepath,filename+'.jpg')
-    SaveFile(jpgfile, getURL(image_url))
-    nfofile = os.path.join(cachepath,filename+'.nfo')
-    HTTPDynamicCacheNFO(video,nfofile)
     videofile = os.path.join(cachepath,filename+'.flv')
-    mp4_url = getVideo(params['url'])
-    dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)
-    dlThread.start()
-    HTTPDynamicCacheSubtitles(filename)
-    count=0
-    while not os.path.exists(videofile):
-        count+=1
-        if count > 6:
-            break
-        xbmc.sleep(2500)
+    jpgfile = os.path.join(cachepath,filename+'.jpg')
+    nfofile = os.path.join(cachepath,filename+'.nfo')
+    subfile = os.path.join(cachepath,filename+'.srt')
     if os.path.exists(videofile):
-        if dlThread.isAlive():
-            sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
-            xbmc.sleep(sleeptime+2000)
-            print "Playing %s while downloading" % filename
-            item = xbmcgui.ListItem(path=videofile) 
-            xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        print "Found %s in cache, Adding to savedDB and resolving" % filename
+        item = xbmcgui.ListItem(path=videofile) 
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        addCachedb(vevoID,artist,title,'completed')
+        if not os.path.exists(jpgfile):
+            SaveFile(jpgfile, getURL(image_url))
+        if not os.path.exists(nfofile):
+            HTTPDynamicCacheNFO(video,nfofile)
+        if not os.path.exists(subfile):
+            subtitles = os.path.join(cachepath,filename+'.srt')
+            HTTPDynamicCacheSubtitles(subfile)
+    else:
+        mp4_url = getVideo(params['url'])
+        dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)
+        dlThread.start()
+        HTTPDynamicCacheSubtitles(subfile)
+        HTTPDynamicCacheNFO(video,nfofile)
+        try:SaveFile(jpgfile, getURL(image_url))
+        except: print 'Saving screenshot failed'
+        count=0
+        while not os.path.exists(videofile):
+            count+=1
+            if count > 6:
+                break
+            xbmc.sleep(2500)
+        if os.path.exists(videofile):
+            if dlThread.isAlive():
+                sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
+                xbmc.sleep(sleeptime+2000)
+                print "Playing %s while downloading" % filename
+                item = xbmcgui.ListItem(path=videofile) 
+                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def HTTPDynamic():
     item = xbmcgui.ListItem(path=getVideo(params['url']))
@@ -1041,44 +1052,44 @@ def convert_time(milliseconds):
     return "%02d:%02d:%02d,%03d" % (hours, minutes, seconds, milliseconds)
 
 def getLyrics(vevoID,duration,subtitles):
-    #if not os.path.isfile(subtitles):
-    url = 'http://www.vevo.com/data/VideoLyrics/'+vevoID
-    data = getURL(url,browser=True,alert=False)
-    if data:
-        json = demjson.decode(data)
-        lyrics = json['Text'].replace('\r','').split('\n')
-        sets = []
-        set=''
-        setlength = 0
-        for lyric in lyrics:
-            sub = lyric.strip().encode('utf-8')
-            if setlength > 7 and set <> '':
+    if not os.path.isfile(subtitles):
+        url = 'http://www.vevo.com/data/VideoLyrics/'+vevoID
+        data = getURL(url,browser=True,alert=False)
+        if data:
+            json = demjson.decode(data)
+            lyrics = json['Text'].replace('\r','').split('\n')
+            sets = []
+            set=''
+            setlength = 0
+            for lyric in lyrics:
+                sub = lyric.strip().encode('utf-8')
+                if setlength > 7 and set <> '':
+                    sets.append(set)
+                    set=''
+                    setlength = 0
+                if sub == '' and set <> '':
+                    sets.append(set)
+                    set=''
+                    setlength = 0
+                elif sub <> '':
+                    set += sub+'\n'
+                    setlength += 1 
+            if set <> '':
                 sets.append(set)
-                set=''
-                setlength = 0
-            if sub == '' and set <> '':
-                sets.append(set)
-                set=''
-                setlength = 0
-            elif sub <> '':
-                set += sub+'\n'
-                setlength += 1 
-        if set <> '':
-            sets.append(set)
-        lines = len(sets)
-        duration = float(duration)*1000
-        offset = duration*0.025
-        rate = (duration*0.95)/lines
-        count = 0
-        srt_output = ''      
-        for set in sets:
-            start = convert_time( (count*rate)+offset )
-            end = convert_time( ( (count+1)*rate ) + offset)
-            count += 1
-            line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n"
-            srt_output += line
-        if srt_output <> '':
-            SaveFile(subtitles, srt_output)
+            lines = len(sets)
+            duration = float(duration)*1000
+            offset = duration*0.025
+            rate = (duration*0.95)/lines
+            count = 0
+            srt_output = ''      
+            for set in sets:
+                start = convert_time( (count*rate)+offset )
+                end = convert_time( ( (count+1)*rate ) + offset)
+                count += 1
+                line = str(count)+"\n"+start+" --> "+end+"\n"+set+"\n"
+                srt_output += line
+            if srt_output <> '':
+                SaveFile(subtitles, srt_output)
 
 def YouTube():
     vevoID = params['url'].split('/')[-1]

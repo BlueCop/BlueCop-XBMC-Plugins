@@ -905,6 +905,7 @@ class DownloadThread (threading.Thread):
         try:
             addCachedb(self.id,self.artist,self.title)
             urllib.urlretrieve(self.url, self.dest)
+            user = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0'
             statusUpdatedb(self.id,'completed')
         except:
             statusUpdatedb(self.id,'failed')
@@ -1100,7 +1101,23 @@ def HTTPDynamicCacheDownload(vevoID):
         if not os.path.exists(subfile):
             HTTPDynamicCacheSubtitles(subfile)
     else:
-        mp4_url = getVideo(params['url'])
+        type5 = False
+        for version in video['videoVersions']:
+            if version['sourceType'] == 5:
+                type5 = True
+        if type5:
+            print "VEVO - Saving from VEVO"
+            mp4_url = getVideo(params['url'])
+        else:
+            print "VEVO - Saving from Youtube"
+            youtubeID = video['videoVersions'][0]['id']
+            data = getURL('http://www.youtube.com/watch?v=%s&safeSearch=none' % youtubeID, browser=True)
+            data = re.compile('yt.playerConfig = (.*?)};',re.DOTALL).findall(data)[0].replace("\\/", "/")
+            json = demjson.decode('{ "PLAYER_CONFIG" : ' + data + "}}" )
+            fmt_stream_map = json['PLAYER_CONFIG']['args']['url_encoded_fmt_stream_map']
+            links = urllib.unquote(fmt_stream_map[4:]).split(',url=')
+            mp4_url = chooseYBLink(links)
+        print "VEVO Downloading : %s" % mp4_url
         dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)
         dlThread.start()
         HTTPDynamicCacheSubtitles(subfile)
@@ -1120,6 +1137,20 @@ def HTTPDynamicCacheDownload(vevoID):
                 print "Playing %s while downloading" % filename
                 item = xbmcgui.ListItem(path=videofile) 
                 xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+
+def chooseYBLink(links):
+    qualities = (5,33,18,26,43,34,78,44,59,35,22,45,38,37)
+    index= -1
+    for link in links:
+        print link
+        for quality in qualities:
+            tag = '&itag='+str(quality)
+            if tag in link:
+                vindex = qualities.index(quality)
+                if vindex > index:
+                    index=vindex
+                    video_url=link
+    return video_url.replace(" ", "%20").split('&type')[0]
 
 def HTTPDynamic():
     item = xbmcgui.ListItem(path=getVideo(params['url']))

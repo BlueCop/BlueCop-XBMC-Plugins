@@ -246,8 +246,8 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                         genre = credits['Genre']
                     if credits.has_key('Record Label'):
                         recordlabel = credits['Record Label']
-                    if credit.has_key('Director'):
-                        director = metadict['Director']  
+                    if credits.has_key('Director'):
+                        director = credits['Director']  
                 else:
                     metadict={}
                     for credit in credits:

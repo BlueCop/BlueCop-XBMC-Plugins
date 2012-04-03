@@ -8,6 +8,7 @@ from xml.dom.minidom import parse, parseString
 # global variables
 settings = xbmcaddon.Addon( id="plugin.video.nba")
 quality = settings.getSetting( id="quality")
+scores = settings.getSetting( id="scores")
 cookies = ''
 http = httplib2.Http()
 http.disable_ssl_certificate_validation=True
@@ -28,7 +29,7 @@ def getDate( default= '', heading='Please enter date (YYYY/MM/DD)', hidden=False
 def login():
     try:
         url = 'https://www.nba.tv/nbatv/secure/login?'
-        body = {'username': settings.getSetting( id="username"), 'password': settings.getSetting( id="password")}
+        body = {'username' : settings.getSetting( id="username"), 'password' : settings.getSetting( id="password")}
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         response, content = http.request(url+urllib.urlencode(body), 'POST', headers=headers)
         global cookies
@@ -60,7 +61,39 @@ def encrypt(args):
     except:
         return ''
 
-def getGames(fromDate = '', full = True):
+teams = {
+        "nyk" : "knicks",
+        "njn" : "nets",
+        "atl" : "hawks",
+        "was" : "wizards",
+        "phi" : "sixers",
+        "bos" : "celtics",
+        "chi" : "bulls",
+        "min" : "timberwolves",
+        "mil" : "bucks",
+        "cha" : "bobcats",
+        "dal" : "mavericks",
+        "lac" : "clippers",
+        "lal" : "lakers",
+        "sas" : "spurs",
+        "okc" : "thunder",
+        "noh" : "hornets",
+        "por" : "blazers",
+        "mem" : "grizzlies",
+        "mia" : "heat",
+        "orl" : "magic",
+        "sac" : "kings",
+        "tor" : "raptors",
+        "ind" : "pacers",
+        "det" : "pistons",
+        "cle" : "cavaliers",
+        "den" : "nuggets",
+        "uta" : "jazz",
+        "phx" : "suns",
+        "gsw" : "warriors",
+        "hou" : "rockets"}
+
+def getGames(fromDate = '', full = True, highlight = False):
     pattern = 'c:{ipd:'
     postfix = 'condensed_'
     squality = 'hd'
@@ -79,6 +112,8 @@ def getGames(fromDate = '', full = True):
         gid =''
         idx = ''
         st = ''
+        vs = ''
+        hs = ''
         headers = {'User-agent' : 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'}
         thisweek = 'http://smb.cdnak.neulion.com/fs/nba/feeds/schedule/' +fromDate + '.js'
         req = urllib2.Request(thisweek, None, headers);
@@ -92,6 +127,8 @@ def getGames(fromDate = '', full = True):
             v = ''
             gid =''
             idx = ''
+            vs = ''
+            hs = ''
             if isFirst:
                 tmp2 = x.partition('games":[[{')
                 isFirst = False
@@ -101,11 +138,17 @@ def getGames(fromDate = '', full = True):
 
             tmp4 = tmp3.split(',')
             for y in tmp4:
-                y = y.replace('"', '').replace(" ", "")
+                y = y.replace('"', '').replace(" ", "").replace("[", "")
+                y = y.replace('{h' , 'h')
+
                 if y[:2] == 'h:':
                     h = y[2:]
                 elif y[:2] == 'v:':
                     v = y[2:]
+                elif y[:3] == 'vs:':
+                    vs = y[3:]
+                elif y[:3] == 'hs:':
+                    hs = y[3:]
                 elif y[:3] == 'id:':
                     gid = y[5:]
                 elif y[:2] == 'd:':
@@ -117,9 +160,15 @@ def getGames(fromDate = '', full = True):
 
             if date != '' and idx in ['1', '2', '3', '4', '5']:
                 name = date  + ' '  + v + '@' + h
-                url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
-                url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
-                addDir(name, url, '5', '')
+                if scores == '1' and vs != '':
+                    name = name + " " + vs + ":" + hs
+                if highlight == False:
+                    url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
+                    url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
+                    addDir(name, url, '5', '')
+                else:
+                    url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_576x324.flv'
+                    addLink(name, url, '', '')
     except:
         return None
 
@@ -138,6 +187,7 @@ def playGame(title, url):
 def mainMenu():
     addDir('Archive', 'archive', '1','')
     addDir('Condensed', 'condensed', '1','')
+    addDir('Highlights', 'highlights', '1', '')
 
 def dateMenu(type):
     addDir('This week',  type + 'this', '2' ,'')
@@ -147,7 +197,7 @@ def dateMenu(type):
 def gameLinks(mode, url):
     try:
         isFull = url.find('archive') != -1
-
+        isHighlight = url.find('highlights') != -1
         if mode == 4:
             tday = getDate()
         else:
@@ -161,16 +211,17 @@ def gameLinks(mode, url):
         default = default + '/' + "%d" % now.month
         default = default + '_' + "%d" % now.day
         if mode == 2 or mode ==4:
-            getGames(default, isFull)
+            getGames(default, isFull, isHighlight)
         elif mode == 3:
             tday = tday - timedelta(7)
             now = tday
             default = "%04d" % now.year
             default = default + '/' + "%d" % now.month
             default = default + '_' + "%d" % now.day
-            getGames(default, isFull)
+            getGames(default, isFull, isHighlight)
         else:
-                getGames(default, False)
+                getGames(default, False, isHighlight)
+        xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
     except:
         xbmcplugin.endOfDirectory(handle = int(sys.argv[1]),succeeded=False)
         return None

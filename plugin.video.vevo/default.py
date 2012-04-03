@@ -903,8 +903,8 @@ def checkIDdb(id):
         db = sqlite.connect(CACHEDB)
         db.text_factory = str
         c = db.cursor()
-        c.close()
         video = c.execute('select distinct * from videos where id = (?)', (id,)).fetchone()
+        c.close()
         if video:
             id,artist,title,status = video
             if status == 'failed':

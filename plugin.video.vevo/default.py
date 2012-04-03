@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib, urllib2, cookielib
-import string, os, re, time, datetime, math, time, unicodedata
+import string, os, re, time, datetime, math, time, unicodedata, types
 import threading
 
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
@@ -114,6 +114,15 @@ def listFeatured(url=False):
                 albumtext = primary_split[0].strip()
             else:
                 albumtext = ''
+            if mode == 'playVideo':
+                overlay = checkIDdb(videoid)
+                if overlay:
+                    dcu=sys.argv[0]+"?url="+urllib.quote_plus(videoid)+"&mode="+urllib.quote_plus('deleteCachedFile')+'&page='+urllib.quote_plus('1')
+                    cm.append( ('Delete Cached File', "XBMC.RunPlugin(%s)" % dcu) )
+                else:
+                    overlay=0
+            else:
+                overlay=0
             u = sys.argv[0]
             u += '?url='+urllib.quote_plus(videoid)
             u += '&mode='+urllib.quote_plus(mode)
@@ -122,6 +131,7 @@ def listFeatured(url=False):
                                                      "Artist":primary_text,
                                                      "Album":primary_text,
                                                      "Studio":albumtext,
+                                                     "overlay":overlay,
                                                      })
             item.setProperty('fanart_image',image_wide_url)
             if mode == 'playVideo':
@@ -228,26 +238,42 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             director = ''
             producer = ''
             composer = ''
+            plot = ''
             if video.has_key('credit'):
                 credits = video['credit']
-                try:
+                if not isinstance(credits, list):
+                    if credits.has_key('Genre'):
+                        genre = credits['Genre']
+                    if credits.has_key('Record Label'):
+                        recordlabel = credits['Record Label']
+                    if credit.has_key('Director'):
+                        director = metadict['Director']  
+                else:
+                    metadict={}
                     for credit in credits:
-                        if credit['Key'] == 'Genre':
-                            genre = credit['Value']
-                        elif credit['Key'] == 'Producer':
-                            producer = credit['Value']
-                        elif credit['Key'] == 'Director':
-                            director = credit['Value']
-                        elif credit['Key'] == 'Composer':
-                            composer = credit['Value']
-                        elif credit['Key'] == 'Record Label':
-                            recordlabel = credit['Value']
-                except:
-                    genre = credits['Genre']
-                    recordlabel = credits['Record Label']
-                    #director = credit['Director']
-                    #producer = credit['Producer']
-                    #composer = credit['Composer']
+                        if credit['Key'] == 'Credit':
+                            value = credit['Value']
+                            if '=>' in value:
+                                valuesplit = value.split('=>')
+                                key = valuesplit[0].strip()
+                                value = valuesplit[1].strip()
+                                metadict[key]=meta[value]
+                            else:
+                                metadict[credit['Key']]=credit['Value']
+                            plot+=credit['keyValue'].replace('=>',':')+'\n'
+                        else:
+                            metadict[credit['Key']]=credit['Value']
+                            plot+=credit['Key']+' : '+credit['Value']+'\n'
+                    if metadict.has_key('Director'):
+                        director = metadict['Director']    
+                    if metadict.has_key('Record Label'):
+                        recordlabel = metadict['Record Label']
+                    if metadict.has_key('Genre'):
+                        genre = metadict['Genre']           
+                    if metadict.has_key('Composer'):
+                        composer = metadict['Composer'] 
+                    if metadict.has_key('Producer'):
+                        producer = metadict['Producer']                                              
        
             if len(video['artists_main']) > 0:
                 artistdata = video['artists_main'][0]
@@ -297,6 +323,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                          "Writer":composer,
                          #"Producer":producer,
                          "Genre":genre,
+                         "Plot":plot,
                          "Year":year,
                          "Count":count}
             overlay = checkIDdb(video_id)

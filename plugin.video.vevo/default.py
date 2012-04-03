@@ -288,17 +288,23 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             u += '&duration='+urllib.quote_plus(str(duration))
             displayname = artist+' - '+title
             item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
-            item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                     "Artist":artist,
-                                                     "Album":artist,
-                                                     "Duration":str(duration),
-                                                     "Studio":recordlabel,
-                                                     "Director":director,
-                                                     "Writer":composer,
-                                                     #"Producer":producer,
-                                                     "Genre":genre,
-                                                     "Year":year,
-                                                     "Count":count})
+            infoLabels={ "Title":title,
+                         "Artist":artist,
+                         "Album":artist,
+                         "Duration":str(duration),
+                         "Studio":recordlabel,
+                         "Director":director,
+                         "Writer":composer,
+                         #"Producer":producer,
+                         "Genre":genre,
+                         "Year":year,
+                         "Count":count}
+            overlay = checkIDdb(video_id)
+            if overlay:
+                infoLabels['overlay']=overlay
+                dcu=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('deleteCachedFile')+'&page='+urllib.quote_plus('1')
+                cm.append( ('Delete Cached File', "XBMC.RunPlugin(%s)" % dcu) )
+            item.setInfo( type="Video",infoLabels=infoLabels)
             count +=1
             item.setProperty('fanart_image',artist_image)
             item.setProperty('IsPlayable', 'true')
@@ -891,6 +897,48 @@ def createCachedb():
         db.commit()
         c.close()
 
+def checkIDdb(id): 
+    if addon.getSetting('enabled-cache') == 'true':
+        createCachedb()
+        db = sqlite.connect(CACHEDB)
+        db.text_factory = str
+        c = db.cursor()
+        c.close()
+        video = c.execute('select distinct * from videos where id = (?)', (id,)).fetchone()
+        if video:
+            id,artist,title,status = video
+            if status == 'failed':
+                return False
+            elif status == 'started':
+                return 1
+            elif status == 'completed':
+                return 7
+            else:
+                return 3
+        else:
+            return False
+    return False
+
+def deleteCachedFile(id=False):
+    if not id:
+        id = params['url']
+    db = sqlite.connect(CACHEDB)
+    db.text_factory = str
+    c = db.cursor()
+    video = c.execute('select distinct * from videos where id = (?)', (id,)).fetchone()
+    if video:
+        id,artist,title,status = video
+        filename=cleanfilename(artist+' - '+title)
+        videofile = os.path.join(cachepath,filename+'.flv')
+        jpgfile = os.path.join(cachepath,filename+'.jpg')
+        nfofile = os.path.join(cachepath,filename+'.nfo')
+        subfile = os.path.join(cachepath,filename+'.srt')
+        for file in (videofile,jpgfile,nfofile,subfile):
+            if os.path.exists(file):
+                os.remove(file)
+        deleteCachedb(id)
+        #xbmc.executebuiltin("Container.Refresh()")
+
 def statusUpdatedb(id,status):
     db = sqlite.connect(CACHEDB)
     db.text_factory = str
@@ -990,10 +1038,10 @@ def HTTPDynamicCacheNFO(video,nfofile):
         nfo+='<thumb>'+image_url+'</thumb>'+'\n'
         nfo+='<plot>'+plot+'</plot>'+'\n'
         nfo+='<year>'+year+'</year>'+'\n'
-        try:director = metadict['Director']
+        try:director = metadict['Director'].encode('utf-8')
         except:director = ''
         nfo+='<director>'+director+'</director>'+'\n'
-        try:studio = metadict['Label']
+        try:studio = metadict['Label'].encode('utf-8')
         except:studio = ''
         nfo+='<studio>'+studio+'</studio>'+'\n'
         nfo+='</musicvideo>'
@@ -1150,9 +1198,9 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
         item.setProperty('fanart_image',iconimage)
     else:
         item.setProperty('fanart_image',fanart)
-    #item.setInfo( type="Video", infoLabels={ "Title":name,
-    #                                         "plot":plot
-    #                                       })
+    item.setInfo( type="Video", infoLabels={ "Title":name,
+                                             "plot":plot
+                                           })
     if cm:
         item.addContextMenuItems( cm )
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)

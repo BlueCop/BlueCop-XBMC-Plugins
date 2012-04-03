@@ -905,7 +905,6 @@ class DownloadThread (threading.Thread):
         try:
             addCachedb(self.id,self.artist,self.title)
             urllib.urlretrieve(self.url, self.dest)
-            user = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0'
             statusUpdatedb(self.id,'completed')
         except:
             statusUpdatedb(self.id,'failed')
@@ -1101,48 +1100,58 @@ def HTTPDynamicCacheDownload(vevoID):
         if not os.path.exists(subfile):
             HTTPDynamicCacheSubtitles(subfile)
     else:
-        type5 = False
+        type5=False
+        youtube=False
         for version in video['videoVersions']:
             if version['sourceType'] == 5:
-                type5 = True
+                type5=True
+            elif version['sourceType'] == 0:
+                youtubeID = version['id']
+                youtube=True
+        
+        video_url=False
         if type5:
             print "VEVO - Saving from VEVO"
-            mp4_url = getVideo(params['url'])
-        else:
+            video_url = getVideo(params['url'])
+        elif youtube:
             print "VEVO - Saving from Youtube"
-            youtubeID = video['videoVersions'][0]['id']
-            data = getURL('http://www.youtube.com/watch?v=%s&safeSearch=none' % youtubeID, browser=True)
-            data = re.compile('yt.playerConfig = (.*?)};',re.DOTALL).findall(data)[0].replace("\\/", "/")
-            json = demjson.decode('{ "PLAYER_CONFIG" : ' + data + "}}" )
-            fmt_stream_map = json['PLAYER_CONFIG']['args']['url_encoded_fmt_stream_map']
-            links = urllib.unquote(fmt_stream_map[4:]).split(',url=')
-            mp4_url = chooseYBLink(links)
-        print "VEVO Downloading : %s" % mp4_url
-        dlThread = DownloadThread(mp4_url, videofile, artist, title, vevoID)
-        dlThread.start()
-        HTTPDynamicCacheSubtitles(subfile)
-        HTTPDynamicCacheNFO(video,nfofile)
-        try:SaveFile(jpgfile, getURL(image_url))
-        except: print 'Saving screenshot failed'
-        count=0
-        while not os.path.exists(videofile):
-            count+=1
-            if count > 6:
-                break
-            xbmc.sleep(2500)
-        if os.path.exists(videofile):
-            if dlThread.isAlive():
-                sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
-                xbmc.sleep(sleeptime+5000)
-                print "Playing %s while downloading" % filename
-                item = xbmcgui.ListItem(path=videofile) 
-                xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+            video_url = getYouTubeLink(youtubeID)
+        else:
+            try:video_url = getVideo(params['url'])
+            except: pass
+        if video_url:
+            print "VEVO Downloading : %s" % video_url
+            dlThread = DownloadThread(video_url, videofile, artist, title, vevoID)
+            dlThread.start()
+            HTTPDynamicCacheSubtitles(subfile)
+            HTTPDynamicCacheNFO(video,nfofile)
+            try:SaveFile(jpgfile, getURL(image_url))
+            except: print 'Saving screenshot failed'
+            count=0
+            while not os.path.exists(videofile):
+                count+=1
+                if count > 6:
+                    break
+                xbmc.sleep(2500)
+            if os.path.exists(videofile):
+                if dlThread.isAlive():
+                    sleeptime = (int(addon.getSetting('unpausetime'))+1)*1000
+                    xbmc.sleep(sleeptime+5000)
+                    print "Playing %s while downloading" % filename
+                    item = xbmcgui.ListItem(path=videofile) 
+                    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        else:
+            print "No Link Found"
 
-def chooseYBLink(links):
+def getYouTubeLink(youtubeID):
+    data = getURL('http://www.youtube.com/watch?v=%s&safeSearch=none' % youtubeID, browser=True)
+    data = re.compile('yt.playerConfig = (.*?)};',re.DOTALL).findall(data)[0].replace("\\/", "/")
+    json = demjson.decode('{ "PLAYER_CONFIG" : ' + data + "}}" )
+    fmt_stream_map = json['PLAYER_CONFIG']['args']['url_encoded_fmt_stream_map']
+    links = urllib.unquote(fmt_stream_map[4:]).split(',url=')
     qualities = (5,33,18,26,43,34,78,44,59,35,22,45,38,37)
     index= -1
     for link in links:
-        print link
         for quality in qualities:
             tag = '&itag='+str(quality)
             if tag in link:

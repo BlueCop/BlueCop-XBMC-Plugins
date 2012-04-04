@@ -98,7 +98,7 @@ def getGames(fromDate = '', full = True, highlight = False):
     postfix = 'condensed_'
     squality = 'hd'
 
-    if str(quality) == '0':
+    if quality == '0':
         squality = 'sd'
 
     if full == True:
@@ -167,7 +167,11 @@ def getGames(fromDate = '', full = True, highlight = False):
                     url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
                     addDir(name, url, '5', '')
                 else:
-                    url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_576x324.flv'
+                    url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
+                    if quality == '0':
+                        url = url + '576x324.flv'
+                    else:
+                        url = url + '1280x720.mp4'
                     addLink(name, url, '', '')
     except:
         return None

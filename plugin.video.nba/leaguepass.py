@@ -160,11 +160,6 @@ def getGames(fromDate = '', full = True, highlight = False):
 
             if date != '' and idx in ['1', '2', '3', '4', '5']:
                 name = date  + ' '  + v + '@' + h
-                # don't show thumbs for archived games and hide score because spoilers :-)'
-                if full == False or highlight == True or score == '1':
-                    thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
-                else:
-                    thumb = ''
 
                 if scores == '1' and vs != '':
                     name = name + " " + vs + ":" + hs
@@ -172,13 +167,14 @@ def getGames(fromDate = '', full = True, highlight = False):
                 if highlight == False:
                     url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
                     url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
-                    addDir(name, url, '5', thumb)
+                    addDir(name, url, '5', '')
                 else:
                     url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
                     if quality == '0':
                         url = url + '576x324.flv'
                     else:
                         url = url + '1280x720.mp4'
+                    thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
                     addLink(name, url, '', thumb)
     except:
         return None

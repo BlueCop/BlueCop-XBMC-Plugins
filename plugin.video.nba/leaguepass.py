@@ -160,10 +160,15 @@ def getGames(fromDate = '', full = True, highlight = False):
 
             if date != '' and idx in ['1', '2', '3', '4', '5']:
                 name = date  + ' '  + v + '@' + h
-                thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
+                # don't show thumbs for archived games and hide score because spoilers :-)'
+                if full == False or highlight == True or score == '1':
+                    thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
+                else:
+                    thumb = ''
 
                 if scores == '1' and vs != '':
                     name = name + " " + vs + ":" + hs
+
                 if highlight == False:
                     url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
                     url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'

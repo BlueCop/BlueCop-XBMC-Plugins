@@ -21,7 +21,7 @@ except:
     from pysqlite2 import dbapi2 as sqlite
 
 pluginhandle = int(sys.argv[1])
-xbmcplugin.setContent(pluginhandle, 'musicvideos')
+#xbmcplugin.setContent(pluginhandle, 'musicvideos')
 
 addon = xbmcaddon.Addon('plugin.video.vevo')
 pluginpath = addon.getAddonInfo('path')
@@ -79,6 +79,7 @@ def Trending():
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listFeatured(url=False):
+    xbmcplugin.setContent(pluginhandle, 'musicvideos')
     if not url:
         url = params['url']
     max = maxperpage
@@ -107,13 +108,17 @@ def listFeatured(url=False):
                     cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
                     u=sys.argv[0]+"?url="+urllib.quote_plus(videoid)+"&mode="+urllib.quote_plus('newVideoPlaylist')+'&page='+str(1)
                     cm.append( ('Start New Playlist', "XBMC.RunPlugin(%s)" % u) )   
-            displayname = primary_text+' - '+secondary_text
+            
             if ':' in primary_text:
                 primary_split = primary_text.split(':')
                 primary_text = primary_split[1].strip()
-                albumtext = primary_split[0].strip()
+                text = primary_split[0].strip().title()
             else:
-                albumtext = ''
+                text = ''
+            
+            displayname = primary_text+' - '+secondary_text
+            if text <> '':
+                displayname +=' ('+text+')'
             if mode == 'playVideo':
                 overlay = checkIDdb(videoid)
                 if overlay:
@@ -130,7 +135,7 @@ def listFeatured(url=False):
             item.setInfo( type="Video", infoLabels={ "Title":secondary_text,
                                                      "Artist":primary_text,
                                                      "Album":primary_text,
-                                                     "Studio":albumtext,
+                                                     "Studio":text,
                                                      "overlay":overlay,
                                                      })
             item.setProperty('fanart_image',image_wide_url)
@@ -172,8 +177,12 @@ def sortWhenVideo():
     
 def listArtistVideos():
     listVideos(artistlist=True)
+    
+def listVideosNoPage(url=False):
+    listVideos(url=url,paginate=False)
                
-def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=False,artistlist=False):
+def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=False,artistlist=False,paginate=True):
+    xbmcplugin.setContent(pluginhandle, 'musicvideos')
     if artistlist:
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
@@ -182,10 +191,13 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
         #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     if not url:
         url = params['url']
-    max = maxperpage
-    page = int(params['page'])
-    offset = (page-1)*max
-    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
+    if paginate:
+        max = maxperpage
+        page = int(params['page'])
+        offset = (page-1)*max
+        fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
+    else:
+        fetch_url=url+'&extended=true'
     data = getURL(fetch_url,VEVOToken=VEVOToken)
     if data:
         if playlist:
@@ -199,8 +211,9 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                 playlist.clear()   
         elif playlist is False:
             total = len(videos)
-            if total >= max:
-                addDir('*Next Page*', url,    'listVideos', page=str(page+1))
+            if paginate:
+                if total >= max:
+                    addDir('*Next Page*', url,    'listVideos', page=str(page+1))
             cm=[]
             u=sys.argv[0]+"?url="+urllib.quote_plus(fetch_url)+"&mode="+urllib.quote_plus('queueAll')+'&page='+urllib.quote_plus('1')
             cm.append( ('Queue All', "XBMC.RunPlugin(%s)" % u) )
@@ -232,7 +245,6 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             try:year = int(video['video_year'])
             except:year = 0
 
-
             genre = ''
             recordlabel = ''
             director = ''
@@ -241,39 +253,32 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             plot = ''
             if video.has_key('credit'):
                 credits = video['credit']
-                if not isinstance(credits, list):
-                    if credits.has_key('Genre'):
-                        genre = credits['Genre']
-                    if credits.has_key('Record Label'):
-                        recordlabel = credits['Record Label']
-                    if credits.has_key('Director'):
-                        director = credits['Director']  
-                else:
+                if isinstance(credits, list):
                     metadict={}
                     for credit in credits:
                         if credit['Key'] == 'Credit':
                             value = credit['Value']
                             if '=>' in value:
                                 valuesplit = value.split('=>')
-                                key = valuesplit[0].strip()
-                                value = valuesplit[1].strip()
-                                metadict[key]=meta[value]
+                                metadict[valuesplit[0].strip()]=meta[valuesplit[1].strip()]
                             else:
                                 metadict[credit['Key']]=credit['Value']
-                            plot+=credit['keyValue'].replace('=>',':')+'\n'
                         else:
                             metadict[credit['Key']]=credit['Value']
-                            plot+=credit['Key']+' : '+credit['Value']+'\n'
-                    if metadict.has_key('Director'):
-                        director = metadict['Director']    
-                    if metadict.has_key('Record Label'):
-                        recordlabel = metadict['Record Label']
-                    if metadict.has_key('Genre'):
-                        genre = metadict['Genre']           
-                    if metadict.has_key('Composer'):
-                        composer = metadict['Composer'] 
-                    if metadict.has_key('Producer'):
-                        producer = metadict['Producer']                                              
+                else:
+                    metadict=credits
+                for item in metadict:
+                    plot+=item+' : '+metadict[item]+'\n' 
+                if metadict.has_key('Director'):
+                    director = metadict['Director']    
+                if metadict.has_key('Record Label'):
+                    recordlabel = metadict['Record Label']
+                if metadict.has_key('Genre'):
+                    genre = metadict['Genre']           
+                if metadict.has_key('Composer'):
+                    composer = metadict['Composer'] 
+                if metadict.has_key('Producer'):
+                    producer = metadict['Producer']                                              
        
             if len(video['artists_main']) > 0:
                 artistdata = video['artists_main'][0]
@@ -285,11 +290,12 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                 cm.append( ('More %s' % artist_name, "Container.Update(%s)" % u) )
                 artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
                 u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-                cm.append( ('%s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+                cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
             else:
                 artist_name = ''
                 artist_image = ''
-        
+            
+            artists = [artist_name]
             if len(video['artists_featured']) > 0:
                 feats=''
                 for featuredartist in video['artists_featured']:
@@ -297,12 +303,13 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                     #featuredartist_image = featuredartist['image_url']
                     featuredartist_name = featuredartist['name'].encode('utf-8')
                     feats= featuredartist_name+', '
+                    artists.append(featuredartist_name)
                     artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % featuredartist_id
                     u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
-                    cm.append( ('More %s Videos' % featuredartist_name, "Container.Update(%s)" % u) )
+                    cm.append( ('More by %s' % featuredartist_name, "Container.Update(%s)" % u) )
                     artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % featuredartist_id
                     u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-                    cm.append( ('Add %s to Favorites' % featuredartist_name, "XBMC.RunPlugin(%s)" % u) )
+                    cm.append( ('Favorite %s' % featuredartist_name, "XBMC.RunPlugin(%s)" % u) )
                 feats=feats[:-2]
                 artist = artist_name
                 title += ' (ft. '+feats+')'
@@ -316,22 +323,25 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             item=xbmcgui.ListItem(displayname, iconImage=video_image, thumbnailImage=video_image)
             infoLabels={ "Title":title,
                          "Artist":artist,
+                         #Set album to artist because xbmc bug doesn't display artist value for video type
                          "Album":artist,
-                         "Duration":str(duration),
+                         "Duration":str(duration/60)+':'+str(duration-(duration/60)*60),
                          "Studio":recordlabel,
                          "Director":director,
                          "Writer":composer,
-                         #"Producer":producer,
+                         "Producer":producer,
                          "Genre":genre,
                          "Plot":plot,
                          "Year":year,
-                         "Count":count}
+                         "Count":count
+                         }
             overlay = checkIDdb(video_id)
             if overlay:
                 infoLabels['overlay']=overlay
                 dcu=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('deleteCachedFile')+'&page='+urllib.quote_plus('1')
                 cm.append( ('Delete Cached File', "XBMC.RunPlugin(%s)" % dcu) )
             item.setInfo( type="Video",infoLabels=infoLabels)
+            item.setProperty('Artist',artist)
             count +=1
             item.setProperty('fanart_image',artist_image)
             item.setProperty('IsPlayable', 'true')
@@ -339,7 +349,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
             if playall or queue:
                 playlist.add(url=u, listitem=item)
             else:
-                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)#,totalItems=total)
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
         if playall:
             xbmc.Player().play(playlist)
         elif queue:
@@ -401,6 +411,7 @@ def listAZ():
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listArtists(url = False):
+    xbmcplugin.setContent(pluginhandle, 'artists')
     if not url:
         url = params['url']
     max = maxperpage
@@ -422,7 +433,7 @@ def listArtists(url = False):
         cm = []
         artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-        cm.append( ('%s to Favorites' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
         tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
         cm.append( ('List Tours', "Container.Update(%s)" % u) )
@@ -438,6 +449,8 @@ def rootPlaylists():
             if getFBAuth():
                 getVEVOAccount()
                 addon.setSetting(id='getnewtoken',value='false')
+            else:
+                xbmcgui.Dialog().ok('Error','Facebook Login Failed') 
         if addon.getSetting('session_token'):
             addDir('My Playlists',         'http://api.vevo.com/mobile/v1/userplaylists.json?',             'listPlaylistsToken')
             #friendPlaylists('http://api.vevo.com/mobile/v1/user/getfacebookfriends.json?')
@@ -472,7 +485,7 @@ def addVideo2Playlist(isrc=False):
     data = getURL(url,VEVOToken=True)
     playlists = demjson.decode(data)['result']
     selected=xbmcgui.Dialog().select('Add Video to Playlist',
-                                     [playlist['title']+' ('+str(playlist['videocount'])+')' for playlist in playlists])
+                            [playlist['title']+' ('+str(playlist['videocount'])+')' for playlist in playlists])
     playlist=playlists[selected]
     title=playlist['title'].replace(' ','%20')
     playlist_id=playlist['playlist_id']
@@ -634,14 +647,10 @@ def queuePlaylist():
 
 # Show listings
 def rootShows(url = False):
-    #xbmcplugin.setContent(pluginhandle, 'shows')
+    xbmcplugin.setContent(pluginhandle, 'tvshows')
     if not url:
         url = params['url']
-    max = maxperpage
-    page = int(params['page'])
-    offset = (page-1)*max
-    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)
-    data = getURL(fetch_url)
+    data = getURL(url)
     shows = demjson.decode(data)['result']
     total = len(shows)
     if total >= max:
@@ -652,12 +661,52 @@ def rootShows(url = False):
         show_image = show['image_url']
         video_count = show['total_videos_count']
         description = show['description']
-        url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'/videos.json?order=MostRecent'
+        url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'.json'
         display_name=show_name+' ('+str(video_count)+')'
-        addDir(display_name, url, 'listVideos', plot=description, iconimage=show_image, total=total)
+        addDir(display_name, url, 'rootEpisodes', plot=description, iconimage=show_image, total=total)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+    setView(override=504)
 
+def rootEpisodes(url = False):
+    if not url:
+        url = params['url']
+    data = getURL(url)
+    result = demjson.decode(data)['result']
+    show_id = result['id']
+    show_name = result['name']
+    show_image = result['image_url']
+    description = result['description']
+    if len(result['videos']) > 0:
+        url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'/videos.json?order=MostRecent'
+        listVideosNoPage(url)
+    else:
+        xbmcplugin.setContent(pluginhandle, 'episodes')
+        episodes = result['episodes']
+        total = len(episodes)
+        for episode in episodes:
+            episode_id = episode['episode_id']
+            episode_title = episode['title']
+            episode_image = episode['image_url']
+            video_count = episode['video_count']
+            url = 'http://api.vevo.com/mobile/v1/show/'+str(show_id)+'/videos.json?episode='+episode_id.replace(" ", "%20")
+            display_name=episode_title +' ('+str(video_count)+')'
+            u = sys.argv[0]
+            u += '?url='+urllib.quote_plus(url)
+            u += '&mode='+urllib.quote_plus('listVideosNoPage')
+            u += '&page=1'
+            item=xbmcgui.ListItem(display_name, iconImage=episode_image, thumbnailImage=episode_image)
+            item.setInfo( type="Video", infoLabels={ "Title":episode_title,
+                                                     "TVShowTitle":show_name,
+                                                     "plot":description,
+                                                     #"episode":video_count,
+                                                     })
+            item.setProperty('fanart_image',show_image)
+            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=True,totalItems=total)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+        setView(override=503)
+    
 # Search
 def searchVideos():
     Search('Videos')
@@ -713,6 +762,8 @@ def toursRightNow():
     page = int(params['page'])
     offset = (page-1)*max
     fetch_url=url+'&offset='+str(offset)+'&max='+str(max)#+'&extended=true'
+    #if total >= max:
+    #    addDir('*Next Page*', url,    'toursRightNow', page=str(page+1))
     listTours(fetch_url)
 
 def listTours(url=False):
@@ -721,8 +772,6 @@ def listTours(url=False):
     data = getURL(url)
     artists = demjson.decode(data)['result']
     total = len(artists)
-    #if total >= max:
-    #    addDir('*Next Page*', url,    'toursRightNow', page=str(page+1))
     for artist in artists:
         artist_id = artist['artistid']
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
@@ -749,7 +798,7 @@ def listTours(url=False):
             final_name = date+' : '+city+' - '+artist_name+' @ '+venuename
         addDir(final_name, url, 'listArtistVideos', iconimage=artist_image, total=total)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-    xbmc.executebuiltin("Container.SetViewMode(51)")
+    setView(override=51)
 
 def createArtistdb():
     if not os.path.isfile(FAVFILESQL):
@@ -814,6 +863,7 @@ def convertJSONfavs():
         os.remove(FAVFILE)
 
 def favArtists():
+    xbmcplugin.setContent(pluginhandle, 'artists')
     createArtistdb()
     db = sqlite.connect(FAVFILESQL)
     db.text_factory = str
@@ -879,10 +929,8 @@ def playlistVideo():
     if addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
         except:HTTPDynamic()
-    elif addon.getSetting('enabled-cache') == 'true':   
-        #try:
+    elif addon.getSetting('enabled-cache') == 'true':
         HTTPDynamicCache()
-        #except:YouTube()
     else:
         try:HTTPDynamic()
         except:YouTube()
@@ -1272,11 +1320,15 @@ def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1
         item.addContextMenuItems( cm )
     return xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=folder,totalItems=total)
 
-def setView():
+def setView(override=False):
     confluence_views = [50,500,511]
     if addon.getSetting('viewenable') == 'true':
-        view=int(addon.getSetting('defaultview'))
-        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
+        if override:
+            view = str(override)
+        else:
+            view=int(addon.getSetting('defaultview'))
+            view = str(confluence_views[view])
+        xbmc.executebuiltin("Container.SetViewMode("+view+")")
 
 def setLocation():
     try:
@@ -1323,6 +1375,7 @@ def getFBAuth():
     br["email"] = email
     br["pass"] = password
     logged_in = br.submit()
+    data = logged_in.read()
     url = logged_in.geturl()
     graph = newGraph(email, password)
     token = graph.extractTokenFromURL(url)
@@ -1356,15 +1409,16 @@ def getURL( url , postdata=False, method=False, extendTimeout=False, VEVOToken=F
         if VEVOKey:
             opener.addheaders = [('X-VEVO-Private-Key', 'G05bmz9x--_6-J-qpR4_' )]
         if postdata:
-            request = urllib2.Request(url, data=postdata)
             if method:
+                request = urllib2.Request(url, data=postdata)
                 #request.add_header('Content-Type', 'your/contenttype')
                 request.get_method = lambda: method
-            #if extendTimeout <> False:
-            #    try:usock=opener.open(url,postdata,extendTimeout)
-            #    except:usock=opener.open(request)
-            #else:
-            usock=opener.open(request)
+                usock=opener.open(request)
+            elif extendTimeout <> False:
+                try:usock=opener.open(url,postdata,extendTimeout)
+                except:usock=opener.open(url,postdata)
+            else:
+                usock=opener.open(url,postdata)
         else:
             usock=opener.open(url)
         response=usock.read()
@@ -1429,4 +1483,3 @@ if mode==None:
     listCategories()
 else:
     exec '%s()' % mode
-xbmcplugin.setContent(pluginhandle, 'musicvideos')

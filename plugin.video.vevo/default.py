@@ -116,6 +116,9 @@ def listFeatured(url=False):
             else:
                 text = ''
             
+            u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(primary_text)+'&'
+            cm.append( ('YouTube %s' % primary_text, "Container.Update(%s)" % u) )
+            
             displayname = primary_text+' - '+secondary_text
             if text <> '':
                 displayname +=' ('+text+')'
@@ -289,6 +292,8 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                 u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
                 cm.append( ('More %s' % artist_name, "Container.Update(%s)" % u) )
                 artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
+                u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(artist_name)+'&'
+                cm.append( ('YouTube %s' % artist_name, "Container.Update(%s)" % u) )
                 u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
                 cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
             else:
@@ -307,6 +312,8 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                     artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % featuredartist_id
                     u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
                     cm.append( ('More by %s' % featuredartist_name, "Container.Update(%s)" % u) )
+                    u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(featuredartist_name)+'&'
+                    cm.append( ('YouTube %s' % featuredartist_name, "Container.Update(%s)" % u) )
                     artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % featuredartist_id
                     u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
                     cm.append( ('Favorite %s' % featuredartist_name, "XBMC.RunPlugin(%s)" % u) )
@@ -434,6 +441,8 @@ def listArtists(url = False):
         artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
         cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
+        u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(artist_name)+'&'
+        cm.append( ('YouTube %s' % artist_name, "Container.Update(%s)" % u) )
         tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
         cm.append( ('List Tours', "Container.Update(%s)" % u) )
@@ -879,6 +888,8 @@ def favArtists():
         tours_url = 'http://api.vevo.com/mobile/v1/artist/%s/tours.json?toDate=2020-12-31&extended=true' % artist_id
         u=sys.argv[0]+"?url="+urllib.quote_plus(tours_url)+"&mode="+urllib.quote_plus('listTours')+'&page='+str(1)
         cm.append( ('List Tours', "Container.Update(%s)" % u) )
+        u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(artist_name)+'&'
+        cm.append( ('YouTube %s' % artist_name, "Container.Update(%s)" % u) )
         u=sys.argv[0]+"?url="+urllib.quote_plus(artist_id)+"&mode="+urllib.quote_plus('removefavArtists')+'&page='+str(1)
         cm.append( ('Remove %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
         addDir(display_name, url, 'listArtistVideos', iconimage=artist_image, cm=cm)
@@ -900,7 +911,7 @@ def matchedArtists():
     json_query = demjson.encode(json_query)
     data = getURL( url , postdata=json_query, extendTimeout=60)
     artists = demjson.decode(data)['result']
-    total = len(artists)
+    #total = len(artists)
     returns = []
     for artist in artists:
         returns.append(artist['artist'])

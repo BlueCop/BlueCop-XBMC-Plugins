@@ -7,6 +7,7 @@ import os
 import sys
 import urllib
 import datetime
+import unicodedata
 
 try:
     from xml.etree import ElementTree
@@ -66,6 +67,9 @@ class Main:
             return 0
         else:
             return int(tree.findtext('total_count'))
+
+    def remove_accents(self, s):
+        return ''.join((c for c in unicodedata.normalize('NFD', s.decode('utf-8')) if unicodedata.category(c) != 'Mn'))
 
     def addMenuItems( self, perpage, pagenumber ,url=common.args.url ):
         # Grab xml item list
@@ -271,6 +275,7 @@ class Main:
             #Set Networks and Studios fanart
             elif common.args.name == 'Networks' or common.args.name == 'Studios':
                 xbmcplugin.setContent(pluginhandle, 'tvshows')
+                canonical_name = self.remove_accents(canonical_name.encode('utf-8'))
                 fanart = "http://assets.huluim.com/companies/key_art_"+canonical_name.replace('-','_')+".jpg"
                 art = fanart
             #Add Count to Display Name for Non-Show/Episode Lists
@@ -322,7 +327,7 @@ class Main:
                 total_items = len(menuitems)
             else:
                 total_items = int(total_count)
-                
+            
             cm = []
             if isVideo == False:
                 u += '&name="'+urllib.quote_plus(display.replace("'",""))+'"'

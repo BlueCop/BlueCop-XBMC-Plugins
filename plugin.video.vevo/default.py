@@ -432,7 +432,7 @@ def listArtists(url = False):
         addDir('*Next Page*', url,    'listArtists', page=str(page+1))
     for artist in artists:
         artist_id = artist['id']
-        artist_name = artist['name']
+        artist_name = artist['name'].encode('utf-8')
         artist_image = artist['image_url']
         video_count = artist['video_count']
         url = 'http://api.vevo.com/mobile/v1/artist/'+artist_id+'/videos.json?order=MostRecent'
@@ -1410,7 +1410,8 @@ def getURL( url , postdata=False, method=False, extendTimeout=False, VEVOToken=F
         print 'VEVO --> common :: getURL :: url = '+url
         #proxy = 'http://localhost:8888'
         #proxy_handler = urllib2.ProxyHandler({'http':proxy})
-        opener = urllib2.build_opener()#proxy_handler)
+        #opener = urllib2.build_opener(proxy_handler)
+        opener = urllib2.build_opener()
         if browser:
             opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0')]
         else:

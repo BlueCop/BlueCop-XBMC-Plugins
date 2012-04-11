@@ -1,4 +1,4 @@
-import datetime
+import datetime, time
 from datetime import date
 from datetime import timedelta
 import urllib,urllib2,re,time,xbmcplugin,xbmcgui, xbmcaddon, os, httplib2
@@ -115,7 +115,7 @@ def getGames(fromDate = '', full = True, highlight = False):
         vs = ''
         hs = ''
         headers = {'User-agent' : 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'}
-        thisweek = 'http://smb.cdnak.neulion.com/fs/nba/feeds/schedule/' +fromDate + '.js'
+        thisweek = 'http://smb.cdnak.neulion.com/fs/nba/feeds/schedule/' +fromDate +  '.js?t=' + "%d"  %time.time()
         req = urllib2.Request(thisweek, None, headers);
         response = str(urllib2.urlopen(req).read())
         tmp = response.split('}}}')

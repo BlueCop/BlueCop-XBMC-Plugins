@@ -1,14 +1,8 @@
 Changelog:
 
+0.0.6- fix for strange schedule js response
 0.0.5- apply quality settings for highlights, high = 720p
-
-
 0.0.4- added highlights and scores
-
-
-0.0.3
-- video idx check
-0.0.2
-- initial release
-0.0.1
-- initial test version
+0.0.3- video idx check
+0.0.2- initial release
+0.0.1- initial test version

@@ -29,7 +29,7 @@ BASE = 'http://www.mtv.com'
 
 fanart = os.path.join(pluginpath,'fanart.jpg')
 vicon = os.path.join(pluginpath,'icon.png')
-maxperpage=(int(addon.getSetting('perpage'))+1)*25
+#maxperpage=(int(addon.getSetting('perpage'))+1)*25
 
 # Root listing
 

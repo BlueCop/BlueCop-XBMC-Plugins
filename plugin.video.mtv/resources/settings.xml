@@ -1,0 +1,8 @@
+<settings>
+	<category label="30022">
+	   <setting type="sep" />
+	   <setting id="viewenable" type ="bool" label="30050" default="true"/>
+	   <setting id="defaultview" type="enum" lvalues="30053|30051|30052" label="30058" default="2"/>
+	   <setting type="sep" />
+	</category>
+</settings>

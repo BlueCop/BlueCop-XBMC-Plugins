@@ -1,39 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
-	<string id="30000">Facebook E-Mail</string>
-	<string id="30001">Password</string>
-
-	<string id="30004">Chosen Bitrate</string>
-	<string id="30005">288p@564kbps</string>
-	<string id="30006">288p@864kbps</string>
-	<string id="30007">432p@1328kbps</string>
-	<string id="30008">432p@1728kbps</string>
-	<string id="30009">720p@2528kbps</string>
-	<string id="30010">720p@3328kbps</string>
-	<string id="30011">1080p@4392kbps</string>
-	<string id="30012">1080p@5392kbps</string>
-
-	<string id="30014">UnPause Hack</string>
-	<string id="30015">UnPause Delay</string>
-
-	<string id="30016">Per Page</string>
-	<string id="30017">Play from Youtube</string>
-	<string id="30018">Latitude (Blank to Disable)</string>
-	<string id="30019">Longitude (Blank to Disable)</string>
-	<string id="30020">Radius in Miles</string>
-	
-	<string id="30021">User Data</string>
 	<string id="30022">View</string>
 	<string id="30023">Streaming</string>
 	
-	<string id="30024">Get New Token</string>
-	
-	<string id="30025">Lyric Subtitles (Experimental)</string>
-	<string id="30026">Enable Cache</string>
-	<string id="30027">Cache Folder</string>
-	
-	<string id="30028">Rick Roll!</string>
-	
+	<string id="30042">Enable Proxy</string>
+	<string id="30040">Proxy IP</string>
+	<string id="30041">Proxy Port</string>
+	<string id="30043">Proxy Username</string>
+	<string id="30044">Proxy Password</string>
 	
 	<string id="30050">Enable Set View</string>
 	<string id="30058">Default View</string>

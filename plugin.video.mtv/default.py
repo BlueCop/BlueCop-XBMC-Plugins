@@ -23,6 +23,8 @@ xbmcplugin.setContent(pluginhandle, 'musicvideos')
 addon = xbmcaddon.Addon('plugin.video.mtv')
 pluginpath = addon.getAddonInfo('path')
 datapath = xbmc.translatePath('special://profile/addon_data/plugin.video.mtv/')
+if not os.path.exists(datapath):
+    os.makedirs(datapath)
 #cachepath = xbmc.translatePath(addon.getSetting('cache-folder'))
 
 FAVFILESQL = os.path.join(datapath,'favs.sqlite')

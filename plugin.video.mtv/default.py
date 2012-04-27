@@ -87,20 +87,35 @@ def listArtistRoot():
         if videoType not in types:
             types.append(videoType)
     for type in types:
-        addDir(type,params['url'], 'listArtistVideos', iconimage=params['artistimage'])
-    addDir('All Videos',            params['url'], 'listArtistVideos', iconimage=params['artistimage'])
+        addDir(type,type, 'listArtistVideos', iconimage=params['artistimage'])
+    addDir('All Videos',            'All Videos', 'listArtistVideos', iconimage=params['artistimage'])
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def listArtistVideos():   
+def playlistArtistVideos(): 
+    listArtistVideos(playall=True)
+
+def queueArtistVideos(): 
+    listArtistVideos(queue=True)
+    
+def listArtistVideos(playall=False,queue=False):   
     #url = 'http://www.mtvmusicmeter.com/sitewide/dataservices/meter/videos/?id='+params['url']
     #data = getURL(url)
     data = OpenFile(VIDEOCACHE)
     videos = demjson.decode(data)['videos']
     total = len(videos)
+    if playall or queue:
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        if playall:
+            playlist.clear()
+    else:
+        cm=[]
+        u=sys.argv[0]+"?url="+urllib.quote_plus(params['url'])+"&mode="+urllib.quote_plus('queueArtistVideos')+"&artistimage="+urllib.quote_plus(params['artistimage'])
+        cm.append( ('Queue All', "XBMC.RunPlugin(%s)" % u) )
+        addDir('*Play All*', params['url'], 'playlistArtistVideos',iconimage=params['artistimage'],folder=False,cm=cm)
     for video in videos:
         videoType = video['videoTypeGrouping_facet'].replace('_',' ').title()
-        if videoType == params['name'] or 'All Videos' == params['name']:
+        if videoType == params['url'] or 'All Videos' == params['url']:
             mtvID = video['id']
             title = video['title_t'].replace('&amp;','&')
             artist = video['artist_t']
@@ -116,9 +131,17 @@ def listArtistVideos():
                                                     "Artist":artist,
                                                     "Album":artist})
             item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
-    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
-    setView()
+            if playall or queue:
+                playlist.add(url=u, listitem=item)
+            else:
+                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False,totalItems=total)
+    if playall:
+        xbmc.Player().play(playlist)
+    elif queue:
+        pass
+    else:
+        xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
+        setView()
     
 # Play Video
 def playVideo():

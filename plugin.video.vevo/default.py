@@ -96,13 +96,13 @@ def listFeatured(url=False):
             action_url = item['action_url']
             is_live_stream = item['is_live_stream']
             image_wide_url  = item['image_wide_url']
+            cm=[]
             if 'vevo://playlist/' in action_url:
                 mode = 'playlistRoot'
                 videoid = action_url.replace('vevo://playlist/','')
             elif 'vevo://video/' in action_url:
                 mode = 'playVideo'
                 videoid = action_url.replace('vevo://video/','')
-                cm=[]
                 if addon.getSetting('session_token'):
                     u=sys.argv[0]+"?url="+urllib.quote_plus(videoid)+"&mode="+urllib.quote_plus('addVideo2Playlist')+'&page='+str(1)
                     cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
@@ -134,6 +134,7 @@ def listFeatured(url=False):
             u = sys.argv[0]
             u += '?url='+urllib.quote_plus(videoid)
             u += '&mode='+urllib.quote_plus(mode)
+            u += '&duration='+urllib.quote_plus('210')
             item=xbmcgui.ListItem(displayname, iconImage=image_url, thumbnailImage=image_url)
             item.setInfo( type="Video", infoLabels={ "Title":secondary_text,
                                                      "Artist":primary_text,
@@ -142,9 +143,9 @@ def listFeatured(url=False):
                                                      "overlay":overlay,
                                                      })
             item.setProperty('fanart_image',image_wide_url)
+            item.addContextMenuItems( cm )
             if mode == 'playVideo':
                 item.setProperty('IsPlayable', 'true')
-                item.addContextMenuItems( cm )
                 xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
             else:
                 u += '&page=1'
@@ -231,18 +232,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
         for video in videos:
             video_id = video['isrc']
             try:title = video['title'].encode('utf-8')
-            except: title = ''
-            cm=[]
-            if addon.getSetting('session_token'):
-                if VEVOToken:
-                    playlist_id = fetch_url.split('userplaylist/')[1].split('.')[0]
-                    index=str(videos.index(video))
-                    u=sys.argv[0]+"?url="+urllib.quote_plus(index)+"&mode="+urllib.quote_plus('removeVideo2Playlist')+'&page='+urllib.quote_plus(playlist_id)
-                    cm.append( ('Remove from Playlist', "XBMC.RunPlugin(%s)" % u) )
-                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('addVideo2Playlist')+'&page='+str(1)
-                cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
-                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('newVideoPlaylist')+'&page='+str(1)
-                cm.append( ('Start New Playlist', "XBMC.RunPlugin(%s)" % u) )                    
+            except: title = ''                  
             video_image = video['image_url']
             duration = video['duration_in_seconds']
             try:year = int(video['video_year'])
@@ -263,7 +253,7 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                             value = credit['Value']
                             if '=>' in value:
                                 valuesplit = value.split('=>')
-                                metadict[valuesplit[0].strip()]=meta[valuesplit[1].strip()]
+                                metadict[valuesplit[0].strip()]=valuesplit[1].strip()
                             else:
                                 metadict[credit['Key']]=credit['Value']
                         else:
@@ -288,40 +278,46 @@ def listVideos(url = False,playlist=False,playall=False,queue=False,VEVOToken=Fa
                 artist_id = artistdata['id']
                 artist_name = artistdata['name'].encode('utf-8')
                 artist_image = artistdata['image_url']
-                artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % artist_id
-                u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
-                cm.append( ('More %s' % artist_name, "Container.Update(%s)" % u) )
-                artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
-                u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(artist_name)+'&'
-                cm.append( ('YouTube %s' % artist_name, "Container.Update(%s)" % u) )
-                u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-                cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
             else:
                 artist_name = ''
+                artist_id = ''
                 artist_image = ''
-            
-            artists = [artist_name]
+            artists = {artist_id:artist_name}
             if len(video['artists_featured']) > 0:
                 feats=''
                 for featuredartist in video['artists_featured']:
                     featuredartist_id = featuredartist['id']
                     #featuredartist_image = featuredartist['image_url']
                     featuredartist_name = featuredartist['name'].encode('utf-8')
-                    feats= featuredartist_name+', '
-                    artists.append(featuredartist_name)
-                    artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % featuredartist_id
-                    u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
-                    cm.append( ('More by %s' % featuredartist_name, "Container.Update(%s)" % u) )
-                    u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(featuredartist_name)+'&'
-                    cm.append( ('YouTube %s' % featuredartist_name, "Container.Update(%s)" % u) )
-                    artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % featuredartist_id
-                    u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
-                    cm.append( ('Favorite %s' % featuredartist_name, "XBMC.RunPlugin(%s)" % u) )
+                    feats+=featuredartist_name+', '
+                    artists[featuredartist_id]=featuredartist_name
                 feats=feats[:-2]
-                artist = artist_name
                 title += ' (ft. '+feats+')'
-            else:
-                artist = artist_name
+
+            cm=[]
+            if addon.getSetting('session_token'):
+                if VEVOToken:
+                    playlist_id = fetch_url.split('userplaylist/')[1].split('.')[0]
+                    index=str(videos.index(video))
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(index)+"&mode="+urllib.quote_plus('removeVideo2Playlist')+'&page='+urllib.quote_plus(playlist_id)
+                    cm.append( ('Remove from Playlist', "XBMC.RunPlugin(%s)" % u) )
+                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('addVideo2Playlist')+'&page='+str(1)
+                cm.append( ('Add to Playlist', "XBMC.RunPlugin(%s)" % u) )
+                u=sys.argv[0]+"?url="+urllib.quote_plus(video_id)+"&mode="+urllib.quote_plus('newVideoPlaylist')+'&page='+str(1)
+                cm.append( ('Start New Playlist', "XBMC.RunPlugin(%s)" % u) )
+            artist = artist_name
+            for _artist in artists:
+                if _artist <> '':
+                    artist_name = artists[_artist]
+                    artist_id = _artist
+                    artist_url = 'http://api.vevo.com/mobile/v1/artist/%s/videos.json?order=MostRecent' % artist_id
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('listVideos')+'&page='+str(1)
+                    cm.append( ('More %s' % artist_name, "Container.Update(%s)" % u) )
+                    artist_url = 'http://api.vevo.com/mobile/v1/artist/%s.json' % artist_id
+                    u='plugin://plugin.video.youtube/?path=/root/search&feed=search&search='+urllib.quote_plus(artist_name)+'&'
+                    cm.append( ('YouTube %s' % artist_name, "Container.Update(%s)" % u) )
+                    u=sys.argv[0]+"?url="+urllib.quote_plus(artist_url)+"&mode="+urllib.quote_plus('addfavArtists')+'&page='+str(1)
+                    cm.append( ('Favorite %s' % artist_name, "XBMC.RunPlugin(%s)" % u) )
             u = sys.argv[0]
             u += '?url='+urllib.quote_plus(video_id)
             u += '&mode='+urllib.quote_plus('playVideo')
@@ -932,14 +928,22 @@ def playVideo():
     playlistVideo()
 
 def playlistVideo():
+    if addon.getSetting('rickroll') == 'true':
+        params['url']='GB1108700010'
     subtitles = os.path.join(datapath,params['url']+'.srt')
     if addon.getSetting('lyricsubs') == 'true':
         if params['duration']:
             try:getLyrics(params['url'],params['duration'],subtitles)
             except: print "Subtitles Failed"
+
     if addon.getSetting('defaultyoutube') == 'true':
         try:YouTube()
-        except:HTTPDynamic()
+        except:
+            try:RTMP()
+            except:HTTPDynamic()
+    elif addon.getSetting('defaultrtmp') == 'true':
+        try:RTMP()
+        except:YouTube()
     elif addon.getSetting('enabled-cache') == 'true':
         HTTPDynamicCache()
     else:
@@ -1285,14 +1289,36 @@ def YouTube():
     youtubeurl = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % youtubeID
     item = xbmcgui.ListItem(path=youtubeurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-     
+
+def RTMP():
+    item = xbmcgui.ListItem(path=getVideoRTMP(params['url']))
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item) 
+
+def getVideoRTMP(pageurl):
+    quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
+    select = int(addon.getSetting('bitrate'))
+    maxbitrate = quality[select]
+    vevoID = pageurl.split('/')[-1]
+    url = 'http://vevoodfs.fplive.net/Video/V2/VFILE/%s/%sr.smil' % (vevoID,vevoID.lower())
+    data = getURL(url,alert=False)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    print tree.prettify()
+    rtmp = tree.find('meta')['base']
+    videos = tree.findAll('video')
+    number = len(videos)-1
+    if number < select:
+        select = number
+    playpath = videos[select]['src']
+    final = rtmp+' playpath='+playpath
+    return final
+
 def getVideo(pageurl):
     quality = [564000, 864000, 1328000, 1728000, 2528000, 3328000, 4392000, 5392000]
     select = int(addon.getSetting('bitrate'))
     maxbitrate = quality[select]
     vevoID = pageurl.split('/')[-1]
     url = 'http://smilstream.vevo.com/HDFlash/v1/smil/%s/%s.smil' % (vevoID,vevoID.lower())
-    data = getURL(url)
+    data = getURL(url,alert=False)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     print tree.prettify()
     videobase = tree.find(attrs={'name':'httpBase'})['content']

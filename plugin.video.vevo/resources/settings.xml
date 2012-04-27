@@ -10,6 +10,8 @@
 	   <setting id="longitude" type="text" label="30019" default="Lookup by IP"/>
 	   <setting id="radius" type="enum" label="30020" values="100|200|300|400|500" default="2"/>
 	   <setting type="sep" />
+	   <setting id='rickroll' type ="bool" label="30028" default="false" />
+	   <setting type="sep" />
 	</category>
 	<!-- View Settings -->
 	<category label="30022">
@@ -25,13 +27,14 @@
 	   <setting id='lyricsubs' type ="bool" label="30025" default="false" />
 	   <setting id='defaultyoutube' type ="bool" label="30017" default="false" />
 	   <setting type="sep" />
-	   <setting id="bitrate" type="enum" lvalues="30005|30006|30007|30008|30009|30010|30011|30012" label="30004" default="7" enable="!eq(-2,true)"/>
+	   <setting id='defaultrtmp' type ="bool" label="30029" default="true" enable="!eq(-2,true)"/>
+	   <setting id="bitrate" type="enum" lvalues="30005|30006|30007|30008|30009|30010|30011|30012" label="30004" default="7" enable="!eq(-3,true)"/>
 	   <setting type="sep" />
-	   <setting id='unpause' type ="bool" label="30014" default="true" enable="!eq(-4,true)"/>
-	   <setting id="unpausetime" type="enum" label="30015" values="1|2|3|4|5|6|7|8|9|10" default="4" enable="!eq(-5,true)"/>
+	   <setting id='unpause' type ="bool" label="30014" default="true" enable="!eq(-3,true)"/>
+	   <setting id="unpausetime" type="enum" label="30015" values="1|2|3|4|5|6|7|8|9|10" default="4" enable="!eq(-4,true)"/>
 	   <setting type="sep" />
-	   <setting id='enabled-cache' type ="bool" label="30026" default="false" enable="!eq(-7,true)"/>
-	   <setting id="cache-folder" type="folder" label="30027" default="" enable="!eq(-8,true)"/>
+	   <setting id='enabled-cache' type ="bool" label="30026" default="false" enable="!eq(-6,true)"/>
+	   <setting id="cache-folder" type="folder" label="30027" default="" enable="!eq(-7,true)"/>
 	   <setting type="sep" />
 	</category>
 </settings>

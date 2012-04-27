@@ -13,7 +13,7 @@
 	<string id="30011">1080p@4392kbps</string>
 	<string id="30012">1080p@5392kbps</string>
 
-	<string id="30014">UnPause Hack</string>
+	<string id="30014">HTTP Unpause</string>
 	<string id="30015">UnPause Delay</string>
 
 	<string id="30016">Per Page</string>
@@ -29,9 +29,11 @@
 	<string id="30024">Get New Token</string>
 	
 	<string id="30025">Lyric Subtitles (Experimental)</string>
-	<string id="30026">Enable Cache</string>
+	<string id="30026">Enable HTTP Cache</string>
 	<string id="30027">Cache Folder</string>
 	
+	<string id="30028">Rick Roll!</string>
+	<string id="30029">RTMP Mode</string>
 	
 	<string id="30050">Enable Set View</string>
 	<string id="30058">Default View</string>

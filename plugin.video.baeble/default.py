@@ -80,6 +80,7 @@ def ListArtistVideos():
                                                 "Artist":artist,
                                                 "Album":artist})
         item.setProperty('IsPlayable', 'true')
+        item.setProperty('mimetype', 'video/mp4')
         xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)
@@ -116,6 +117,7 @@ def AllVideos(type='musicvideo'):
                                                 "Artist":artist,
                                                 "Album":artist})
         item.setProperty('IsPlayable', 'true')
+        item.setProperty('mimetype', 'video/mp4')
         xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=True)

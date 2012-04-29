@@ -165,7 +165,10 @@ def getGames(fromDate = '', full = True, highlight = False):
                     name = name + " " + vs + ":" + hs
 
                 if highlight == False:
-                    url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/2_' + gid
+                    playoffidx = '2'
+                    if date > '2012/04/27':
+                        playoffidx = '3'
+                    url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/' + playoffidx + '_' + gid
                     url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
                     addDir(name, url, '5', '')
                 else:

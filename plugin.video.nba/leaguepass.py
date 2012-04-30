@@ -172,12 +172,20 @@ def getGames(fromDate = '', full = True, highlight = False):
                     url = url + '_' + v.lower() + '_' + h.lower() + '_2011_h_'  + postfix+ idx + '_'  + squality + '.mp4'
                     addDir(name, url, '5', '')
                 else:
-                    url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
-                    if quality == '0':
-                        url = url + '576x324.flv'
+                    if date < '2012/04/27':
+                        url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
+                        if quality == '0':
+                            url = url + '576x324.flv'
+                        else:
+                            url = url + '1280x720.mp4'
+                        thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
                     else:
-                        url = url + '1280x720.mp4'
-                    thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
+                        url = 'http://nba.cdn.turner.com/nba/big/channels/playoffs/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
+                        if quality == '0':
+                            url = url + '576x324.flv'
+                        else:
+                            url = url + '1280x720.mp4'
+                        thumb = 'http://i2.cdn.turner.com/nba/nba/video/channels/playoffs/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.576x324.jpg'
                     addLink(name, url, '', thumb)
     except:
         return None

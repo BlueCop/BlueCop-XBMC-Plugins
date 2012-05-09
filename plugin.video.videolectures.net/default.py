@@ -37,9 +37,10 @@ vicon = os.path.join(pluginpath,'icon.png')
 # Root listing
 
 def listRoot():
+    addDir('Featured',       'http://videolectures.net/site/ajax/featured/', 'ListEventVideos')
     addDir('Categories',       '', 'listCategories')
-    #addDir('Categories Old',       'http://videolectures.net/', 'listCategoriesOLD')
     addDir('Search',           '', 'searchVideos')
+    #addDir('Categories Old',       'http://videolectures.net/', 'listCategoriesOLD')
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def listCategories():
@@ -140,10 +141,15 @@ def listVideos4Tree(tree):
         name = link.find('span',attrs={'class':'thumb_ext'}).string.encode('utf-8').strip()
         thumb = item.find('div',attrs={'class':'lec_thumb_img'})['style'].split("background:url('")[1].split("')")[0]
         try:
+            duration = link.find('u').string
+            duration = duration.split(',')[1].strip()
+        except:
+            duration = ''
+        try:
             author = item.find('div',attrs={'class':'author'}).find('span',attrs={'class':'thumb_ext'}).string.encode('utf-8').strip()
             display = name+' ('+author+')'
         except:display = name  
-        addDir(display,     url, 'playVideo', iconimage=thumb ,playable=True)
+        addDir(display,     url, 'playVideo', iconimage=thumb ,playable=True,duration=duration)
 
 def searchVideos():
     keyb = xbmc.Keyboard('', 'Search '+mode)
@@ -159,21 +165,27 @@ def playVideo(url=False):
     data = getURL(url)
     rtmp = re.compile('clip.netConnectionUrl = "(.+?)";').findall(data)[0]
     playpath = re.compile('clip.url = "(.+?)";').findall(data)[0]
+    #captionsUrl = re.compile('clip.captionUrl = "(.+?)";').findall(data)
+    #if len(captionsUrl) > 0:
+    #    captionsUrl=BASE+captionsUrl[0]
     final = rtmp +' playpath='+playpath
     item = xbmcgui.ListItem(path=final)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 # Common
-def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1,cm=False,playable=False):
+def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1,cm=False,playable=False,duration=False):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+urllib.quote_plus(mode)+'&name='+urllib.quote_plus(name)+'&page='+urllib.quote_plus(str(page))
     if iconimage <> vicon:
         u+='&iconimage='+urllib.quote_plus(iconimage)
     item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
     #if iconimage <> vicon:
     #    item.setProperty('fanart_image',iconimage)
-    item.setInfo( type="Video", infoLabels={ "Title":name,
-                                             "plot":plot
-                                           })
+    infoLabels={ "Title":name,
+                 "plot":plot
+               }
+    if duration:
+        infoLabels['duration']=duration
+    item.setInfo( type="Video", infoLabels=infoLabels)
     if playable:
         item.setProperty('IsPlayable', 'true')
         folder=False

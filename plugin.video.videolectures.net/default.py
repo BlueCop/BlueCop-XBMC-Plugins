@@ -165,12 +165,25 @@ def playVideo(url=False):
     data = getURL(url)
     rtmp = re.compile('clip.netConnectionUrl = "(.+?)";').findall(data)[0]
     playpath = re.compile('clip.url = "(.+?)";').findall(data)[0]
-    #captionsUrl = re.compile('clip.captionUrl = "(.+?)";').findall(data)
-    #if len(captionsUrl) > 0:
-    #    captionsUrl=BASE+captionsUrl[0]
+    captionsUrl = re.compile('clip.captionUrl = "(.+?)";').findall(data)
+    subtitles=''
+    if len(captionsUrl) > 0:
+        captionsUrl=BASE+captionsUrl[0].replace('.xml','.srt')
+        filename=captionsUrl.split('/')[-1]
+        subtitles = os.path.join(datapath,filename)
+        SaveFile(subtitles, getURL(captionsUrl))
     final = rtmp +' playpath='+playpath
     item = xbmcgui.ListItem(path=final)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    count = 0
+    while not xbmc.Player().isPlaying():
+        xbmc.sleep(500)
+        count += 1
+        if count > 10:
+            break
+    if xbmc.Player().isPlaying():
+        if os.path.isfile(subtitles):
+            xbmc.Player().setSubtitles(subtitles)
 
 # Common
 def addDir(name, url, mode, plot='', iconimage=vicon ,folder=True,total=0,page=1,cm=False,playable=False,duration=False):

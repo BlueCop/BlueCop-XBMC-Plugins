@@ -77,7 +77,7 @@ def PLAYVIDEO():
     getstream += '&customerID='+values['customerID']
     getstream += '&deviceID='+values['deviceID']
     getstream += '&token='+values['token']
-    getstream += '&xws-fa-ov=true'
+    getstream += '&xws-fa-ov=false'
     getstream += '&format=json'
     getstream += '&version=1'
     rtmpurls, streamSessionID, cdn, title = GETSTREAMS(getstream)

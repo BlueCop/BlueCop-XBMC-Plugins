@@ -25,7 +25,7 @@ print "\n\n\n\n\n\n\n====================AMAZON START====================\n\n\n\
 
 def modes( ):
     if sys.argv[2]=='':
-        #common.mechanizeLogin()
+        common.mechanizeLogin()
         common.addDir('Watchlist','library','WATCHLIST_ROOT')
         if common.addon.getSetting('enablelibrary') == 'true':
             common.addDir('Purchases & Rentals','library','LIBRARY_ROOT')

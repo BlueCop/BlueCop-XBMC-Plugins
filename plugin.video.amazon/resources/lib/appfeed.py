@@ -78,7 +78,7 @@ def getList(ContentType,start=0,isPrime=True):
 
 def ASIN_LOOKUP(ASINLIST):
     results = len(ASINLIST.split(','))-1
-    BROWSE_PARAMS = '&asinList='+ASINLIST+'&NumberOfResults='+str(results)+'&Detailed=T&tag=1&version=2'
+    BROWSE_PARAMS = '&asinList='+ASINLIST+'&NumberOfResults='+str(results)+'&IncludeAll=T&NumberOfResults=400&playbackInformationRequired=true&version=2'
     url = BUILD_BASE_API('catalog/GetASINDetails')+BROWSE_PARAMS
     return demjson.decode(common.getATVURL(url))
 
@@ -248,10 +248,22 @@ def BROWSE_ADDITEMS(url,results,index,search=False):
             ADD_SERIES(title['titleId'])
             Series = True
         elif title['contentType'] == 'SEASON':
-            ADD_SEASON(title['titleId'],seriesTitle=True)
+            asin = title['titleId']
+            for format in title['formats']:
+                if format['videoFormatType'] == 'HD':
+                    for offer in format['offers']:
+                        if offer['offerType'] == 'SEASON_PURCHASE':
+                            asin = offer['asin']
+            ADD_SEASON(asin,seriesTitle=True)
             Season = True
         elif title['contentType'] == 'EPISODE':
-            ADD_EPISODE(title['titleId'],seriesTitle=search)
+            asin = title['titleId']
+            for format in title['formats']:
+                if format['videoFormatType'] == 'HD':
+                    for offer in format['offers']:
+                        if offer['offerType'] == 'PURCHASE':
+                            asin = offer['asin']
+            ADD_EPISODE(asin,seriesTitle=search)
             Episode = True
     if Series:
         view='showview'

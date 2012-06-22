@@ -44,4 +44,6 @@
 	<string id="30036">Custom Library Folder</string>
 	<string id="30037">Library Folder stored in addon settings</string>
 	<string id="30038">Update Library when complete</string>
+	
+	<string id="30039">Items Per Page</string>
 </strings>

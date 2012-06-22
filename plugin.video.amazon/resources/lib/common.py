@@ -15,6 +15,12 @@ import xbmcgui
 import xbmcaddon
 import xbmc
 
+import binascii
+import hmac
+import hashlib
+import base64
+import demjson
+
 print sys.argv
 addon = xbmcaddon.Addon('plugin.video.amazon')
 pluginpath = addon.getAddonInfo('path')
@@ -24,7 +30,7 @@ pluginhandle = int(sys.argv[1])
 COOKIEFILE = os.path.join(xbmc.translatePath(pluginpath),'resources','cache','cookies.lwp')
 
 BASE_URL = 'http://www.amazon.com'
-
+                     
 class _Info:
     def __init__( self, *args, **kwargs ):
         print "common.args"
@@ -39,24 +45,51 @@ def getURL( url , host='www.amazon.com',useCookie=False):
     if useCookie and os.path.isfile(COOKIEFILE):
         cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/9.0.0'),
+    opener.addheaders = [('User-Agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)'),
                          ('Host', host)]
-    usock = opener.open(url)
+    usock = opener.open(url,timeout=30)
     response = usock.read()
     usock.close()
     return response
 
-def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, totalItems=0, cm=False):
+def getATVURL( url , values = None ):
+    try:
+        #proxy = 'http://192.168.2.104:8888'
+        #proxy_handler = urllib2.ProxyHandler({'http':proxy})
+        #opener = urllib2.build_opener(proxy_handler)
+        opener = urllib2.build_opener()
+        print 'ATVURL --> url = '+url
+        opener.addheaders = [('x-android-sign', androidsig(url) )]
+        if values == None:
+            usock=opener.open(url)
+        else:
+            data = urllib.urlencode(values)
+            usock=opener.open(url,postdata)
+        response=usock.read()
+        usock.close()
+    except urllib2.URLError, e:
+        print 'Error reason: ', e
+        return False
+    else:
+        return response
+
+def androidsig(url):
+    hmac_key = binascii.unhexlify('f5b0a28b415e443810130a4bcb86e50d800508cc')
+    sig = hmac.new(hmac_key, url, hashlib.sha1)
+    return base64.encodestring(sig.digest()).replace('\n','')
+
+def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, totalItems=0, cm=False ,page=1):
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
     u += '&name="'+urllib.quote_plus(name)+'"'
-    if fanart == '':
+    u += '&page="'+urllib.quote_plus(str(page))+'"'
+    if fanart == '' or fanart == None:
         try:fanart = args.fanart
         except:fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
     else:u += '&fanart="'+urllib.quote_plus(fanart)+'"'
-    if thumb == '':
+    if thumb == '' or thumb == None:
         try:thumb = args.thumb
         except:thumb = os.path.join(os.getcwd().replace(';', ''),'icon.png')
     else:u += '&thumb="'+urllib.quote_plus(thumb)+'"'
@@ -90,12 +123,75 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
         liz.addContextMenuItems( cm , replaceItems=True )
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
 
+def setCustomer():
+    url = 'http://www.amazon.com'
+    data = getURL(url,useCookie=True)
+    customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
+    addon.setSetting("customerId",customerId)
+    return customerId
+
+def addMovieWatchlist():
+    addWatchlist('movie')
+
+def addTVWatchlist():
+    addWatchlist('tv')
+
+def addWatchlist(prodType,asin=False):
+    if not asin:
+        asin=args.asin
+    if addon.getSetting("customerId"):
+        customerid=addon.getSetting("customerId")
+    else:
+        customerid=setCustomer()
+    url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
+    url += '?dataType=json&addItem=10&ASIN='+asin
+    url += '&custID='+customerid
+    url += '&prodType='+prodType #movie or tv
+    data = getURL(url,useCookie=True)
+    json = demjson.decode(data)
+    if json['AsinStatus'] == 0:
+        getURL(url,useCookie=True)
+
+def removeMovieWatchlist():
+    removeWatchlist('movie')
+
+def removeTVWatchlist():
+    removeWatchlist('tv')
+
+def removeWatchlist(prodType,asin=False):
+    if not asin:
+        asin=args.asin
+    if addon.getSetting("customerId"):
+        customerid=addon.getSetting("customerId")
+    else:
+        customerid=setCustomer()
+    url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
+    url += '?dataType=json&ASIN='+asin
+    url += '&custID='+customerid
+    url += '&prodType='+prodType #movie or tv
+    data = getURL(url,useCookie=True)
+    json = demjson.decode(data)
+    if json['AsinStatus'] == 1:
+        getURL(url,useCookie=True)
+        
+def makeGUID():
+    import random
+    guid = ''
+    for i in range(3):
+        number = "%X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
+        guid += number[1:]
+    print guid
+    return guid
+
+def gen_id():
+    if not addon.getSetting("GenDeviceID"): 
+        addon.setSetting("GenDeviceID",makeGUID()) 
 
 def mechanizeLogin():
     succeeded = dologin()
     retrys = 0
     while succeeded == False:
-        xbmc.sleep(400)
+        xbmc.sleep(1000)
         retrys += 1
         print 'Login Retry: '+str(retrys)
         succeeded = dologin()
@@ -111,7 +207,7 @@ def dologin():
         br = mechanize.Browser()  
         br.set_handle_robots(False)
         br.set_cookiejar(cj)
-        br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/10.10 (maverick) Firefox/3.6.17')]  
+        br.addheaders = [('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)')]  
         sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html") 
         #print sign_in.read()  
         br.select_form(name="sign-in")  

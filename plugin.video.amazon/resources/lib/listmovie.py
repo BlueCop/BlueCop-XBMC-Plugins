@@ -92,44 +92,10 @@ def LIST_MOVIES_FAVOR_FILTERED():
 
 def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False):
     xbmcplugin.setContent(pluginhandle, 'Movies')
-    editenable=common.addon.getSetting("editenable")
     import movies as moviesDB
     movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter,alphafilter=alphafilter)
-    for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor,TMDB_ID in movies:
-        fanart = poster.replace('.jpg','._BO354,0,0,0_CR177,354,708,500_.jpg')
-        infoLabels={'Title':movietitle}
-        if plot:
-            infoLabels['Plot'] = plot
-        if actors:
-            infoLabels['Cast'] = actors.split(',')
-        if director:
-            infoLabels['Director'] = director
-        if year:
-            infoLabels['Year'] = year
-        if premiered:
-            infoLabels['Premiered'] = premiered
-        if stars:
-            infoLabels['Rating'] = stars           
-        if votes:
-            infoLabels['Votes'] = votes  
-        if genres:
-            infoLabels['Genre'] = genres 
-        if mpaa:
-            infoLabels['mpaa'] = mpaa
-        if studio:
-            infoLabels['Studio'] = studio
-        if runtime:
-            infoLabels['Duration'] = runtime
-        cm = []
-        if watched:
-            infoLabels['overlay']=7
-            cm.append( ('Unwatch', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unwatchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-        else: cm.append( ('Mark Watched', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="watchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-        if favor: cm.append( ('Remove from Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unfavorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-        else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="favorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-        if editenable == 'true':
-            cm.append( ('Remove from Movies', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="deleteMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-        common.addVideo(movietitle,url,poster,fanart,infoLabels=infoLabels,cm=cm)
+    for moviedata in movies:
+        ADD_MOVIE_ITEM(moviedata)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
@@ -141,3 +107,46 @@ def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiof
         view=int(common.addon.getSetting("movieview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+    
+def ADD_MOVIE_ITEM(moviedata,inWatchlist=False):
+    asin,hd_asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,isHD,watched,favor,TMDB_ID = moviedata
+    fanart = poster.replace('.jpg','._BO354,0,0,0_CR177,354,708,500_.jpg')
+    infoLabels={'Title':movietitle}
+    if plot:
+        infoLabels['Plot'] = plot
+    if actors:
+        infoLabels['Cast'] = actors.split(',')
+    if director:
+        infoLabels['Director'] = director
+    if year:
+        infoLabels['Year'] = year
+    if premiered:
+        infoLabels['Premiered'] = premiered
+    if stars:
+        infoLabels['Rating'] = stars           
+    if votes:
+        infoLabels['Votes'] = votes  
+    if genres:
+        infoLabels['Genre'] = genres 
+    if mpaa:
+        infoLabels['mpaa'] = mpaa
+    if studio:
+        infoLabels['Studio'] = studio
+    if runtime:
+        infoLabels['Duration'] = runtime
+    cm = []
+    if inWatchlist:
+        cm.append( ('Remove from Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="removeMovieWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    else:
+        cm.append( ('Add to Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="addMovieWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    if watched:
+        infoLabels['overlay']=7
+        cm.append( ('Unwatch', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unwatchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    else: cm.append( ('Mark Watched', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="watchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    if favor: cm.append( ('Remove from Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unfavorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="favorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    if common.addon.getSetting("editenable") == 'true':
+        cm.append( ('Remove from Movies', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="deleteMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    common.addVideo(movietitle,url,poster,fanart,infoLabels=infoLabels,cm=cm)
+        
+

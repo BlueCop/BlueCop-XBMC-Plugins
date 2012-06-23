@@ -168,19 +168,10 @@ def addMoviesdb(isPrime=True):
     dialog = xbmcgui.DialogProgress()
     dialog.create('Building Prime Movie Database')
     dialog.update(0,'Initializing Movie Scan')
-    #First Page
     page = 1
-    json = appfeed.getList('Movie',0)
-    endIndex = json['message']['body']['endIndex']
-    titles = json['message']['body']['titles']
-    dialog.update(page*100.0/8,'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
-    ASINLIST = ''
-    for title in titles:
-        ASINLIST += title['titleId']+','
-    ASIN_ADD(ASINLIST)
-    del json
-    #Do More Pages
-    while endIndex > 0:
+    goAhead = True
+    endIndex=0
+    while goAhead:
         page+=1
         json = appfeed.getList('Movie',endIndex)
         titles = json['message']['body']['titles']
@@ -190,7 +181,9 @@ def addMoviesdb(isPrime=True):
         ASIN_ADD(ASINLIST)
         endIndex = json['message']['body']['endIndex']
         if (dialog.iscanceled()):
-            endIndex = 0
+            goAhead = False
+        elif endIndex == 0:
+            goAhead = False
         dialog.update(page*100.0/8,'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
 
 def ASIN_ADD(ASINLIST,isPrime=True):

@@ -129,7 +129,7 @@ def ADD_SHOW_ITEM(showdata,HDonly=False):
     if favor: cm.append( ('Remove from Favorites', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="unfavorShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
     else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="favorShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
     if common.addon.getSetting("editenable") == 'true':
-        cm.append( ('Rename Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
+        cm.append( ('Rename Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameShowdb"&title="%s"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle),asin ) ) )
         if TVDBseriesid:
             cm.append( ('Refresh TVDB Data', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="refreshTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         cm.append( ('Lookup Show in TVDB', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="scanTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
@@ -140,9 +140,9 @@ def LIST_HDTV_SEASONS():
     LIST_TV_SEASONS(HDonly=True)
    
 def LIST_TV_SEASONS(HDonly=False):
-    namefilter = common.args.url
+    seriestitle = common.args.url
     import tv as tvDB
-    seasons = tvDB.loadTVSeasonsdb(showname=namefilter,HDonly=HDonly).fetchall()
+    seasons = tvDB.loadTVSeasonsdb(seriestitle=seriestitle,HDonly=HDonly).fetchall()
     seasonTotal = len(seasons)
     #FLATTEN ONE SEASON
     #if seasonTotal == 1:
@@ -163,7 +163,7 @@ def LIST_TV_SEASONS(HDonly=False):
 
 def ADD_SEASON_ITEM(seasondata,mode='listtv',submode='LIST_EPISODES_DB',seriesTitle=False,inWatchlist=False):
    #asin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime
-    asin,episodeFeed,poster,season,seriestitle,plot,actors,network,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime = seasondata
+    asin,seriesASIN,episodeFeed,poster,season,seriestitle,plot,actors,network,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime = seasondata
     infoLabels={'Title': seriestitle,'TVShowTitle':seriestitle}
     if plot:
         infoLabels['Plot'] = plot
@@ -207,8 +207,8 @@ def ADD_SEASON_ITEM(seasondata,mode='listtv',submode='LIST_EPISODES_DB',seriesTi
     else:
         cm.append( ('Add to Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="addTVWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     if common.addon.getSetting("editenable") == 'true':
-        cm.append( ('Rename Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
-        cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season) ) ) )
+        cm.append( ('Rename Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameSeasondb"&title="%s"&season="%s"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season),urllib.quote_plus(asin) ) ) )
+        cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season),urllib.quote_plus(asin) ) ) )
     try:fanart = common.args.fanart
     except:fanart = poster
     common.addDir(displayname,mode,submode,url,poster,fanart,infoLabels,cm=cm)
@@ -238,9 +238,9 @@ def LIST_EPISODES_DB(HDonly=False,owned=False,url=False):
         view=int(common.addon.getSetting("episodeview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")  
         
-def ADD_EPISODE_ITEM(episodedata):
+def ADD_EPISODE_ITEM(episodedata,seriesTitle=False):
    #asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,airdate,year,runtime,isHD,isprime,watched
-    asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,network,stars,votes,url,plot,airdate,year,runtime,isHD,isprime,watched = episodedata
+    asin,seasonASIN,seriesASIN,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,network,stars,votes,url,plot,airdate,year,runtime,isHD,isprime,watched = episodedata
     infoLabels={'Title': episodetitle,'TVShowTitle':seriestitle,
                 'Episode': episode,'Season':season}
     if plot:
@@ -263,9 +263,12 @@ def ADD_EPISODE_ITEM(episodedata):
         infoLabels['Genre'] = genres 
     if network:
         infoLabels['Studio'] = network
-
-    if season == 0: displayname =  str(episode)+'. '+episodetitle
-    else: displayname =  str(season)+'x'+str(episode)+' - '+episodetitle
+    if seriesTitle:
+        displayname=seriestitle+' - '
+    else:
+        displayname=''
+    if season == 0: displayname +=  str(episode)+'. '+episodetitle
+    else: displayname +=  str(season)+'x'+str(episode)+' - '+episodetitle
     if isHD: displayname += ' [HD]'
     displayname = displayname.replace('"','')
     try:

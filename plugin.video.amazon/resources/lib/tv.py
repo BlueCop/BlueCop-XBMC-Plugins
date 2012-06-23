@@ -48,6 +48,7 @@ def createTVdb():
                  );''')
     c.execute('''CREATE TABLE seasons(
                  asin TEXT UNIQUE,
+                 seriesasin TEXT,
                  feed TEXT,
                  poster TEXT,
                  season INTEGER,
@@ -72,6 +73,8 @@ def createTVdb():
     #             asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,airdate,runtime,isHD,isprime,watched
     c.execute('''create table episodes(
                  asin TEXT UNIQUE,
+                 seasonasin TEXT,
+                 seriesasin TEXT,
                  seriestitle TEXT,
                  season INTEGER,
                  episode INTEGER,
@@ -118,19 +121,19 @@ def loadTVShowdb(HDonly=False,mpaafilter=False,genrefilter=False,creatorfilter=F
     else:
         return c.execute('select distinct * from shows where isprime = (?)', (isprime,))
 
-def loadTVSeasonsdb(showname,HDonly=False,isprime=True):
+def loadTVSeasonsdb(seriestitle,HDonly=False,isprime=True):
     c = tvDB.cursor()
     if HDonly:
-        return c.execute('select distinct * from seasons where isprime = (?) and (seriestitle = (?) and isHD = (?))', (isprime,showname,HDonly))
+        return c.execute('select distinct * from seasons where isprime = (?) and (seriestitle = (?) and isHD = (?))', (isprime,seriestitle,HDonly))
     else:
-        return c.execute('select distinct * from seasons where isprime = (?) and seriestitle = (?)', (isprime,showname))
+        return c.execute('select distinct * from seasons where isprime = (?) and seriestitle = (?)', (isprime,seriestitle))
 
-def loadTVEpisodesdb(showname,season,HDonly=False,isprime=True):
+def loadTVEpisodesdb(seriestitle,season,HDonly=False,isprime=True):
     c = tvDB.cursor()
     if HDonly:
-        return c.execute('select distinct * from episodes where isprime = (?) and (seriestitle = (?) and season = (?) and isHD = (?)) order by episode', (isprime,showname,season,HDonly))
+        return c.execute('select distinct * from episodes where isprime = (?) and (seriestitle = (?) and season = (?) and isHD = (?)) order by episode', (isprime,seriestitle,season,HDonly))
     else:
-        return c.execute('select distinct * from episodes where isprime = (?) and (seriestitle = (?) and season = (?) and isHD = (?)) order by episode', (isprime,showname,season,HDonly))
+        return c.execute('select distinct * from episodes where isprime = (?) and (seriestitle = (?) and season = (?) and isHD = (?)) order by episode', (isprime,seriestitle,season,HDonly))
 
 def getShowTypes(col):
     c = tvDB.cursor()
@@ -158,6 +161,7 @@ def getPoster(seriestitle):
 
 def fixHDshows():
     c = tvDB.cursor()
+    c.execute("update shows set isHD=?", (False,))
     HDseasons = c.execute('select distinct seriestitle from seasons where isHD = (?)', (True,)).fetchall()
     for series in HDseasons:
         c.execute("update shows set isHD=? where seriestitle=?", (True,series[0]))
@@ -193,43 +197,49 @@ def deleteShowdb(seriestitle=False):
         tvDB.commit()
         c.close()
 
-def renameShowdb(seriestitle=False):
+def renameShowdb(seriestitle=False,asin=False):
     if not seriestitle:
         seriestitle = common.args.title
+    if not asin:
+        asin = common.args.asin
     keyb = xbmc.Keyboard(seriestitle, 'Show Rename')
     keyb.doModal()
     if (keyb.isConfirmed()):
             newname = keyb.getText()
             c = tvDB.cursor()
-            c.execute("update or replace shows set seriestitle=? where seriestitle=?", (newname,seriestitle))
+            c.execute("update or replace shows set seriestitle=? where seriestitle=? and asin=?", (newname,seriestitle,asin))
             c.execute("update seasons set seriestitle=? where seriestitle=?", (newname,seriestitle))
             c.execute("update episodes set seriestitle=? where seriestitle=?", (newname,seriestitle))
             tvDB.commit()
             c.close()
 
-def deleteSeasondb(seriestitle=False,season=False):
+def deleteSeasondb(seriestitle=False,season=False,asin=False):
     if not seriestitle and not season:
         seriestitle = common.args.title
         season = int(common.args.season)
+    if not asin:
+        asin = common.args.asin
     dialog = xbmcgui.Dialog()
     ret = dialog.yesno('Delete Season', 'Delete %s Season %s?' % (seriestitle,season))
     if ret:
         c = tvDB.cursor()
-        c.execute('delete from seasons where seriestitle = (?) and season = (?)', (seriestitle,season))
-        c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
+        c.execute('delete from seasons where seriestitle = (?) and season = (?) and asin=(?)', (seriestitle,season,asin))
+        #c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
         tvDB.commit()
         c.close()
 
-def renameSeasondb(seriestitle=False,season=False):
+def renameSeasondb(seriestitle=False,season=False,asin=False):
     if not seriestitle and not season:
         seriestitle = common.args.title
         season = int(common.args.season)
+    if not asin:
+        asin = common.args.asin
     keyb = xbmc.Keyboard(seriestitle, 'Season Rename')
     keyb.doModal()
     if (keyb.isConfirmed()):
             newname = keyb.getText()
             c = tvDB.cursor()
-            c.execute("update or ignore seasons set seriestitle=? where seriestitle=? and season = ?", (newname,seriestitle,season))
+            c.execute("update or ignore seasons set seriestitle=? where seriestitle=? and season = ? and asin=?", (newname,seriestitle,season,asin))
             c.execute("update or ignore episodes set seriestitle=? where seriestitle=? and season = ?", (newname,seriestitle,season))
             tvDB.commit()
             c.close()
@@ -270,7 +280,7 @@ def addEpisodedb(episodedata):
     print 'AMAZON: addEpisodedb'
     print episodedata
     c = tvDB.cursor()
-    c.execute('insert or ignore into episodes values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', episodedata)
+    c.execute('insert or ignore into episodes values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', episodedata)
     tvDB.commit()
     c.close()
     
@@ -278,7 +288,7 @@ def addSeasondb(seasondata):
     print 'AMAZON: addSeasondb'
     print seasondata
     c = tvDB.cursor()
-    c.execute('insert or ignore into seasons values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', seasondata)
+    c.execute('insert or ignore into seasons values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', seasondata)
     tvDB.commit()
     c.close()
 
@@ -318,45 +328,15 @@ def addTVdb():
     dialog = xbmcgui.DialogProgress()
     dialog.create('Building Prime Television Database')
     dialog.update(0,'Initializing Television Scan')
-    #First Page
     page = 1
-    #json = appfeed.getList('TVSeries',0)
-    json = appfeed.getList('TVSeason',0)
-    endIndex = json['message']['body']['endIndex']
-    titles = json['message']['body']['titles']
-    del json
+    endIndex = 0
+    goAhead = True    
     SERIES_COUNT = 0
     SEASON_COUNT = 0
     EPISODE_COUNT = 0
-    
     ALL_SERIES_ASINS = ''
-    SERIES_ASINS = ''
-    SEASONS_ASINS = ''
-    EPISODE_FEEDS = []
-    for title in titles:
-        SEASON_COUNT += 1
-        SEASONS_ASINS += title['titleId']+','
-        if title['ancestorTitles'][0]['titleId'] not in ALL_SERIES_ASINS:
-            SERIES_COUNT += 1
-            SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
-            ALL_SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
-        EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'])
-    del titles
-    ASIN_ADD(SERIES_ASINS)
-    dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT))
-    ASIN_ADD(SEASONS_ASINS)
-    dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT))
-    for url in EPISODE_FEEDS:
-        titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
-        EPISODE_ASINS=''
-        for title in titles:
-            EPISODE_COUNT += 1
-            EPISODE_ASINS += title['titleId']+','
-        ASIN_ADD(EPISODE_ASINS)
-        dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
-    #Do More Pages
-    while endIndex > 0:
-        page+=1
+    while goAhead:
+        #json = appfeed.getList('TVSeries',0)
         json = appfeed.getList('TVSeason',endIndex)
         titles = json['message']['body']['titles']
         SERIES_ASINS = ''
@@ -364,33 +344,55 @@ def addTVdb():
         EPISODE_FEEDS = []
         for title in titles:
             SEASON_COUNT += 1
+            asin=title['titleId']
+            hdasin=False
             SEASONS_ASINS += title['titleId']+','
+            for format in title['formats']:
+                if format['videoFormatType'] == 'HD':
+                    for offer in format['offers']:
+                        if offer['offerType'] == 'SEASON_PURCHASE':
+                            hdasin=offer['asin']
+                            SEASONS_ASINS.replace(asin,hdasin)            
             if title['ancestorTitles'][0]['titleId'] not in ALL_SERIES_ASINS:
                 SERIES_COUNT += 1
                 SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
                 ALL_SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
             EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'])
+            if hdasin:
+                EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'].replace(asin,hdasin))
         del titles
         ASIN_ADD(SERIES_ASINS)
-        dialog.update(page*100.0/8,'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+        dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         ASIN_ADD(SEASONS_ASINS)
-        dialog.update(page*100.0/8,'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+        dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         for url in EPISODE_FEEDS:
+            if (dialog.iscanceled()):
+                goAhead = False
             titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
             EPISODE_ASINS=''
             for title in titles:
                 EPISODE_COUNT += 1
                 EPISODE_ASINS += title['titleId']+','
-            ASIN_ADD(EPISODE_ASINS)
-            dialog.update(page*100.0/8,'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+                for format in title['formats']:
+                    if format['videoFormatType'] == 'HD':
+                        for offer in format['offers']:
+                            if offer['offerType'] == 'PURCHASE':
+                                EPISODE_ASINS += offer['asin']+','
+            if EPISODE_ASINS <> '':
+                ASIN_ADD(EPISODE_ASINS)
+            dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         endIndex = json['message']['body']['endIndex']
         if (dialog.iscanceled()):
-            endIndex = 0
-        dialog.update(page*100.0/8,'Scanning Page %s' % str(page),'Scanned %s Seasons' % str(endIndex) )
+            goAhead = False
+        elif endIndex == 0:
+            goAhead = False
+        dialog.update(int(page*100.0/8),'Scanning Page %s' % str(page),'Scanned %s Seasons' % str(endIndex) )
+        page+=1
     print 'TOTALS'
     print SERIES_COUNT
     print SEASON_COUNT
     print EPISODE_COUNT
+    fixHDshows()
 
 def ASIN_FEED(url):
     titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
@@ -470,6 +472,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
             asin = title['titleId']
             season = title['number']
             seriestitle = title['ancestorTitles'][0]['title']
+            seriesasin = title['ancestorTitles'][0]['titleId']
             if title['formats'][0].has_key('images'):
                 try:
                     thumbnailUrl = title['formats'][0]['images'][0]['uri']
@@ -526,7 +529,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
                     for offer in format['offers']:
                         if offer['offerType'] == 'SEASON_PURCHASE':
                             hd_asin = offer['asin']
-                            addSeasondb([hd_asin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
+                            addSeasondb([hd_asin,seriesasin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
                             #if hd_asin not in episodeFeed:
                             #    ASIN_FEED(episodeFeed.replace(asin,hd_asin))
                 if format['videoFormatType'] == 'SD':
@@ -537,12 +540,14 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
                     for offer in format['offers']:
                         if offer['offerType'] == 'SEASON_PURCHASE':
                             sd_asin = offer['asin']
-                            addSeasondb([sd_asin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
+                            addSeasondb([sd_asin,seriesasin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
             #            asin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime
         elif title['contentType'] == 'EPISODE':
             asin = title['titleId']
             episodetitle = title['title']
             seriestitle = title['ancestorTitles'][0]['title']
+            seriesasin = title['ancestorTitles'][0]['titleId']
+            seasonasin = title['ancestorTitles'][1]['titleId']
             season = title['ancestorTitles'][1]['number']
             if title.has_key('number'):
                 episode = title['number']
@@ -606,10 +611,10 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
                         isPrime = True
             #             asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,airdate,year,runtime,isHD,isprime,watched
             if isHD:
-                addEpisodedb([hd_asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,hd_url,plot,premiered,year,runtime,isHD,isPrime,False])
-                addEpisodedb([asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,premiered,year,runtime,False,isPrime,False])
+                addEpisodedb([hd_asin,seasonasin,seriesasin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,hd_url,plot,premiered,year,runtime,isHD,isPrime,False])
+                addEpisodedb([asin,seasonasin,seriesasin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,premiered,year,runtime,False,isPrime,False])
             else:
-                addEpisodedb([asin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,premiered,year,runtime,isHD,isPrime,False])
+                addEpisodedb([asin,seasonasin,seriesasin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,premiered,year,runtime,isHD,isPrime,False])
 
 
 tvDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newtv.db')

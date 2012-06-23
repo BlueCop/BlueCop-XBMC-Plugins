@@ -166,12 +166,12 @@ def ADD_SERIES(addASIN,isPrime=True):
 def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False):
     seasons = tvDB.lookupSeasondb(addASIN,isPrime)
     for seasondata in seasons:
-        listtv.ADD_SEASON_ITEM(seasondata,mode='appfeed',submode='BROWSE_EPISODES',seriesTitle=True,inWatchlist=inWatchlist)
+        listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=True,inWatchlist=inWatchlist)
 
 def ADD_EPISODE(addASIN,isPrime=True,seriesTitle=False):
     episodes = tvDB.lookupEpisodedb(addASIN,isPrime)
     for episodedata in episodes:
-        listtv.ADD_EPISODE_ITEM(episodedata)
+        listtv.ADD_EPISODE_ITEM(episodedata,seriesTitle=seriesTitle)
 
 def BROWSE_NEXT(results=MAX):
     index = int(common.args.page)*results

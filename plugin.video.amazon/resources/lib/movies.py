@@ -252,10 +252,14 @@ def ASIN_ADD(ASINLIST,isPrime=True):
     return [asin,hd_asin]
 
 MovieDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newmovies.db')
-MovieDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies0.db')
+MovieDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
+MovieDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies0.db')
+MovieDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies1.db')
 if not os.path.exists(MovieDBfile) and os.path.exists(MovieDBdownload):
     import shutil
     shutil.move(MovieDBdownload, MovieDBfile)
+    os.remove(MovieDBfile0)
+    os.remove(MovieDBold)
 if not os.path.exists(MovieDBfile):
     MovieDB = sqlite.connect(MovieDBfile)
     MovieDB.text_factory = str

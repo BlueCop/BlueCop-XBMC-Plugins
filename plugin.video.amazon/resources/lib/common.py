@@ -17,7 +17,11 @@ import xbmc
 
 import binascii
 import hmac
-import hashlib
+try:
+    import hashlib.sha1 as sha1
+except:
+    import sha as sha1
+
 import base64
 import demjson
 
@@ -47,7 +51,7 @@ def getURL( url , host='www.amazon.com',useCookie=False):
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     opener.addheaders = [('User-Agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)'),
                          ('Host', host)]
-    usock = opener.open(url,timeout=30)
+    usock = opener.open(url)#,timeout=30)
     response = usock.read()
     usock.close()
     return response
@@ -75,7 +79,7 @@ def getATVURL( url , values = None ):
 
 def androidsig(url):
     hmac_key = binascii.unhexlify('f5b0a28b415e443810130a4bcb86e50d800508cc')
-    sig = hmac.new(hmac_key, url, hashlib.sha1)
+    sig = hmac.new(hmac_key, url, sha1)
     return base64.encodestring(sig.digest()).replace('\n','')
 
 def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, totalItems=0, cm=False ,page=1):
@@ -123,12 +127,24 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
         liz.addContextMenuItems( cm , replaceItems=True )
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz,isFolder=False,totalItems=totalItems)     
 
-def setCustomer():
-    url = 'http://www.amazon.com'
-    data = getURL(url,useCookie=True)
-    customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
-    addon.setSetting("customerId",customerId)
-    return customerId
+def setCustomer(check=False):
+    if check:
+        url = 'http://www.amazon.com'
+        data = getURL(url,useCookie=True)
+        customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
+        if customerId <> addon.getSetting("customerId"):
+            addon.setSetting("customerId",customerId)
+            return False
+        else:
+            return True
+    elif addon.getSetting("customerId"):
+        return addon.getSetting("customerId")
+    else:
+        url = 'http://www.amazon.com'
+        data = getURL(url,useCookie=True)
+        customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
+        addon.setSetting("customerId",customerId)
+        return customerId
 
 def addMovieWatchlist():
     addWatchlist('movie')
@@ -139,10 +155,7 @@ def addTVWatchlist():
 def addWatchlist(prodType,asin=False):
     if not asin:
         asin=args.asin
-    if addon.getSetting("customerId"):
-        customerid=addon.getSetting("customerId")
-    else:
-        customerid=setCustomer()
+    customerid=setCustomer()
     url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
     url += '?dataType=json&addItem=10&ASIN='+asin
     url += '&custID='+customerid
@@ -161,10 +174,7 @@ def removeTVWatchlist():
 def removeWatchlist(prodType,asin=False):
     if not asin:
         asin=args.asin
-    if addon.getSetting("customerId"):
-        customerid=addon.getSetting("customerId")
-    else:
-        customerid=setCustomer()
+    customerid=setCustomer()
     url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
     url += '?dataType=json&ASIN='+asin
     url += '&custID='+customerid
@@ -180,7 +190,6 @@ def makeGUID():
     for i in range(3):
         number = "%X" % (int( ( 1.0 + random.random() ) * 0x10000) | 0)
         guid += number[1:]
-    print guid
     return guid
 
 def gen_id():
@@ -221,6 +230,8 @@ def dologin():
             return True
         else:
             cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
+            setCustomer(check=True)
+            gen_id()
             return True
     except:
         return False

@@ -629,8 +629,8 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
 
 tvDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newtv.db')
 tvDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
-tvDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv0.db')
-tvDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv1.db')
+tvDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv0.db')
+tvDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv1.db')
 if not os.path.exists(tvDBfile) and os.path.exists(tvDBdownload):
     import shutil
     shutil.move(tvDBdownload, tvDBfile)

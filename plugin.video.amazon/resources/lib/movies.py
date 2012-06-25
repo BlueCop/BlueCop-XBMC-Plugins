@@ -258,8 +258,10 @@ MovieDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plu
 if not os.path.exists(MovieDBfile) and os.path.exists(MovieDBdownload):
     import shutil
     shutil.move(MovieDBdownload, MovieDBfile)
-    os.remove(MovieDBfile0)
-    os.remove(MovieDBold)
+    if os.path.exists(MovieDBfile0):
+        os.remove(MovieDBfile0)
+    if os.path.exists(MovieDBold): 
+        os.remove(MovieDBold)
 if not os.path.exists(MovieDBfile):
     MovieDB = sqlite.connect(MovieDBfile)
     MovieDB.text_factory = str

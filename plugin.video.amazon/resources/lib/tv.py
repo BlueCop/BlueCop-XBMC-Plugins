@@ -634,8 +634,10 @@ tvDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin
 if not os.path.exists(tvDBfile) and os.path.exists(tvDBdownload):
     import shutil
     shutil.move(tvDBdownload, tvDBfile)
-    os.remove(tvDBfile0)
-    os.remove(tvDBold)
+    if os.path.exists(tvDBfile0):
+        os.remove(tvDBfile0)
+    if os.path.exists(tvDBold):
+        os.remove(tvDBold)
 if not os.path.exists(tvDBfile):
     tvDB = sqlite.connect(tvDBfile)
     tvDB.text_factory = str

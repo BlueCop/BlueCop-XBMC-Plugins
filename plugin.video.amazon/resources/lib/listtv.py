@@ -87,11 +87,11 @@ def LIST_TVSHOWS(HDonly=False,mpaafilter=False,genrefilter=False,creatorfilter=F
         view=int(common.addon.getSetting("showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
-def ADD_SHOW_ITEM(showdata,HDonly=False):
+def ADD_SHOW_ITEM(showdata,mode='listtv',submode='LIST_TV_SEASONS',HDonly=False):
     artOptions = ['Poster','Banner','Amazon']
     tvart=int(common.addon.getSetting("tvart"))
     option = artOptions[tvart]
-    asin,feed,seriestitle,poster,plot,network,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid = showdata
+    asin,asin2,feed,seriestitle,poster,plot,network,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid = showdata
     infoLabels={'Title': seriestitle,'TVShowTitle':seriestitle}
     if plot:
         infoLabels['Plot'] = plot
@@ -113,8 +113,12 @@ def ADD_SHOW_ITEM(showdata,HDonly=False):
         infoLabels['Episode'] = episodetotal
     if network:
         infoLabels['Studio'] = network
-    if HDonly==True: listmode = 'LIST_HDTV_SEASONS'
-    else: listmode = 'LIST_TV_SEASONS'
+    if mode == 'listtv':
+        item_url = seriestitle
+        if HDonly==True: submode = 'LIST_HDTV_SEASONS'
+        else: submode = 'LIST_TV_SEASONS'
+    else:
+        item_url = asin
     if poster is None:
         poster=''
     if TVDBposter and option == 'Poster':
@@ -134,7 +138,7 @@ def ADD_SHOW_ITEM(showdata,HDonly=False):
             cm.append( ('Refresh TVDB Data', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="refreshTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         cm.append( ('Lookup Show in TVDB', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="scanTVDBshow"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
         cm.append( ('Remove Show', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteShowdb"&title="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle) ) ) )
-    common.addDir(seriestitle,'listtv',listmode,seriestitle,poster,fanart,infoLabels,cm=cm)
+    common.addDir(seriestitle,mode,submode,item_url,poster,fanart,infoLabels,cm=cm)
 
 def LIST_HDTV_SEASONS():
     LIST_TV_SEASONS(HDonly=True)
@@ -209,8 +213,9 @@ def ADD_SEASON_ITEM(seasondata,mode='listtv',submode='LIST_EPISODES_DB',seriesTi
     if common.addon.getSetting("editenable") == 'true':
         cm.append( ('Rename Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="renameSeasondb"&title="%s"&season="%s"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season),urllib.quote_plus(asin) ) ) )
         cm.append( ('Remove Season', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="deleteSeasondb"&title="%s"&season="%s"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(seriestitle), str(season),urllib.quote_plus(asin) ) ) )
-    try:fanart = common.args.fanart
-    except:fanart = poster
+    #try:fanart = common.args.fanart
+    #except:
+    fanart = poster
     common.addDir(displayname,mode,submode,url,poster,fanart,infoLabels,cm=cm)
 
 

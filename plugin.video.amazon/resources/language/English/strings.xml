@@ -3,7 +3,7 @@
 	<string id="30011">General</string>
 	<string id="30000">E-Mail</string>
 	<string id="30001">Password</string>
-	<string id="30004">Choosen Bitrate</string>
+	<string id="30004">Bitrate</string>
 	<string id="30005">Ask</string>
 	<string id="30006">2500kbps</string>
 	<string id="30007">1328kbps</string>
@@ -46,4 +46,5 @@
 	<string id="30038">Update Library when complete</string>
 	
 	<string id="30039">Items Per Page</string>
+	<string id="30040">Watchlist Television listed as Season/Show</string>
 </strings>

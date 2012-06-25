@@ -21,6 +21,7 @@ def createTVdb():
     c = tvDB.cursor()
     c.execute('''CREATE TABLE shows(
                  asin TEXT UNIQUE,
+                 asin2 TEXT UNIQUE,
                  feed TEXT,
                  seriestitle TEXT,
                  poster TEXT,
@@ -224,7 +225,7 @@ def deleteSeasondb(seriestitle=False,season=False,asin=False):
     if ret:
         c = tvDB.cursor()
         c.execute('delete from seasons where seriestitle = (?) and season = (?) and asin=(?)', (seriestitle,season,asin))
-        #c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
+        c.execute('delete from episodes where seriestitle = (?) and season = (?)', (seriestitle,season))
         tvDB.commit()
         c.close()
 
@@ -296,7 +297,7 @@ def addShowdb(showdata):
     print 'AMAZON: addShowdb'
     print showdata
     c = tvDB.cursor()
-    c.execute('insert or ignore into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
+    c.execute('insert or ignore into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
     tvDB.commit()
     c.close()
 
@@ -304,9 +305,16 @@ def lookupShowsdb(asin,isPrime=True):
     c = tvDB.cursor()
     if c.execute('select distinct * from shows where asin = (?)', (asin,)).fetchone():
         return c.execute('select distinct * from shows where asin = (?)', (asin,))
+    elif c.execute('select distinct * from shows where asin2 = (?)', (asin,)).fetchone():
+        return c.execute('select distinct * from shows where asin2 = (?)', (asin,))
     else:
-        showasin = ASIN_ADD(asin,isPrime=isPrime)
-        return c.execute('select distinct * from shows where asin = (?)', (asin,))
+        asin1,asin2 = ASIN_ADD(asin,isPrime=isPrime,single=True)
+        if asin1 == asin2:
+            return c.execute('select distinct * from shows where asin = (?)', (asin1,))
+        elif asin1 <> asin2:
+            c.execute("update shows set asin2=? where asin=?", (asin2,asin1))
+            tvDB.commit()
+            return c.execute('select distinct * from shows where asin = (?)', (asin1,))
 
 def lookupSeasondb(asin,isPrime=True):
     c = tvDB.cursor()
@@ -402,7 +410,7 @@ def ASIN_FEED(url):
     if EPISODE_ASINS <> '':
         ASIN_ADD(EPISODE_ASINS)
 
-def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
+def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
     if url:
         titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
     else:
@@ -467,7 +475,9 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False):
                 stars = None
                 votes = None
             #          asin,feed      ,seriestitle,poster,plot,studio,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart
-            addShowdb([asin,seasonFeed,seriestitle,poster,plot,studio,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,0,0,0,isHD,isPrime,False,None,None,None,None])
+            addShowdb([asin,None,seasonFeed,seriestitle,poster,plot,studio,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,0,0,0,isHD,isPrime,False,None,None,None,None])
+            if single:
+                return asin,ASINLIST
         elif title['contentType'] == 'SEASON':
             asin = title['titleId']
             season = title['number']

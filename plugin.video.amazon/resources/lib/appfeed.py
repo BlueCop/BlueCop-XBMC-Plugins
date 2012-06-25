@@ -161,12 +161,23 @@ def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False):
 def ADD_SERIES(addASIN,isPrime=True):
     shows = tvDB.lookupShowsdb(addASIN,isPrime)
     for showdata in shows:
-        listtv.ADD_SHOW_ITEM(showdata)
+        listtv.ADD_SHOW_ITEM(showdata,'appfeed','BROWSE_SEASONS4SERIES')
+
+def ADD_SEASON_SERIES(addASIN,mode='appfeed',submode='BROWSE_SEASONS4SERIES',isPrime=True,checklist=''):
+    seasons = tvDB.lookupSeasondb(addASIN,isPrime)
+    for seasondata in seasons:
+        if seasondata[1] not in checklist:
+            shows = tvDB.lookupShowsdb(seasondata[1],isPrime)
+            for showdata in shows:
+                listtv.ADD_SHOW_ITEM(showdata,mode,submode)
+                return showdata[0],showdata[1]
+        else:
+            return False,False
 
 def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False):
     seasons = tvDB.lookupSeasondb(addASIN,isPrime)
     for seasondata in seasons:
-        listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=True,inWatchlist=inWatchlist)
+        listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
 
 def ADD_EPISODE(addASIN,isPrime=True,seriesTitle=False):
     episodes = tvDB.lookupEpisodedb(addASIN,isPrime)
@@ -178,9 +189,9 @@ def BROWSE_NEXT(results=MAX):
     BROWSE(results=results,index=index)
 
 def BROWSE(results=MAX,index=0):
-    BROWSE_PARAMS = '&OfferGroups=&HighDef=T&NumberOfResults='+str(results)+'&StartIndex='+str(index)+'&playbackInformationRequired=true&SuppressBlackedoutEST=T&version=2&'
+    BROWSE_PARAMS = '&OfferGroups=B0043YVHMY&HighDef=T&NumberOfResults='+str(results)+'&StartIndex='+str(index)+'&playbackInformationRequired=true&SuppressBlackedoutEST=T&version=2&'
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS+common.args.url
-    BROWSE_ADDITEMS(url,results,index)
+    BROWSE_ADDITEMS(url,results,index,series4season=True)
 
 # No way to filter only prime shows. OfferGroup B0043YVHMY doesn't work
 def BROWSE_SERIES(results=MAX,index=0):
@@ -191,10 +202,10 @@ def BROWSE_SERIES(results=MAX,index=0):
 def BROWSE_SEASONS(results=MAX,index=0):
     BROWSE_PARAMS = '&OfferGroups=&NumberOfResults='+str(results)+'&StartIndex='+str(index)+'&HighDef=T&playbackInformationRequired=true&SuppressBlackedoutEST=T&version=2'
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS+'&ContentType=TVSeaon&HideNum=T&Detailed=T&AID=1&IncludeNonWeb=T&OfferGroups=B0043YVHMY&IncludeAll=T'
-    BROWSE_ADDITEMS(url,results,index)
+    BROWSE_ADDITEMS(url,results,index,series4season=True)
 
 def BROWSE_SEASONS4SERIES(results=MAX,index=0):
-    BROWSE_PARAMS = '&SeriesASIN='+common.args.url+'&ContentType=TVSeason&version=2&HideNum=F&Detailed=T&AID=1&IncludeNonWeb=T&IncludeAll=T'
+    BROWSE_PARAMS = '&SeriesASIN='+common.args.url+'&ContentType=TVSeason&OfferGroups=B0043YVHMY&version=2&HideNum=F&Detailed=T&AID=1&IncludeNonWeb=T&IncludeAll=T'
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS
     BROWSE_ADDITEMS(url,results,index)
 
@@ -203,6 +214,11 @@ def BROWSE_EPISODES(results=MAX,index=0):
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS
     BROWSE_ADDITEMS(url,results,index)
 
+def BROWSE_EPISODES_HD(results=MAX,index=0):
+    BROWSE_PARAMS = '&SeasonASIN='+common.args.url+'&IncludeAll=T&NumberOfResults=400&playbackInformationRequired=true&version=2'
+    url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS
+    BROWSE_ADDITEMS(url,results,index,HD=True)
+
 def SEARCH_PRIME(searchString=False,results=MAX,index=0):
     if not searchString:
         keyboard = xbmc.Keyboard('')
@@ -210,8 +226,8 @@ def SEARCH_PRIME(searchString=False,results=MAX,index=0):
         q = keyboard.getText()
         if (keyboard.isConfirmed()):
             searchString=urllib.quote_plus(keyboard.getText())
-            common.addDir('[Search Suggestions]','appfeed','SEARCH_SUGGEST_PRIME',searchString)
-    BROWSE_PARAMS = '&searchString='+searchString+'&OfferGroups=B0043YVHMY&SuppressBlackedoutEST=T&version=2&NumberOfResults='+str(results)+'&StartIndex='+str(index)
+            common.addDir('[Search Suggestions]','appfeed','SEARCH_SUGGEST_PRIME',searchString) # '+str(results)+'
+    BROWSE_PARAMS = '&searchString='+searchString+'&OfferGroups=B0043YVHMY&IncludeAll=T&SuppressBlackedoutEST=T&version=2&NumberOfResults='+str(results)+'&StartIndex='+str(index)
     url = BUILD_BASE_API('catalog/Search')+BROWSE_PARAMS
     BROWSE_ADDITEMS(url,results,index,search=True)
 
@@ -223,7 +239,7 @@ def SEARCH_SUGGEST_PRIME():
     selected=xbmcgui.Dialog().select('Suggestions', [suggestion for suggestion in suggestions])
     SEARCH_PRIME(searchString=urllib.quote_plus(suggestions[selected]))
     
-def BROWSE_ADDITEMS(url,results,index,search=False):
+def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False):
     data = common.getATVURL(url)
     json = demjson.decode(data)
     del data
@@ -240,6 +256,8 @@ def BROWSE_ADDITEMS(url,results,index,search=False):
     Series = False
     Season = False
     Episode = False
+    if series4season:
+        allSeries = ''
     for title in titles:
         if title['contentType'] == 'MOVIE':
             ADD_MOVIE(title['titleId'])
@@ -248,21 +266,31 @@ def BROWSE_ADDITEMS(url,results,index,search=False):
             ADD_SERIES(title['titleId'])
             Series = True
         elif title['contentType'] == 'SEASON':
-            asin = title['titleId']
-            for format in title['formats']:
-                if format['videoFormatType'] == 'HD':
-                    for offer in format['offers']:
-                        if offer['offerType'] == 'SEASON_PURCHASE':
-                            asin = offer['asin']
-            ADD_SEASON(asin,seriesTitle=True)
-            Season = True
+            if series4season:
+                seriesId = title['ancestorTitles'][0]['titleId']
+                if seriesId not in allSeries:
+                    ADD_SERIES(seriesId)
+                    allSeries += seriesId+','
+                    Series = True
+            else:
+                asin = title['titleId']
+                ADD_SEASON(asin,seriesTitle=search)
+                for format in title['formats']:
+                    if format['videoFormatType'] == 'HD':
+                        for offer in format['offers']:
+                            if offer['offerType'] == 'SEASON_PURCHASE':
+                                asin = offer['asin']
+                                #ADD_SEASON(asin,seriesTitle=True)
+                                ADD_SEASON(asin,seriesTitle=search,submode='BROWSE_EPISODES_HD')
+                Season = True
         elif title['contentType'] == 'EPISODE':
             asin = title['titleId']
-            for format in title['formats']:
-                if format['videoFormatType'] == 'HD':
-                    for offer in format['offers']:
-                        if offer['offerType'] == 'PURCHASE':
-                            asin = offer['asin']
+            if HD:
+                for format in title['formats']:
+                    if format['videoFormatType'] == 'HD':
+                        for offer in format['offers']:
+                            if offer['offerType'] == 'PURCHASE':
+                                asin = offer['asin']
             ADD_EPISODE(asin,seriesTitle=search)
             Episode = True
     if Series:

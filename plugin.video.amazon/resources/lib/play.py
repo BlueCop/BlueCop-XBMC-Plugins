@@ -230,6 +230,6 @@ def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True,title=False):
         xbmc.Player().play(finalUrl,item)
     else:
         item = xbmcgui.ListItem(path=finalUrl)
-        item.setInfo( type="Video", infoLabels={ "Title": title})
+        #item.setInfo( type="Video", infoLabels={ "Title": title})
         xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     return basertmp, ip

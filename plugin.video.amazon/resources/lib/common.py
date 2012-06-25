@@ -121,7 +121,11 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     infoLabels['Trailer']=utrailer
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)
-    liz.setProperty('fanart_image',fanart)
+    try:
+        if fanart <> '' or fanart <> None:
+            liz.setProperty('fanart_image',fanart)
+    except:
+        print 'invalid fanart'
     liz.setProperty('IsPlayable', 'true')
     if cm:
         liz.addContextMenuItems( cm , replaceItems=True )

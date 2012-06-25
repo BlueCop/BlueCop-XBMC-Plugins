@@ -48,7 +48,7 @@ def WATCHLIST_LIST_MOVIES():
     
 def WATCHLIST_LIST_TV():
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    url = common.args.url
+    url = 'https://www.amazon.com/gp/video/watchlist/tv?show=all&sort=DATE_ADDED'
     data = common.getURL(url,useCookie=True)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     data = scripts.sub('', data)
@@ -57,9 +57,17 @@ def WATCHLIST_LIST_TV():
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('div',attrs={'class':'innerItem','id':True})
     totalItems = len(videos)
+    ASINS = ''
     for video in videos:
         asin = video['id']
-        appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True)
+        if common.addon.getSetting("watchlist_tv_view") == '0':
+            appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True)
+        elif common.addon.getSetting("watchlist_tv_view") == '1':
+            asin1,asin2 = appfeed.ADD_SEASON_SERIES(asin,'appfeed','BROWSE_SEASONS4SERIES',isPrime=True,checklist=ASINS)
+            if asin1:
+                ASINS += asin1
+            if asin2:
+                ASINS += asin2
     viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"showview"))

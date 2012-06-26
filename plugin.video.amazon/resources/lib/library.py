@@ -55,7 +55,7 @@ def WATCHLIST_LIST_MOVIES(export=False):
         xbmcplugin.endOfDirectory(pluginhandle)
         viewenable=common.addon.getSetting("viewenable")
         if viewenable == 'true':
-            view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
+            view=int(common.addon.getSetting("movieview"))
             xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     
 
@@ -90,9 +90,9 @@ def WATCHLIST_LIST_TV(export=False):
                     ASINS += asin2
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.endOfDirectory(pluginhandle)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"showview"))
+        view=int(common.addon.getSetting("showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
 def LIBRARY_LIST_MOVIES():
@@ -112,7 +112,7 @@ def LIBRARY_LIST_MOVIES():
     xbmcplugin.endOfDirectory(pluginhandle)
     viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
+        view=int(common.addon.getSetting("movieview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
 def LIBRARY_LIST_TV():
@@ -130,9 +130,9 @@ def LIBRARY_LIST_TV():
         appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=False)
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.endOfDirectory(pluginhandle)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"showview"))
+        view=int(common.addon.getSetting("showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
 
 
@@ -158,7 +158,7 @@ def LIST_EPISODES(owned=False):
         appfeed.ADD_EPISODE(asin,isPrime=False)
     xbmcplugin.setContent(int(sys.argv[1]), 'Episodes') 
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
-    viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
+    viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"episodeview"))
+        view=int(common.addon.getSetting("episodeview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")

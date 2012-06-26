@@ -536,7 +536,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
                             isPrime = True
                     isHD = True
                     for offer in format['offers']:
-                        if offer['offerType'] == 'SEASON_PURCHASE':
+                        if offer['offerType'] == 'SEASON_PURCHASE' or offer['offerType'] == 'TV_PASS':
                             hd_asin = offer['asin']
                             addSeasondb([hd_asin,seriesasin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
                             #if hd_asin not in episodeFeed:
@@ -547,7 +547,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
                             isPrime = True
                     isHD = False
                     for offer in format['offers']:
-                        if offer['offerType'] == 'SEASON_PURCHASE':
+                        if offer['offerType'] == 'SEASON_PURCHASE' or offer['offerType'] == 'TV_PASS':
                             sd_asin = offer['asin']
                             addSeasondb([sd_asin,seriesasin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,0,episodetotal,isHD,isPrime])
             #            asin,episodeFeed,poster,season,seriestitle,plot,actors,studio,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime

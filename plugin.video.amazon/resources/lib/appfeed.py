@@ -167,6 +167,7 @@ def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False,export=False):
 def ADD_SERIES(addASIN,isPrime=True,export=False):
     shows = tvDB.lookupShowsdb(addASIN,isPrime)
     for showdata in shows:
+        print showdata
         if export:
             xbmclibrary.EXPORT_SHOW(showdata[0])
         else:

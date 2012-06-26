@@ -249,7 +249,8 @@ def SEARCH_PRIME(searchString=False,results=MAX,index=0):
         q = keyboard.getText()
         if (keyboard.isConfirmed()):
             searchString=urllib.quote_plus(keyboard.getText())
-            common.addDir('[Search Suggestions]','appfeed','SEARCH_SUGGEST_PRIME',searchString) # '+str(results)+'
+            if searchString <> '':
+                common.addDir('[Search Suggestions]','appfeed','SEARCH_SUGGEST_PRIME',searchString) # '+str(results)+'
     BROWSE_PARAMS = '&searchString='+searchString+'&OfferGroups=B0043YVHMY&IncludeAll=T&SuppressBlackedoutEST=T&version=2&NumberOfResults='+str(results)+'&StartIndex='+str(index)
     url = BUILD_BASE_API('catalog/Search')+BROWSE_PARAMS
     BROWSE_ADDITEMS(url,results,index,search=True)
@@ -259,8 +260,9 @@ def SEARCH_SUGGEST_PRIME():
     url = BUILD_BASE_API('catalog/GetSearchSuggestions')+BROWSE_PARAMS
     data = common.getATVURL(url)
     suggestions = demjson.decode(data)['message']['body']['searchSuggestion']
-    selected=xbmcgui.Dialog().select('Suggestions', [suggestion for suggestion in suggestions])
-    SEARCH_PRIME(searchString=urllib.quote_plus(suggestions[selected]))
+    if len(suggestions) > 0: 
+        selected=xbmcgui.Dialog().select('Suggestions', [suggestion for suggestion in suggestions])
+        SEARCH_PRIME(searchString=urllib.quote_plus(suggestions[selected]))
     
 def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False,export=False):
     data = common.getATVURL(url)

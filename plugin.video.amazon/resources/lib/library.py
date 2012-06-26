@@ -151,16 +151,47 @@ def LIBRARY_LIST_TV():
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
     totalItems = len(videos)
+    ASINS=''
     for video in videos:
         asin = video['asin']
-        appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=False)
+        #appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=False)
+        if common.addon.getSetting("watchlist_tv_view") == '0':
+            appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=False,addSeries=True)
+        elif common.addon.getSetting("watchlist_tv_view") == '1':
+            asin1,asin2 = appfeed.ADD_SEASON_SERIES(asin,'library','LIBRARY_LIST_SEASONS',isPrime=True,checklist=ASINS)
+            if asin1:
+                ASINS += asin1
+            if asin2:
+                ASINS += asin2
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.endOfDirectory(pluginhandle)
+    viewenable=common.addon.getSetting("viewenable")
+    if viewenable == 'true':
+        view=int(common.addon.getSetting("showview"))
+        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
+
+def LIBRARY_LIST_SEASONS():
+    asin = common.args.url
+    series = common.args.name
+    
+    url = 'https://www.amazon.com/gp/video/library/tv?show=all&sort=alpha'
+    data = common.getURL(url,useCookie=True)
+    scripts = re.compile(r'<script.*?script>',re.DOTALL)
+    data = scripts.sub('', data)
+    style = re.compile(r'<style.*?style>',re.DOTALL)
+    data = style.sub('', data)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos = tree.findAll('div',attrs={'class':'lib-item','asin':True})
+    totalItems = len(videos)
+    for video in videos:
+        asin = video['asin']
+        appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=True,inWatchlist=False,seriesfilter=series)
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.endOfDirectory(pluginhandle)
     viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
         view=int(common.addon.getSetting("seasonview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-
 
 def LIBRARY_EPISODES():
     LIST_EPISODES(owned=True)

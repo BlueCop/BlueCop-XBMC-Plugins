@@ -30,7 +30,7 @@ def PLAYTRAILER_RESOLVE():
 
 def PLAYTRAILER(resolve=False):
     videoname = common.args.name
-    swfUrl, values = GETFLASHVARS(common.args.url) 
+    swfUrl, values, owned = GETFLASHVARS(common.args.url) 
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingTrailerUrls'
     getstream += '?asin='+values['asin']
@@ -67,11 +67,10 @@ def GETSTREAMS(getstream):
 def PLAYVIDEO():
     if not os.path.isfile(common.COOKIEFILE):
         common.mechanizeLogin()
-    try:
-        swfUrl, values = GETFLASHVARS(common.args.url)
-    except:
-        common.mechanizeLogin()
-        swfUrl, values = GETFLASHVARS(common.args.url)      
+    #try:
+    swfUrl, values, owned = GETFLASHVARS(common.args.url)
+    #if not owned:
+    #    return PLAYTRAILER_RESOLVE() 
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
     #getstream  = 'https://atv-ext.amazon.com/cdp/cdp/catalog/GetStreamingUrlSets'
@@ -84,7 +83,10 @@ def PLAYVIDEO():
     getstream += '&xws-fa-ov=false'
     getstream += '&format=json'
     getstream += '&version=1'
-    rtmpurls, streamSessionID, cdn, title = GETSTREAMS(getstream)
+    try:
+        rtmpurls, streamSessionID, cdn, title = GETSTREAMS(getstream)
+    except:
+        return PLAYTRAILER_RESOLVE()
     if cdn == 'limelight':
         xbmcgui.Dialog().ok('Limelight CDN','Limelight uses swfverfiy2. Playback may fail.')
     if rtmpurls <> False:
@@ -174,6 +176,10 @@ def GETFLASHVARS(pageurl):
             'deviceID'       :'',
             'asin'           :''      
             }
+    if '<div class="avod-post-purchase">' in showpage:
+        owned=True
+    else:
+        owned=False
     for item in flashVars:
         item = item.split('=')
         if item[0]      == 'token':
@@ -190,7 +196,7 @@ def GETFLASHVARS(pageurl):
             values['sessionID']     = item[1]
         elif item[0]    == 'userAgent':
             values['userAgent']     = item[1]
-    return swfUrl, values
+    return swfUrl, values, owned
         
 def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True,title=False):
     print rtmpurls
@@ -208,7 +214,6 @@ def PLAY(rtmpurls,swfUrl,Trailer=False,resolve=True,title=False):
             rtmpurl = url
     if lbitrate == 0:        
         quality=xbmcgui.Dialog().select('Please select a quality level:', [str(stream[0])+'kbps' for stream in streams])
-        print quality
         if quality!=-1:
             rtmpurl = streams[quality][1]
     protocolSplit = rtmpurl.split("://")

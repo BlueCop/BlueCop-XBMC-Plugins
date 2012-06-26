@@ -13,7 +13,7 @@
 	
 
 	<string id="30012">Library</string>
-	<string id="30013">Enable Amazon Rented/Purchased Library</string>
+	<string id="30013">Enable Purchases & Rentals Library</string>
 	<string id="30014">Library Metadata(cached)</string>
 
 	<string id="30015">Views</string>
@@ -46,5 +46,5 @@
 	<string id="30038">Update Library when complete</string>
 	
 	<string id="30039">Items Per Page</string>
-	<string id="30040">Watchlist Television listed as Season/Show</string>
+	<string id="30040">Watchlist & Purchased Television view</string>
 </strings>

@@ -317,12 +317,12 @@ def lookupShowsdb(asin,isPrime=True):
             tvDB.commit()
             return c.execute('select distinct * from shows where asin = (?)', (asin1,))
 
-def lookupSeasondb(asin,isPrime=True):
+def lookupSeasondb(asin,isPrime=True,addSeries=False):
     c = tvDB.cursor()
     if c.execute('select distinct * from seasons where asin = (?)', (asin,)).fetchone():
         return c.execute('select distinct * from seasons where asin = (?)', (asin,))
     else:
-        ASIN_ADD(asin,isPrime=isPrime)
+        ASIN_ADD(asin,isPrime=isPrime,addSeries=addSeries)
         return c.execute('select distinct * from seasons where asin = (?)', (asin,))
 
 def lookupEpisodedb(asin,isPrime=True):
@@ -409,7 +409,7 @@ def ASIN_FEED(url):
     if EPISODE_ASINS <> '':
         ASIN_ADD(EPISODE_ASINS)
 
-def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
+def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=False):
     if url:
         titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
     else:
@@ -482,6 +482,8 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False):
             season = title['number']
             seriestitle = title['ancestorTitles'][0]['title']
             seriesasin = title['ancestorTitles'][0]['titleId']
+            if addSeries:
+                ASIN_ADD(seriesasin)
             if title['formats'][0].has_key('images'):
                 try:
                     thumbnailUrl = title['formats'][0]['images'][0]['uri']

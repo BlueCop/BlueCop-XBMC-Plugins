@@ -167,7 +167,6 @@ def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False,export=False):
 def ADD_SERIES(addASIN,isPrime=True,export=False):
     shows = tvDB.lookupShowsdb(addASIN,isPrime)
     for showdata in shows:
-        print showdata
         if export:
             xbmclibrary.EXPORT_SHOW(showdata[0])
         else:
@@ -186,8 +185,8 @@ def ADD_SEASON_SERIES(addASIN,mode='appfeed',submode='BROWSE_SEASONS4SERIES',isP
                 return showdata[0],showdata[1]
     return False,False
 
-def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False,export=False):
-    seasons = tvDB.lookupSeasondb(addASIN,isPrime)
+def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False,export=False,addSeries=False):
+    seasons = tvDB.lookupSeasondb(addASIN,isPrime,addSeries=addSeries)
     for seasondata in seasons:
         if export:
             xbmclibrary.EXPORT_SEASON(showdata[0])

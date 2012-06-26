@@ -81,7 +81,7 @@ def WATCHLIST_LIST_TV(export=False):
             xbmclibrary.EXPORT_SEASON(asin)
         else:
             if common.addon.getSetting("watchlist_tv_view") == '0':
-                appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True)
+                appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True,addSeries=True)
             elif common.addon.getSetting("watchlist_tv_view") == '1':
                 asin1,asin2 = appfeed.ADD_SEASON_SERIES(asin,'appfeed','BROWSE_SEASONS4SERIES',isPrime=True,checklist=ASINS)
                 if asin1:

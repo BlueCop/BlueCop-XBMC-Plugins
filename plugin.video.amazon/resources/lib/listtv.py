@@ -233,6 +233,10 @@ def ADD_SEASON_ITEM(seasondata,mode='listtv',submode='LIST_EPISODES_DB',seriesTi
         url = seriestitle+'<split>'+str(season)
         if isHD:
             submode = 'LIST_HDEPISODES_DB'
+    elif mode == 'appfeed':
+        url = asin
+        if isHD:
+            submode =  'BROWSE_EPISODES_HD'
     else:
         url = asin
     if seriesTitle:

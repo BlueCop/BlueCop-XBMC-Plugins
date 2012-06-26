@@ -185,13 +185,16 @@ def ADD_SEASON_SERIES(addASIN,mode='appfeed',submode='BROWSE_SEASONS4SERIES',isP
                 return showdata[0],showdata[1]
     return False,False
 
-def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False,export=False,addSeries=False):
+def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False,export=False,addSeries=False,seriesfilter=False):
     seasons = tvDB.lookupSeasondb(addASIN,isPrime,addSeries=addSeries)
     for seasondata in seasons:
         if export:
-            xbmclibrary.EXPORT_SEASON(showdata[0])
+            xbmclibrary.EXPORT_SEASON(seasondata[0])
         else:
-            listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
+            if not seriesfilter:
+                listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
+            elif seriesfilter == seasondata[5]:
+                listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
 
 def ADD_EPISODE(addASIN,isPrime=True,seriesTitle=False,export=False):
     episodes = tvDB.lookupEpisodedb(addASIN,isPrime)

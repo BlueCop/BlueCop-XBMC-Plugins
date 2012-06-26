@@ -91,11 +91,11 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     u += '&page="'+urllib.quote_plus(str(page))+'"'
     if fanart == '' or fanart == None:
         try:fanart = args.fanart
-        except:fanart = os.path.join(os.getcwd().replace(';', ''),'fanart.jpg')
+        except:fanart = os.path.join(addon.getAddonInfo('path'),'fanart.jpg')
     else:u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     if thumb == '' or thumb == None:
         try:thumb = args.thumb
-        except:thumb = os.path.join(os.getcwd().replace(';', ''),'icon.png')
+        except:thumb = os.path.join(addon.getAddonInfo('path'),'icon.png')
     else:u += '&thumb="'+urllib.quote_plus(thumb)+'"'
     item=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=thumb)
     item.setProperty('fanart_image',fanart)

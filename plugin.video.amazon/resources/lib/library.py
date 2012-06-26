@@ -11,6 +11,7 @@ import urllib
 import resources.lib.common as common
 import re
 import appfeed
+import xbmclibrary
 
 pluginhandle = common.pluginhandle
 confluence_views = [500,501,502,503,504,508]
@@ -22,13 +23,19 @@ def LIBRARY_ROOT():
     xbmcplugin.endOfDirectory(pluginhandle)
 
 def WATCHLIST_ROOT():
-    common.addDir('Movies','library','WATCHLIST_LIST_MOVIES','https://www.amazon.com/gp/video/watchlist/movie?show=all&sort=DATE_ADDED')
-    common.addDir('Television','library','WATCHLIST_LIST_TV','https://www.amazon.com/gp/video/watchlist/tv?show=all&sort=DATE_ADDED')
+    cm = [ ('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="library"&sitemode="WATCHLIST_LIST_MOVIES_EXPORT"&url="")') ]
+    common.addDir('Movies','library','WATCHLIST_LIST_MOVIES','',cm=cm)
+    cm = [ ('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="library"&sitemode="WATCHLIST_LIST_TV_EXPORT"&url="")') ]
+    common.addDir('Television','library','WATCHLIST_LIST_TV','',cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle)
 
-def WATCHLIST_LIST_MOVIES():
-    xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
-    url = common.args.url
+def WATCHLIST_LIST_MOVIES_EXPORT():
+    WATCHLIST_LIST_MOVIES(export=True)
+
+def WATCHLIST_LIST_MOVIES(export=False):
+    if export:
+        xbmclibrary.SetupLibrary()
+    url = 'https://www.amazon.com/gp/video/watchlist/movie?show=all&sort=DATE_ADDED'
     data = common.getURL(url,useCookie=True)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     data = scripts.sub('', data)
@@ -39,15 +46,25 @@ def WATCHLIST_LIST_MOVIES():
     totalItems = len(videos)
     for video in videos:
         asin = video['id']
-        appfeed.ADD_MOVIE(asin,isPrime=True,inWatchlist=True)
-    viewenable=common.addon.getSetting("viewenable")
-    if viewenable == 'true':
-        view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
-        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle)
+        if export:
+            xbmclibrary.EXPORT_MOVIE(asin)
+        else:
+            appfeed.ADD_MOVIE(asin,isPrime=True,inWatchlist=True)
+    if not export:   
+        xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
+        xbmcplugin.endOfDirectory(pluginhandle)
+        viewenable=common.addon.getSetting("viewenable")
+        if viewenable == 'true':
+            view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
+            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
     
-def WATCHLIST_LIST_TV():
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
+def WATCHLIST_LIST_TV_EXPORT():
+    WATCHLIST_LIST_TV(export=True)
+
+def WATCHLIST_LIST_TV(export=False):
+    if export:
+        xbmclibrary.SetupLibrary()
     url = 'https://www.amazon.com/gp/video/watchlist/tv?show=all&sort=DATE_ADDED'
     data = common.getURL(url,useCookie=True)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
@@ -60,22 +77,25 @@ def WATCHLIST_LIST_TV():
     ASINS = ''
     for video in videos:
         asin = video['id']
-        if common.addon.getSetting("watchlist_tv_view") == '0':
-            appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True)
-        elif common.addon.getSetting("watchlist_tv_view") == '1':
-            asin1,asin2 = appfeed.ADD_SEASON_SERIES(asin,'appfeed','BROWSE_SEASONS4SERIES',isPrime=True,checklist=ASINS)
-            if asin1:
-                ASINS += asin1
-            if asin2:
-                ASINS += asin2
+        if export:
+            xbmclibrary.EXPORT_SEASON(asin)
+        else:
+            if common.addon.getSetting("watchlist_tv_view") == '0':
+                appfeed.ADD_SEASON(asin,isPrime=True,inWatchlist=True)
+            elif common.addon.getSetting("watchlist_tv_view") == '1':
+                asin1,asin2 = appfeed.ADD_SEASON_SERIES(asin,'appfeed','BROWSE_SEASONS4SERIES',isPrime=True,checklist=ASINS)
+                if asin1:
+                    ASINS += asin1
+                if asin2:
+                    ASINS += asin2
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.endOfDirectory(pluginhandle)
     viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIBRARY_LIST_MOVIES():
-    xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
     url = common.args.url
     data = common.getURL(url,useCookie=True)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
@@ -88,14 +108,14 @@ def LIBRARY_LIST_MOVIES():
     for video in videos:
         asin = video['asin']
         appfeed.ADD_MOVIE(asin,isPrime=False)
+    xbmcplugin.setContent(int(sys.argv[1]), 'Movies')
+    xbmcplugin.endOfDirectory(pluginhandle)
     viewenable=common.addon.getSetting("viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"movieview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle)
 
 def LIBRARY_LIST_TV():
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     url = common.args.url
     data = common.getURL(url,useCookie=True)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
@@ -108,18 +128,19 @@ def LIBRARY_LIST_TV():
     for video in videos:
         asin = video['asin']
         appfeed.ADD_SEASON(asin,'library','LIBRARY_EPISODES',isPrime=False)
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.endOfDirectory(pluginhandle)
     viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"showview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle)
+
 
 def LIBRARY_EPISODES():
     LIST_EPISODES(owned=True)
     
 def LIST_EPISODES(owned=False):
     episode_url = common.BASE_URL+'/gp/product/'+common.args.url
-    xbmcplugin.setContent(int(sys.argv[1]), 'Episodes') 
     data = common.getURL(episode_url,useCookie=owned)
     scripts = re.compile(r'<script.*?script>',re.DOTALL)
     data = scripts.sub('', data)
@@ -135,8 +156,9 @@ def LIST_EPISODES(owned=False):
                 continue
         asin = episode['asin']
         appfeed.ADD_EPISODE(asin,isPrime=False)
+    xbmcplugin.setContent(int(sys.argv[1]), 'Episodes') 
+    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
     viewenable=xbmcplugin.getSetting(pluginhandle,"viewenable")
     if viewenable == 'true':
         view=int(xbmcplugin.getSetting(pluginhandle,"episodeview"))
         xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)

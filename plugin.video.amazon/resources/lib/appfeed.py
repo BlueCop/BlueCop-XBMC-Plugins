@@ -13,6 +13,7 @@ import re
 import demjson
 import listtv
 import listmovie
+import xbmclibrary
 
 import movies as moviesDB
 import tv as tvDB
@@ -133,7 +134,8 @@ def APP_LEVEL2():
         if item.has_key('categories'):
             common.addDir(item['title'],'appfeed','APP_LEVEL3',common.args.url+','+str(categories.index(item)))
         else:
-            common.addDir(item['title'],'appfeed','BROWSE',item['query'])
+            cm = [('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="appfeed"&sitemode="BROWSE_EXPORT"&url="%s")' % ( urllib.quote_plus(item['query']) ) ) ]
+            common.addDir(item['title'],'appfeed','BROWSE',item['query'],cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle)    
 
 def APP_LEVEL3():
@@ -147,51 +149,69 @@ def APP_LEVEL3():
         if item.has_key('categories'):
             common.addDir(item['title'],'appfeed','APP_LEVEL4',common.args.url+','+str(categories.index(item)))
         else:
-            common.addDir(item['title'],'appfeed','BROWSE',item['query'])
+            cm = [('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="appfeed"&sitemode="BROWSE_EXPORT"&url="%s")' % ( urllib.quote_plus(item['query']) ) ) ]
+            common.addDir(item['title'],'appfeed','BROWSE',item['query'],cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle) 
 
 def APP_LEVEL4():
     common.addDir('ADD LEVEL4','appfeed','APP_LEVEL4','')
     
-def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False):
+def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False,export=False):
     movies = moviesDB.lookupMoviedb(addASIN,isPrime=True)
     for moviedata in movies:
-        listmovie.ADD_MOVIE_ITEM(moviedata,inWatchlist=inWatchlist)
+        if export:
+            xbmclibrary.EXPORT_MOVIE(moviedata[0])
+        else:
+            listmovie.ADD_MOVIE_ITEM(moviedata,inWatchlist=inWatchlist)
 
-def ADD_SERIES(addASIN,isPrime=True):
+def ADD_SERIES(addASIN,isPrime=True,export=False):
     shows = tvDB.lookupShowsdb(addASIN,isPrime)
     for showdata in shows:
-        listtv.ADD_SHOW_ITEM(showdata,'appfeed','BROWSE_SEASONS4SERIES')
+        if export:
+            xbmclibrary.EXPORT_SHOW(showdata[0])
+        else:
+            listtv.ADD_SHOW_ITEM(showdata,'appfeed','BROWSE_SEASONS4SERIES')
 
-def ADD_SEASON_SERIES(addASIN,mode='appfeed',submode='BROWSE_SEASONS4SERIES',isPrime=True,checklist=''):
+def ADD_SEASON_SERIES(addASIN,mode='appfeed',submode='BROWSE_SEASONS4SERIES',isPrime=True,checklist='',export=False):
     seasons = tvDB.lookupSeasondb(addASIN,isPrime)
     for seasondata in seasons:
         if seasondata[1] not in checklist:
             shows = tvDB.lookupShowsdb(seasondata[1],isPrime)
             for showdata in shows:
-                listtv.ADD_SHOW_ITEM(showdata,mode,submode)
+                if export:
+                    xbmclibrary.EXPORT_SHOW(showdata[0])
+                else:
+                    listtv.ADD_SHOW_ITEM(showdata,mode,submode)
                 return showdata[0],showdata[1]
-        else:
-            return False,False
+    return False,False
 
-def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False):
+def ADD_SEASON(addASIN,mode='appfeed',submode='BROWSE_EPISODES',isPrime=True,seriesTitle=True,inWatchlist=False,export=False):
     seasons = tvDB.lookupSeasondb(addASIN,isPrime)
     for seasondata in seasons:
-        listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
+        if export:
+            xbmclibrary.EXPORT_SEASON(showdata[0])
+        else:
+            listtv.ADD_SEASON_ITEM(seasondata,mode=mode,submode=submode,seriesTitle=seriesTitle,inWatchlist=inWatchlist)
 
-def ADD_EPISODE(addASIN,isPrime=True,seriesTitle=False):
+def ADD_EPISODE(addASIN,isPrime=True,seriesTitle=False,export=False):
     episodes = tvDB.lookupEpisodedb(addASIN,isPrime)
     for episodedata in episodes:
-        listtv.ADD_EPISODE_ITEM(episodedata,seriesTitle=seriesTitle)
+        if export:
+            xbmclibrary.EXPORT_EPISODE(episodedata[0])
+        else:
+            listtv.ADD_EPISODE_ITEM(episodedata,seriesTitle=seriesTitle)
 
 def BROWSE_NEXT(results=MAX):
     index = int(common.args.page)*results
     BROWSE(results=results,index=index)
 
-def BROWSE(results=MAX,index=0):
+def BROWSE_EXPORT():
+    BROWSE(export=True)
+    
+def BROWSE(results=MAX,index=0,export=False):
     BROWSE_PARAMS = '&OfferGroups=B0043YVHMY&HighDef=T&NumberOfResults='+str(results)+'&StartIndex='+str(index)+'&playbackInformationRequired=true&SuppressBlackedoutEST=T&version=2&'
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS+common.args.url
-    BROWSE_ADDITEMS(url,results,index,series4season=True)
+    BROWSE_ADDITEMS(url,results,index,series4season=True,export=export)
 
 # No way to filter only prime shows. OfferGroup B0043YVHMY doesn't work
 def BROWSE_SERIES(results=MAX,index=0):
@@ -239,7 +259,7 @@ def SEARCH_SUGGEST_PRIME():
     selected=xbmcgui.Dialog().select('Suggestions', [suggestion for suggestion in suggestions])
     SEARCH_PRIME(searchString=urllib.quote_plus(suggestions[selected]))
     
-def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False):
+def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False,export=False):
     data = common.getATVURL(url)
     json = demjson.decode(data)
     del data
@@ -250,7 +270,7 @@ def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False)
             page = 1
         else:
             page = index/results
-        if not search:
+        if not search or not export:
             common.addDir('Next Page (%s-%s)'% (page*results+1,(page+1)*results),'appfeed','BROWSE_NEXT',common.args.url,page=page)
     Movies = False
     Series = False
@@ -260,28 +280,28 @@ def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False)
         allSeries = ''
     for title in titles:
         if title['contentType'] == 'MOVIE':
-            ADD_MOVIE(title['titleId'])
+            ADD_MOVIE(title['titleId'],export=export)
             Movies = True
         elif title['contentType'] == 'SERIES':
-            ADD_SERIES(title['titleId'])
+            ADD_SERIES(title['titleId'],export=export)
             Series = True
         elif title['contentType'] == 'SEASON':
             if series4season:
                 seriesId = title['ancestorTitles'][0]['titleId']
                 if seriesId not in allSeries:
-                    ADD_SERIES(seriesId)
+                    ADD_SERIES(seriesId,export=export)
                     allSeries += seriesId+','
                     Series = True
             else:
                 asin = title['titleId']
-                ADD_SEASON(asin,seriesTitle=search)
+                ADD_SEASON(asin,seriesTitle=search,export=export)
                 for format in title['formats']:
                     if format['videoFormatType'] == 'HD':
                         for offer in format['offers']:
                             if offer['offerType'] == 'SEASON_PURCHASE':
                                 asin = offer['asin']
                                 #ADD_SEASON(asin,seriesTitle=True)
-                                ADD_SEASON(asin,seriesTitle=search,submode='BROWSE_EPISODES_HD')
+                                ADD_SEASON(asin,seriesTitle=search,submode='BROWSE_EPISODES_HD',export=export)
                 Season = True
         elif title['contentType'] == 'EPISODE':
             asin = title['titleId']
@@ -291,26 +311,27 @@ def BROWSE_ADDITEMS(url,results,index,search=False,series4season=False,HD=False)
                         for offer in format['offers']:
                             if offer['offerType'] == 'PURCHASE':
                                 asin = offer['asin']
-            ADD_EPISODE(asin,seriesTitle=search)
+            ADD_EPISODE(asin,seriesTitle=search,export=export)
             Episode = True
-    if Series:
-        view='showview'
-        xbmcplugin.setContent(pluginhandle, 'tvshows')
-    elif Season:
-        view = 'seasonview'
-        xbmcplugin.setContent(pluginhandle, 'tvshows')
-    elif Movies:
-        view='movieview'
-        xbmcplugin.setContent(pluginhandle, 'Movies')
-    elif Episode:
-        view='episodeview'
-        xbmcplugin.setContent(pluginhandle, 'Episodes')
-    else:
-        view='showview'
-        xbmcplugin.setContent(pluginhandle, 'tvshows')
-    xbmcplugin.endOfDirectory(pluginhandle)
-    viewenable=common.addon.getSetting("viewenable")
-    if viewenable == 'true':
-        view=int(common.addon.getSetting(view))
-        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
+    if not export:
+        if Series:
+            view='showview'
+            xbmcplugin.setContent(pluginhandle, 'tvshows')
+        elif Season:
+            view = 'seasonview'
+            xbmcplugin.setContent(pluginhandle, 'tvshows')
+        elif Movies:
+            view='movieview'
+            xbmcplugin.setContent(pluginhandle, 'Movies')
+        elif Episode:
+            view='episodeview'
+            xbmcplugin.setContent(pluginhandle, 'Episodes')
+        else:
+            view='showview'
+            xbmcplugin.setContent(pluginhandle, 'tvshows')
+        xbmcplugin.endOfDirectory(pluginhandle)
+        viewenable=common.addon.getSetting("viewenable")
+        if viewenable == 'true':
+            view=int(common.addon.getSetting(view))
+            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
        

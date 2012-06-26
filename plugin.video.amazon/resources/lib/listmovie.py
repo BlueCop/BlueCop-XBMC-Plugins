@@ -8,6 +8,7 @@ import sys
 import urllib
 import string
 import resources.lib.common as common
+import xbmclibrary
 
 pluginhandle = common.pluginhandle
 
@@ -16,8 +17,10 @@ confluence_views = [500,501,502,503,504,508]
 
 ################################ Movie listing
 def LIST_MOVIE_ROOT():
-    common.addDir('Favorited','listmovie','LIST_MOVIES_FAVOR_FILTERED')
-    common.addDir('All Movies','listmovie','LIST_MOVIES')
+    cm = [('Export Favorited to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="listmovie"&sitemode="LIST_MOVIES_FAVOR_FILTERED_EXPORT"&url="")' ) ]
+    common.addDir('Favorited','listmovie','LIST_MOVIES_FAVOR_FILTERED',cm=cm)
+    cm = [('Export All to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="listmovie"&sitemode="LIST_MOVIES_EXPORT"&url="")' ) ]
+    common.addDir('All Movies','listmovie','LIST_MOVIES',cm=cm)
     #common.addDir('Alphabetical','listmovie','LIST_MOVIE_AZ')
     common.addDir('Genres','listmovie','LIST_MOVIE_TYPES','GENRE')
     common.addDir('Years','listmovie','LIST_MOVIE_TYPES','YEARS')
@@ -25,7 +28,8 @@ def LIST_MOVIE_ROOT():
     common.addDir('MPAA Rating','listmovie','LIST_MOVIE_TYPES','MPAA')
     common.addDir('Directors','listmovie','LIST_MOVIE_TYPES','DIRECTORS')
     #common.addDir('Actors','listmovie','LIST_MOVIE_TYPES','ACTORS')
-    common.addDir('Watched History','listmovie','LIST_MOVIES_WATCHED_FILTERED')
+    cm = [('Export Watched to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="listmovie"&sitemode="LIST_MOVIES_WATCHED_FILTERED_EXPORT"&url="")' ) ]
+    common.addDir('Watched History','listmovie','LIST_MOVIES_WATCHED_FILTERED',cm=cm)
     xbmcplugin.endOfDirectory(pluginhandle)
     
 def LIST_MOVIE_AZ():
@@ -62,51 +66,86 @@ def LIST_MOVIE_TYPES(type=False):
         mode = 'LIST_MOVIES_ACTOR_FILTERED'
         items = moviesDB.getMovieTypes('actors')     
     for item in items:
-        common.addDir(item,'listmovie',mode,item)
+        export_mode=mode+'_EXPORT'
+        cm = [('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="listmovie"&sitemode="%s"&url="%s")' % ( export_mode, urllib.quote_plus(item) ) ) ]
+        common.addDir(item,'listmovie',mode,item,cm=cm)
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)          
     xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)   
 
-def LIST_MOVIES_GENRE_FILTERED():
-    LIST_MOVIES(genrefilter=common.args.url)
+def LIST_MOVIES_GENRE_FILTERED_EXPORT():
+    LIST_MOVIES_GENRE_FILTERED(export=True) 
 
-def LIST_MOVIES_YEAR_FILTERED():
-    LIST_MOVIES(yearfilter=common.args.url)
+def LIST_MOVIES_GENRE_FILTERED(export=False):
+    LIST_MOVIES(export=export,genrefilter=common.args.url)
 
-def LIST_MOVIES_MPAA_FILTERED():
-    LIST_MOVIES(mpaafilter=common.args.url)
+def LIST_MOVIES_YEAR_FILTERED_EXPORT():
+    LIST_MOVIES_YEAR_FILTERED(export=True) 
+
+def LIST_MOVIES_YEAR_FILTERED(export=False):
+    LIST_MOVIES(export=export,yearfilter=common.args.url)
+
+def LIST_MOVIES_MPAA_FILTERED_EXPORT():
+    LIST_MOVIES_MPAA_FILTERED(export=True) 
+
+def LIST_MOVIES_MPAA_FILTERED(export=False):
+    LIST_MOVIES(export=export,mpaafilter=common.args.url)
+ 
+def LIST_MOVIES_STUDIO_FILTERED_EXPORT():
+    LIST_MOVIES_STUDIO_FILTERED(export=True) 
     
-def LIST_MOVIES_STUDIO_FILTERED():
-    LIST_MOVIES(studiofilter=common.args.url)
+def LIST_MOVIES_STUDIO_FILTERED(export=False):
+    LIST_MOVIES(export=export,studiofilter=common.args.url)
 
-def LIST_MOVIES_DIRECTOR_FILTERED():
-    LIST_MOVIES(directorfilter=common.args.url)
+def LIST_MOVIES_DIRECTOR_FILTERED_EXPORT():
+    LIST_MOVIES_DIRECTOR_FILTERED(export=True)
 
-def LIST_MOVIES_ACTOR_FILTERED():
-    LIST_MOVIES(actorfilter=common.args.url)
+def LIST_MOVIES_DIRECTOR_FILTERED(export=False):
+    LIST_MOVIES(export=export,directorfilter=common.args.url)
+
+def LIST_MOVIES_ACTOR_FILTERED_EXPORT():
+    LIST_MOVIES_ACTOR_FILTERED(export=True)
+
+def LIST_MOVIES_ACTOR_FILTERED(export=False):
+    LIST_MOVIES(export=export,actorfilter=common.args.url)
+
+def LIST_MOVIES_WATCHED_FILTERED_EXPORT():
+    LIST_MOVIES_WATCHED_FILTERED(export=True)
     
-def LIST_MOVIES_WATCHED_FILTERED():
-    LIST_MOVIES(watchedfilter=True)
+def LIST_MOVIES_WATCHED_FILTERED(export=False):
+    LIST_MOVIES(export=export,watchedfilter=True)
+
+def LIST_MOVIES_FAVOR_FILTERED_EXPORT():
+    LIST_MOVIES_FAVOR_FILTERED(export=True) 
   
-def LIST_MOVIES_FAVOR_FILTERED():
-    LIST_MOVIES(favorfilter=True)
+def LIST_MOVIES_FAVOR_FILTERED(export=False):
+    LIST_MOVIES(export=export,favorfilter=True)
 
-def LIST_MOVIES(genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False):
-    xbmcplugin.setContent(pluginhandle, 'Movies')
+def LIST_MOVIES_EXPORT():
+    LIST_MOVIES(export=True)
+
+def LIST_MOVIES(export=False,genrefilter=False,actorfilter=False,directorfilter=False,studiofilter=False,yearfilter=False,mpaafilter=False,watchedfilter=False,favorfilter=False,alphafilter=False):
+    if export:
+        xbmclibrary.SetupLibrary()
     import movies as moviesDB
     movies = moviesDB.loadMoviedb(genrefilter=genrefilter,actorfilter=actorfilter,directorfilter=directorfilter,studiofilter=studiofilter,yearfilter=yearfilter,mpaafilter=mpaafilter,watchedfilter=watchedfilter,favorfilter=favorfilter,alphafilter=alphafilter)
     for moviedata in movies:
-        ADD_MOVIE_ITEM(moviedata)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
-    viewenable=common.addon.getSetting("viewenable")
-    if viewenable == 'true':
-        view=int(common.addon.getSetting("movieview"))
-        xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
-    xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
+        if export:
+            xbmclibrary.EXPORT_MOVIE(moviedata[0])
+        else:
+            ADD_MOVIE_ITEM(moviedata)
+    if not export:
+        xbmcplugin.setContent(pluginhandle, 'Movies')
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
+        viewenable=common.addon.getSetting("viewenable")
+        if viewenable == 'true':
+            view=int(common.addon.getSetting("movieview"))
+            xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
+        xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
     
 def ADD_MOVIE_ITEM(moviedata,inWatchlist=False):
     asin,hd_asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,isHD,watched,favor,TMDB_ID = moviedata
@@ -143,12 +182,13 @@ def ADD_MOVIE_ITEM(moviedata,inWatchlist=False):
         cm.append( ('Remove from Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="removeMovieWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     else:
         cm.append( ('Add to Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="addMovieWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    if favor: cm.append( ('Remove from Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unfavorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="favorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
+    cm.append( ('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="xbmclibrary"&sitemode="EXPORT_MOVIE"&asin="%s")' % ( urllib.quote_plus(asin) ) ) )
     if watched:
         infoLabels['overlay']=7
         cm.append( ('Unwatch', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unwatchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     else: cm.append( ('Mark Watched', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="watchMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-    if favor: cm.append( ('Remove from Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="unfavorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
-    else: cm.append( ('Add to Favorites', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="favorMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     if common.addon.getSetting("editenable") == 'true':
         cm.append( ('Remove from Movies', 'XBMC.RunPlugin(%s?mode="movies"&sitemode="deleteMoviedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     common.addVideo(movietitle,url,poster,fanart,infoLabels=infoLabels,cm=cm)

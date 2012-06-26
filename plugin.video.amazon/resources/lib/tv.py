@@ -109,8 +109,9 @@ def loadTVShowdb(HDonly=False,mpaafilter=False,genrefilter=False,creatorfilter=F
         genrefilter = '%'+genrefilter+'%'
         return c.execute('select distinct * from shows where isprime = (?) and genres like (?)', (isprime,genrefilter))
     elif mpaafilter:
-        mpaafilter = '%'+mpaafilter+'%'
-        return c.execute('select distinct * from shows where isprime = (?) and mpaa like (?)', (isprime,mpaafilter))
+        #mpaafilter = '%'+mpaafilter+'%'
+        #return c.execute('select distinct * from shows where isprime = (?) and mpaa like (?)', (isprime,mpaafilter))
+        return c.execute('select distinct * from shows where isprime = (?) and mpaa = (?)', (isprime,mpaafilter))
     elif creatorfilter:
         return c.execute('select distinct * from shows where isprime = (?) and creator = (?)', (isprime,creatorfilter))
     elif networkfilter:
@@ -374,8 +375,6 @@ def addTVdb():
         ASIN_ADD(SEASONS_ASINS)
         dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         for url in EPISODE_FEEDS:
-            if (dialog.iscanceled()):
-                goAhead = False
             titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
             EPISODE_ASINS=''
             for title in titles:

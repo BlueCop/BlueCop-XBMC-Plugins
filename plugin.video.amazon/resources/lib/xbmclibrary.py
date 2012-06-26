@@ -9,6 +9,9 @@ import urllib
 import string
 import resources.lib.common as common
 
+import movies as moviesDB
+import tv as tvDB
+
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup , Tag, NavigableString
 
@@ -23,258 +26,228 @@ elif (common.addon.getSetting('customlibraryfolder') <> ''):
 
 def UpdateLibrary():
     xbmc.executebuiltin("UpdateLibrary(video)") 
-
-def CreateStreamFile(name, url, dir):
-    try:
-        u = 'plugin://plugin.video.amazon/'
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="play"'
-        u += '&sitemode="PLAYVIDEO"'
-        filename = name + ".strm"
-        path = os.path.join(dir, filename)
-        file = open(path,'w')
-        file.write(u)
-        file.close()
-    except:
-        print "Error while creating strm file for : " + name
-
-def cleanfilename(name):    
-    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-    return ''.join(c for c in name if c in valid_chars)	
-
-def createElement(tagname,contents):
-    soup = BeautifulSoup()
-    element = Tag(soup, tagname)
-    text = NavigableString(contents)
-    element.insert(0, text)
-    return element
-
-def LIST_MOVIES():
-    if (common.addon.getSetting('enablelibraryfolder') == 'true'):
-        SetupAmazonLibrary()
-    elif (common.addon.getSetting('customlibraryfolder') <> ''):
-        CreateDirectory(MOVIE_PATH)
-        CreateDirectory(TV_SHOWS_PATH)   
-    import movies as moviesDB
-    movies = moviesDB.loadMoviedb(favorfilter=True)
-    for asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,watched,favor,TMDB_ID in movies:
-        CreateStreamFile(movietitle, url, MOVIE_PATH)
-        soup = BeautifulSoup()
-        movie = Tag(soup, "movie")
-        soup.insert(0, movie)
-        movie.insert(0, createElement('title',movietitle+' (Amazon)'))
-        if year:
-            movie.insert(1, createElement('year',str(year)))
-        if premiered:
-            movie.insert(1, createElement('premiered',premiered))
-        if plot:
-            movie.insert(2, createElement('plot',plot))
-        if runtime:
-            movie.insert(2, createElement('runtime',runtime))
-        if votes:
-            movie.insert(3, createElement('votes',str(votes)))
-        if stars:
-            movie.insert(4, createElement('rating',str(stars)))
-        if director:
-            movie.insert(5, createElement('director',director))
-        if studio:
-            movie.insert(6, createElement('studio',studio))       
-        if poster:
-            movie.insert(7, createElement('thumb',poster))
-        if mpaa:
-            movie.insert(8, createElement('mpaa',mpaa)) 
-        u  = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="play"'
-        u += '&name="'+urllib.quote_plus(movietitle)+'"'
-        utrailer = u+'&sitemode="PLAYTRAILER"'    
-        movie.insert(9, createElement('trailer',utrailer))
-        fileinfo = createElement('fileinfo','')
-        streamdetails = createElement('streamdetails','')
-        audio = createElement('audio','')
-        audio.insert(0, createElement('channels','2'))
-        audio.insert(1, createElement('codec','aac'))
-        streamdetails.insert(0,audio)
-        video = createElement('video','')
-        video.insert(0, createElement('codec','h264'))
-        video.insert(1, createElement('height','400'))
-        video.insert(2, createElement('width','720'))
-        video.insert(4, createElement('scantype','Progressive'))
-        streamdetails.insert(1,video)
-        fileinfo.insert(0,streamdetails)
-        movie.insert(10, fileinfo)
-        index = 10   
-        if genres:
-            for genre in genres.split(','):
-                index += 1
-                movie.insert(index, createElement('genre',genre))
-        if actors:
-            for actor in actors.split(','):
-                if actor <> None:
-                    index += 1
-                    actortag = createElement('actor','')
-                    actorname = createElement('name',actor)
-                    actortag.insert(0,actorname)
-                    movie.insert(index, actortag )
-        movieNFO = os.path.join(MOVIE_PATH,movietitle+'.nfo')
-        file = open(movieNFO, 'w')
-        file.write(str(soup))
-        file.close()
-		
-def LIST_TVSHOWS(NFO=False):
-    import tv as tvDB
-    shows = tvDB.loadTVShowdb(favorfilter=True)
-    if (common.addon.getSetting('enablelibraryfolder') == 'true'):
-        SetupAmazonLibrary()
-    elif (common.addon.getSetting('customlibraryfolder') <> ''):
-        CreateDirectory(MOVIE_PATH)
-        CreateDirectory(TV_SHOWS_PATH)                          
-    for seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid in shows:
-        directorname = os.path.join(TV_SHOWS_PATH,seriestitle.replace(':',''))
-    	CreateDirectory(directorname)
-        if NFO:
-            soup = BeautifulStoneSoup()
-            tvshow = Tag(soup, "tvshow")
-            soup.insert(0, tvshow)
-            tvshow.insert(0, createElement('title',seriestitle))
-            if year:
-                tvshow.insert(1, createElement('year',str(year)))
-            if plot:
-                tvshow.insert(2, createElement('plot',plot))
-            if votes:
-                tvshow.insert(3, createElement('votes',str(votes)))
-            if stars:
-                tvshow.insert(4, createElement('rating',str(stars)))
-            if creator:
-                tvshow.insert(5, createElement('credits',creator))
-            if network:
-                tvshow.insert(6, createElement('studio',network))
-            if TVDBseriesid:
-                tvshow.insert(7, createElement('id',TVDBseriesid))
-                episodeguide = createElement('episodeguide','')
-                url = createElement('url','http://www.thetvdb.com/api/03B8C17597ECBD64/series/'+TVDBseriesid+'/all/en.zip')
-                url['cache'] = TVDBseriesid+'.xml'
-                episodeguide.insert(0,url)
-                tvshow.insert(8, episodeguide)
-            if TVDBfanart:
-                fanart_tag = createElement('fanart','')
-                fanart_tag['url'] = 'http://thetvdb.com/banners/' 
-                fanart_tag.insert(0,createElement('thumb',TVDBfanart.replace('http://thetvdb.com/banners/','')))
-                tvshow.insert(9,fanart_tag)
-            if TVDBposter:
-                tvshow.insert(10,createElement('thumb',TVDBposter))
-            elif TVDBbanner:
-                tvshow.insert(11,createElement('thumb',TVDBbanner))
-            index = 11
-            if genres:
-                for genre in genres.split(','):
-                    index += 1
-                    tvshow.insert(index, createElement('genre',genre))
-            if actors:
-                for actor in actors.split(','):
-                    if actor <> None:
-                        index += 1
-                        actortag = createElement('actor','')
-                        actorname = createElement('name',actor)
-                        actortag.insert(0,actorname)
-                        tvshow.insert(index, actortag )
-        seasonTotal,episodeTotal,seasons = LIST_TV_SEASONS(seriestitle,isHD)
-        for season,poster,hasHD in seasons:
-            name = 'Season '+str(season)
-            if hasHD:
-                name += ' HD'
-            seasonpath = os.path.join(directorname,name)
-            CreateDirectory(seasonpath)
-            if NFO:
-                postertag = createElement('thumb',poster)
-                postertag['type'] = 'season'
-                postertag['season'] = str(season)
-                index += 1
-                tvshow.insert(index,postertag)
-            LIST_EPISODES_DB(seriestitle,int(season),poster,HDonly=hasHD,path=seasonpath)
-        if NFO:
-            index += 1
-            tvshow.insert(index, createElement('season',seasonTotal))
-            index += 1
-            tvshow.insert(index, createElement('episode',episodeTotal))  
-            tvshowNFO = os.path.join(directorname,'tvshow.nfo')
-            data = str(soup)
-            if TVDBseriesid:
-                data = 'http://thetvdb.com/index.php?tab=series&id='+TVDBseriesid
-                file = open(tvshowNFO, 'w')
-                file.write(data)
-                file.close()
-    #UpdateLibrary()
     
-def LIST_TV_SEASONS(namefilter,HDonly=False):
-    import tv as tvDB
-    seasons = tvDB.loadTVSeasonsdb(showname=namefilter,HDonly=HDonly).fetchall()
-    seasonTotal = len(seasons)
-    seasonsreturn = []
-    episodereturn = 0
-    for url,poster,season,seriestitle,plot,creator,network,genres,actors,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime in seasons:
-        seasonsreturn.append([season,poster,isHD])
-        if episodetotal:
-            episodereturn += episodetotal
-    return str(seasonTotal),str(episodereturn),seasonsreturn
-
-def LIST_EPISODES_DB(seriestitle,season,poster,HDonly=False,path=False,NFO=True):
-    import tv as tvDB
-    episodes = tvDB.loadTVEpisodesdb(seriestitle,season,HDonly)
-    #asin,seriestitle,season,episode,episodetitle,url,plot,airdate,runtime,isHD,isprime,watched
-    for asin,seriestitle,season,episode,episodetitle,url,plot,airdate,runtime,isHD,isprime,watched in episodes:
-        episodetitle = episodetitle.replace(':','').replace('/',' ').replace('[HD]','').strip()
-        if seriestitle in episodetitle:
-            episodetitle = episodetitle.replace(seriestitle,'').strip().strip(',').strip('')
-        if 'Season ' in episodetitle:
-            episodetitle = episodetitle.replace('Season ','S')
-        filename = 'S%sE%s - %s' % (season,episode,cleanfilename(episodetitle))
-    	CreateStreamFile(filename, url, path)
-        if NFO:
-            soup = BeautifulStoneSoup()
-            episodedetails = Tag(soup, "episodedetails")
-            soup.insert(0, episodedetails)
-            episodedetails.insert(0, createElement('title',episodetitle+' (Amazon)'))
-            if season:
-                episodedetails.insert(1, createElement('season',str(season)))
-            if episode:
-                episodedetails.insert(2, createElement('episode',str(episode)))
-            if plot:
-                episodedetails.insert(3, createElement('plot',plot))
-            if airdate:
-                episodedetails.insert(4, createElement('aired',airdate))
-                episodedetails.insert(5, createElement('premiered',airdate))
-            episodedetails.insert(6, createElement('thumb',poster))
-   
-            fileinfo = createElement('fileinfo','')
-            streamdetails = createElement('streamdetails','')
-            audio = createElement('audio','')
-            audio.insert(0, createElement('channels','2'))
-            audio.insert(1, createElement('codec','aac'))
-            streamdetails.insert(0,audio)
-            video = createElement('video','')
-            video.insert(0, createElement('codec','h264'))
-            if isHD:
-                video.insert(1, createElement('height','720'))
-                video.insert(2, createElement('width','1280'))
-                video.insert(3, createElement('aspect','1.778'))
-            else:
-                video.insert(1, createElement('height','480'))
-                video.insert(2, createElement('width','640'))
-            video.insert(3, createElement('scantype','Progressive'))
-            streamdetails.insert(1,video)
-            fileinfo.insert(0,streamdetails)
-            episodedetails.insert(7, fileinfo)
-                
-            episodeNFO = os.path.join(path,filename+'.nfo')
-            file = open(episodeNFO, 'w')
-            file.write(str(soup))
-            file.close()
+def SaveFile(filename, data, dir):
+    path = os.path.join(dir, filename)
+    file = open(path,'w')
+    file.write(data)
+    file.close()
 
 def CreateDirectory(dir_path):
     dir_path = dir_path.strip()
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
+
+def cleanfilename(name):    
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    return ''.join(c for c in name if c in valid_chars)    
+
+def SetupLibrary():
+    if (common.addon.getSetting('enablelibraryfolder') == 'true'):
+        SetupAmazonLibrary()
+    elif (common.addon.getSetting('customlibraryfolder') <> ''):
+        CreateDirectory(MOVIE_PATH)
+        CreateDirectory(TV_SHOWS_PATH) 
+
+def streamDetails(duration, ishd, language='en', hasSubtitles=False):      
+    fileinfo  = '<fileinfo>'
+    fileinfo += '<streamdetails>'
+    fileinfo += '<audio>'
+    fileinfo += '<channels>2</channels>'
+    fileinfo += '<codec>aac</codec>'
+    fileinfo += '</audio>'
+    fileinfo += '<video>'
+    fileinfo += '<codec>h264</codec>'
+    fileinfo += '<durationinseconds>'+duration+'</durationinseconds>'
+    if ishd == True:
+        fileinfo += '<aspect>1.778</aspect>'
+        fileinfo += '<height>720</height>'
+        fileinfo += '<width>1280</width>'
+    else:
+        fileinfo += '<height>400</height>'
+        fileinfo += '<width>720</width>'        
+    fileinfo += '<language>'+language+'</language>'
+    #fileinfo += '<longlanguage>English</longlanguage>'
+    fileinfo += '<scantype>Progressive</scantype>'
+    fileinfo += '</video>'
+    if hasSubtitles == True:
+        fileinfo += '<subtitle>'
+        fileinfo += '<language>eng</language>'
+        fileinfo += '</subtitle>'
+    fileinfo += '</streamdetails>'
+    fileinfo += '</fileinfo>'
+    return fileinfo
+
+def EXPORT_MOVIE(asin=False,makeNFO=True):
+    if not asin:
+        asin=common.args.asin
+    #SetupLibrary()
+    movie = moviesDB.lookupMoviedb(asin,isPrime=True)
+    for asin,hd_asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,isHD,watched,favor,TMDB_ID in movie:       
+        if year:
+            filename = cleanfilename(movietitle+' ('+str(year)+')')
+        else:
+            filename = cleanfilename(movietitle)
+ 
+        strm_file = filename + ".strm"
+        u = 'plugin://plugin.video.amazon/'
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="play"'
+        u += '&sitemode="PLAYVIDEO"'
+        u += '&xbmclibrary=True'       
+        SaveFile(strm_file, u, MOVIE_PATH)
+        
+        if makeNFO:
+            nfo_file = filename + ".nfo"
+            nfo = '<movie>'
+            nfo+= '<title>'+movietitle+'</title>'
+            if stars:
+                nfo+= '<rating>'+str(stars)+'</rating>'
+            if votes:
+                nfo+= '<votes>'+votes+'</votes>'
+            if year: 
+                nfo+= '<year>'+str(year)+'</year>'
+            if premiered:
+                nfo+= '<premiered>'+premiered+'</premiered>'
+            if plot:
+                nfo+= '<outline>'+plot+'</outline>'
+                nfo+= '<plot>'+plot+'</plot>'
+            if runtime: 
+                nfo+= '<runtime>'+runtime+'</runtime>' ##runtime in minutes
+                nfo+= streamDetails(str(int(runtime)*60), isHD)
+            else:
+                nfo+= streamDetails('', isHD)
+            if poster:
+                nfo+= '<thumb>'+poster+'</thumb>'
+            if mpaa:
+                nfo+= '<mpaa>'+mpaa+'</mpaa>'
+            if studio:
+                nfo+= '<studio>'+studio+'</studio>'
+            if watched:
+                nfo+= '<watched>'+str(watched)+'</watched>'
+            #nfo+= '<id>'tt0432337'</id>'
+            u  = 'plugin://plugin.video.amazon/'
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="play"'
+            u += '&name="'+urllib.quote_plus(movietitle)+'"'
+            utrailer = u+'&sitemode="PLAYTRAILER"'
+            nfo+= '<trailer>'+utrailer+'</trailer>'
+            if genres:
+                for genre in genres.split(','):
+                    nfo+= '<genre>'+genre+'</genre>'
+            if director:
+                nfo+= '<director>'+director+'</director>'
+            if actors:
+                for actor in actors.split(','):
+                    nfo+= '<actor>'
+                    nfo+= '<name>'+actor+'</name>'
+                    nfo+= '</actor>'
+            nfo+= '</movie>'
+            SaveFile(nfo_file, nfo, MOVIE_PATH)
+            
+def EXPORT_SHOW(asin=False):
+    if not asin:
+        asin=common.args.asin
+    #SetupLibrary()
+    show = tvDB.lookupShowsdb(asin)
+    for asin,asin2,feed,seriestitle,poster,plot,network,mpaa,genres,actors,premiered,year,stars,votes,seasontotal,episodetotal,watched,unwatched,isHD,isprime,favor,TVDBbanner,TVDBposter,TVDBfanart,TVDBseriesid in show:
+        directorname = os.path.join(TV_SHOWS_PATH,seriestitle.replace(':',''))
+        CreateDirectory(directorname)
+        seasons = tvDB.loadTVSeasonsdb(seriestitle=seriestitle,HDonly=False).fetchall()
+        seasonTotal = len(seasons)
+        for seasondata in seasons:
+            EXPORT_SEASON(seasondata[0])
+    
+def EXPORT_SEASON(asin=False):
+    if not asin:
+        asin=common.args.asin
+    #SetupLibrary()
+    seasons = tvDB.lookupSeasondb(asin)
+    for asin,seriesASIN,episodeFeed,poster,season,seriestitle,plot,actors,network,mpaa,genres,premiered,year,stars,votes,episodetotal,watched,unwatched,isHD,isprime in seasons:
+        directorname = os.path.join(TV_SHOWS_PATH,seriestitle.replace(':',''))
+        CreateDirectory(directorname)
+        name = 'Season '+str(season)
+        if isHD:
+            name+=' HD'
+        seasonpath = os.path.join(directorname,name)
+        CreateDirectory(seasonpath)
+        episodes = tvDB.loadTVEpisodesdb(seriestitle,season,isHD)
+        for episodedata in episodes:
+            EXPORT_EPISODE(episodedata[0],isHD=isHD)
+    
+def EXPORT_EPISODE(asin=False,makeNFO=True,isHD=False,isPrime=True):
+    if not asin:
+        asin=common.args.asin
+    #SetupLibrary()
+    episodes = tvDB.lookupEpisodedb(asin,isPrime=isPrime)
+    for asin,seasonASIN,seriesASIN,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,network,stars,votes,url,plot,airdate,year,runtime,isHD,isprime,watched in episodes:
+        directorname = os.path.join(TV_SHOWS_PATH,seriestitle.replace(':',''))
+        CreateDirectory(directorname)
+        name = 'Season '+str(season)
+        if isHD:
+            name+=' HD'
+        seasonpath = os.path.join(directorname,name)
+        
+        filename = 'S%sE%s - %s' % (season,episode,cleanfilename(episodetitle))
+        if isHD:
+            filename+=' (HD)'
+        strm_file = filename + ".strm"
+        u = 'plugin://plugin.video.amazon/'
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="play"'
+        u += '&sitemode="PLAYVIDEO"'
+        u += '&xbmclibrary=True'       
+        SaveFile(strm_file, u, seasonpath)
+
+        if makeNFO:
+            nfo_file = filename + ".nfo"
+            nfo = '<episodedetails>'
+            nfo+= '<title>'+episodetitle+'</title>'
+            if season:
+                nfo+= '<season>'+str(season)+'</season>'
+            if episode:
+                nfo+= '<episode>'+str(episode)+'</episode>'
+            if stars:
+                nfo+= '<rating>'+str(stars)+'</rating>'
+            if votes:
+                nfo+= '<votes>'+votes+'</votes>'
+            if year: 
+                nfo+= '<year>'+str(year)+'</year>'
+            if airdate:
+                nfo+= '<aired>'+airdate+'</aired>'
+                nfo+= '<premiered>'+airdate+'</premiered>'
+            if plot:
+                nfo+= '<plot>'+plot+'</plot>'
+            if runtime: 
+                nfo+= '<runtime>'+runtime+'</runtime>' ##runtime in minutes
+                nfo+= streamDetails(str(int(runtime)*60), isHD)
+            else:
+                nfo+= streamDetails('', isHD)
+            if poster:
+                nfo+= '<thumb>'+poster+'</thumb>'
+            if mpaa:
+                nfo+= '<mpaa>'+mpaa+'</mpaa>'
+            if network:
+                nfo+= '<studio>'+network+'</studio>'
+            if watched:
+                nfo+= '<watched>'+str(watched)+'</watched>'
+            #nfo+= '<id>'tt0432337'</id>'
+            u  = 'plugin://plugin.video.amazon/'
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="play"'
+            u += '&name="'+urllib.quote_plus(episodetitle)+'"'
+            utrailer = u+'&sitemode="PLAYTRAILER"'
+            nfo+= '<trailer>'+utrailer+'</trailer>'
+            if genres:
+                for genre in genres.split(','):
+                    nfo+= '<genre>'+genre+'</genre>'
+            if actors:
+                for actor in actors.split(','):
+                    nfo+= '<actor>'
+                    nfo+= '<name>'+actor+'</name>'
+                    nfo+= '</actor>'
+            nfo+= '</episodedetails>'
+            SaveFile(nfo_file, nfo, seasonpath)
 
 def SetupAmazonLibrary():
     print "Trying to add Amazon source paths..."

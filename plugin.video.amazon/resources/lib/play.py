@@ -7,6 +7,7 @@ import demjson
 import xbmcplugin
 import xbmc
 import xbmcgui
+import os
 import resources.lib.common as common
 
 pluginhandle = common.pluginhandle
@@ -64,6 +65,8 @@ def GETSTREAMS(getstream):
 
 
 def PLAYVIDEO():
+    if not os.path.isfile(common.COOKIEFILE):
+        common.mechanizeLogin()
     try:
         swfUrl, values = GETFLASHVARS(common.args.url)
     except:
@@ -71,6 +74,7 @@ def PLAYVIDEO():
         swfUrl, values = GETFLASHVARS(common.args.url)      
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
+    #getstream  = 'https://atv-ext.amazon.com/cdp/cdp/catalog/GetStreamingUrlSets'
     getstream += '?asin='+values['asin']
     getstream += '&deviceTypeID='+values['deviceTypeID']
     getstream += '&firmware=WIN%2010,0,181,14%20PlugIn'

@@ -121,8 +121,9 @@ def loadMoviedb(genrefilter=False,actorfilter=False,directorfilter=False,studiof
         genrefilter = '%'+genrefilter+'%'
         return c.execute('select distinct * from movies where isprime = (?) and genres like (?)', (isprime,genrefilter))
     elif mpaafilter:
-        mpaafilter = '%'+mpaafilter+'%'
-        return c.execute('select distinct * from movies where isprime = (?) and mpaa like (?)', (isprime,mpaafilter))
+        #mpaafilter = '%'+mpaafilter+'%'
+        #return c.execute('select distinct * from movies where isprime = (?) and mpaa like (?)', (isprime,mpaafilter))
+        return c.execute('select distinct * from movies where isprime = (?) and mpaa = (?)', (isprime,mpaafilter))
     elif actorfilter:
         actorfilter = '%'+actorfilter+'%'
         return c.execute('select distinct * from movies where isprime = (?) and actors like (?)', (isprime,actorfilter))
@@ -184,7 +185,7 @@ def addMoviesdb(isPrime=True):
             goAhead = False
         elif endIndex == 0:
             goAhead = False
-        dialog.update(page*100.0/8,'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
+        dialog.update(int(page*100.0/8),'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
 
 def ASIN_ADD(ASINLIST,isPrime=True):
     titles = appfeed.ASIN_LOOKUP(ASINLIST)['message']['body']['titles']

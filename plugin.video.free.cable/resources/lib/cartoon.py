@@ -30,7 +30,8 @@ def rootlist(db=False):
                 subcollections = collection.findAll('subcollection')
                 for subcollection in subcollections:
                         scid = subcollection['id']
-                        name = subcollection.find('name').string.replace('- Full Episodes','')
+                        name = subcollection.find('name').string.replace('- Full Episodes','').encode('utf-8')
+                        print name
                         if db==True:
                                 db_shows.append((name,'cartoon', 'episodes',scid))
                         else:

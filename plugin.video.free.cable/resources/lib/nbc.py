@@ -17,62 +17,19 @@ BASE_URL = 'http://www.nbc.com/Video/library/'
 BASE = 'http://www.nbc.com'
 
 def masterlist():
-    common.args.name = 'Show Library'
-    return shows(BASE_URL, db=True)
-
-def checkurl(url):
-    #Add base url checks
-    return url
+    return shows(BASE_URL,'Show Library', db=True)
 
 def rootlist():
-    data = common.getURL(BASE_URL)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
-    categories=menu.findAll('h3')
-    for item in categories:
-        name = item.string
-        if name == 'Previews & Specials' or name == 'All Videos' or name == 'Webisodes':
-            continue
-        common.addDirectory(name, 'nbc', 'shows', BASE_URL)
+    shows(BASE_URL,'Show Library')
 
-def showroot(url = common.args.url):
-    data = common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
-    categories=menu.findAll('h3')
-    for item in categories:
-        name = item.string    
-        if name == 'All Videos':
-            continue
-        common.addDirectory(name, 'nbc', 'showsub', url)
-
-def showsub(url = common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    if common.args.name == 'Full Episodes' or common.args.name == 'Webisodes':
-        sitemode='fullepisodes'
-    else:
-        sitemode='listvideos'
-    data = common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
-    categories=menu.findAll('h3')
-    for category in categories:
-        if common.args.name == category.string:
-            marker = categories.index(category)
-    items = menu.findAll('ul')[marker].findAll('a')
-    for item in items:
-        name = item.string
-        url = BASE + item['href']
-        common.addDirectory(name, 'nbc', sitemode, url)
-        
-def shows(url = common.args.url, db=False):
+def shows(url = common.args.url, choosenCat='Show Library', db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
     categories=menu.findAll('h3')
     for category in categories:
-        if common.args.name == category.string:
+        if choosenCat == category.string:
             marker = categories.index(category)
     items = menu.findAll('ul')[marker].findAll('a')
     db_shows = []
@@ -88,137 +45,95 @@ def shows(url = common.args.url, db=False):
             common.addDirectory(name, 'nbc', 'showroot', url)
     if db==True:
         return db_shows
-
-def shows2(url):
-    if common.args.name == 'Full Episodes':
-        sitemode='fullepisodes'
-    else:
-        sitemode='listvideos'
+    
+def showroot(url = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'shows')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    items=tree.find(attrs={'id' : 'header-video-clips'})
-    items=items.findAll('a')
-    for item in items:
-        name = item['title']
-        itemurl = item['href']
-        if BASE not in itemurl:
-            if itemurl[0] == '/':
-                itemurl = BASE + itemurl
-            else:
-                itemurl = url + itemurl
-        thumb = item.find('img')['src']
-        common.addDirectory(name, 'nbc', sitemode, itemurl, thumb)
+    sets=tree.find('div',attrs={'id' : 'scet-categories'}).findAll('div',attrs={'class' : 'scet-cat-group'})
+    for set in sets:
+        set_title = set.find('h5').string
+        if set_title == 'All Videos':
+            continue
+        elif set_title == 'Full Episodes' or set_title == 'Webisodes':
+            mode = 'showsubFullEpisode'
+        else:
+            mode = 'showsubClips'
+        for link in set.findAll('a'):
+            name = link.string.strip()
+            url = BASE+link['href'].split('?')[0]+'?view=detail'
+            common.addDirectory(name, 'nbc', mode, url)
 
-def listvideos (url = common.args.url,trypages=True):
+def showsubFullEpisode(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    if trypages == True:
-        try:
-            firstpage = tree.find(attrs={'class':'nbcu_pager_page nbcu_pager_active'})
-            pages = tree.findAll(attrs={'class':'nbcu_pager_page'})
-            pages.insert(0,firstpage)
-            for page in pages:
-                url = BASE + page['href']
-                listvideos(url,False)
-            return
-        except:
-            print 'Single Page'
-    items=tree.find(attrs={'id' : 'header-video-clips'})
-    items=items.findAll(attrs={'class':'img-wrap'})
-    for item in items:
-        url = BASE + item['href']
-        name = item['title']
-        thumb = item.find('img')['src']
+    titledata=tree.find('h3',attrs={'class' : 'scet-browse-heading'}).string.split(':')
+    showname = titledata[0].strip()
+    try:season = int(titledata[1].replace('Season','').strip())
+    except: season = 0
+    videos=tree.find('div',attrs={'class' : 'scet-browse-group detail-full-episodes-view'}).findAll('div',attrs={'class' : 'thumb-block'})
+    for video in videos:
+        #print video.prettify()
+        url = BASE + video.find('a')['href']
+        thumb = video.find('img')['src'].replace('w=131&h=74','w=446&h=248')
+        name = video.find('div',attrs={'class' : 'title'}).string.strip()
+        description = video.find('p',attrs={'class' : 'description'}).find('span').string
+        airDate = video.find('div',attrs={'class' : 'air-date'}).string.split(':')[1].strip()
+        duration = video.find('div',attrs={'class' : 'runtime'}).string.split(':',1)[1].strip()
+        mpaa = video.find('div',attrs={'class' : 'meta rating'}).string
+        if mpaa == None:
+            mpaa=''
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="nbc"'
         u += '&sitemode="play"'
         item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
         item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "TVShowTitle":common.args.name
+                                                 "Season":season,
+                                                 "MPAA":mpaa,
+                                                 #"Episode":episode,
+                                                 "Plot":description,
+                                                 "premiered":airDate,
+                                                 "Duration":duration,
+                                                 "TVShowTitle":showname
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-        
-def fullepisodes (url = common.args.url,trypages=True):
+    
+
+def showsubClips(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    try:
-        if trypages == True:
-            try:
-                firstpage = tree.find(attrs={'class':'nbcu_pager_page nbcu_pager_active'})
-                pages = tree.findAll(attrs={'class':'nbcu_pager_page'})
-                pages.insert(0,firstpage)
-                for page in pages:
-                    url = BASE + page['href']
-                    fullepisodes(url,False)
-                return
-            except:
-                print 'Single Page'
-        items=tree.find(attrs={'id' : 'header-video-clips'})
-        items=items.findAll(attrs={'class' : 'list_full_detail_horiz'})
-        for item in items:
-            link = item.find('a')
-            url = BASE + link['href']
-            name = link['title']
-            thumb = link.find('img')['src']
-            description = item.find(attrs={'class' : 'list_full_des'}).contents[0].contents[0]
-            airDate = item.find(attrs={'class' : 'list_full_det_time'}).contents[0].contents[1].strip()
-            try:
-                seasonepisode = item.find(attrs={'class' : 'list_full_det_title'})('a')[0].string.split(':')[0].split('. ')[1]
-                if 3 == len(seasonepisode):
-                    season = int(seasonepisode[:1])
-                    episode = int(seasonepisode[-2:])
-                elif 4 == len(seasonepisode):
-                    season = int(seasonepisode[:2])
-                    episode = int(seasonepisode[-2:])
-                if season <> 0 or episode <> 0:
-                    displayname = '%sx%s - %s' % (str(season),str(episode),name)
-            except:
-                print 'season/episode metadata failed'
-                season = 0
-                episode = 0
-                displayname = name
-    
-            u = sys.argv[0]
-            u += '?url="'+urllib.quote_plus(url)+'"'
-            u += '&mode="nbc"'
-            u += '&sitemode="play"'
-            item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     "Season":season,
-                                                     "Episode":episode,
-                                                     "Plot":description,
-                                                     "premiered":airDate,
-                                                     #"Duration":duration,
-                                                     "TVShowTitle":common.args.name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-    except:
-        items=tree.findAll(attrs={'class' : 'thumb-block '})
-        for item in items:
-            url = BASE + item.find('a')['href']
-            name = item.find(attrs={'class' : 'title'}).string
-            thumb = item.find('img')['src']
-            u = sys.argv[0]
-            u += '?url="'+urllib.quote_plus(url)+'"'
-            u += '&mode="nbc"'
-            u += '&sitemode="play"'
-            item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name
-                                                     #"premiered":airDate,
-                                                     #"Duration":duration,
-                                                     #"TVShowTitle":common.args.name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)            
+    videos=tree.find('div',attrs={'class' : 'scet-browse-group detail-short-clips-view '}).findAll('div',attrs={'class' : 'thumb-block '})
+    for video in videos:
+        #print video.prettify()
+        url = BASE + video.find('a')['href']
+        thumb = video.find('img')['src'].replace('w=131&h=74','w=446&h=248')
+        name = video.find('div',attrs={'class' : 'title'}).string.strip()
+        showname = video.find('div',attrs={'class' : 'type'}).string.strip()
+        description = video.find('p',attrs={'class' : 'description'}).find('span').string
+        duration = video.find('div',attrs={'class' : 'runtime'}).string.split(':',1)[1].strip()
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="nbc"'
+        u += '&sitemode="play"'
+        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
+        item.setInfo( type="Video", infoLabels={ "Title":name,
+                                                 #"Season":season,
+                                                 #"Episode":episode,
+                                                 "Plot":description,
+                                                 #"premiered":airDate,
+                                                 "Duration":duration,
+                                                 "TVShowTitle":showname
+                                                 })
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
 #Get SMIL url and play video
 def play():
-    vid=re.compile('/(\d+)/').findall(common.args.url)[0]
+    vid=common.args.url.strip('/').split('/')[-1]
     smilurl = getsmil(vid)
     rtmpurl = getrtmp()
     swfUrl = getswfUrl()

@@ -7,95 +7,112 @@ import sys
 import os
 import re
 
+import demjson
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
-from pyamf import amf3
+from pyamf.remoting.client import RemotingService
 import resources.lib._common as common
 
 pluginhandle = int (sys.argv[1])
-
-BASE_URL = 'http://www.oxygen.com/full-episodes/'
+BASE_URL = 'http://feed.theplatform.com/f/AqNl-B/7rsRlZPHdpCt/categories?&form=json&fields=order,title,fullTitle,label&fileFields=duration,url,width,height&sort=order'
 BASE = 'http://www.oxygen.com'
-
-#SHOW_FEED = 'http://www.oxygen.com/full-episodes/media/full-episodes/oxygenShows.xml'
-SHOW_FEED = 'http://www.oxygen.com/full-episodes/xml/showConfig.xml'
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    data = common.getURL(SHOW_FEED)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
-    items=tree.findAll('show')
-    for item in items:
-        name = item.find('showname').string.replace('%26','&')
-        url = item.find('rssurl').string
-        thumb = item.find('thumbnail').string
-        common.addDirectory(name, 'oxygen', 'show', url, thumb=thumb)
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    data = common.getURL(BASE_URL)
+    shows = demjson.decode(data)['entries']
+    db_shows = []
+    for item in shows:
+        print item
+        url = item['plcategory$fullTitle']
+        name = item['title']
+        if db==True:
+            db_shows.append((name,'oxygen','showroot',url))
+        else:
+            common.addDirectory(name, 'oxygen', 'showroot', url)
+    if db==True:
+        return db_shows
 
-def show(feed=common.args.url):
-    data = common.getURL(feed)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
-    items=tree.findAll('item')
-    for item in items:
-        name = item.find('title').string#.split('-')[1].strip()
-        description = item.find('description').string
-        videoid = item.find('link').string
-        thumb = item.find('media:thumbnail').string
-        #seasonepisode = item.find('title').string.replace('Season','').split('Episode')
-        #season = int(seasonepisode[0])
-        #episode = int(seasonepisode[1])
-        duration = item.find('media:content')['duration']
-        airDate = item.find('pubdate').string.split(' ')[0]
-        #if season <> 0 or episode <> 0:
-        #    displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        #else:
-        displayname = name
+def showroot():
+    common.addDirectory('Full Episodes', 'oxygen', 'episodes', common.args.url)
+    common.addDirectory('All Videos', 'oxygen', 'allvideos', common.args.url)
+
+def allvideos():
+    process('http://feed.theplatform.com/f/AqNl-B/iyAsU_4kQn1I')
+    
+def episodes():
+    process('http://feed.theplatform.com/f/AqNl-B/iLe_F3t4pzHB')
+
+def process(urlBase, fullname = common.args.url):
+    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+    #url = 'http://feed.theplatform.com/f/AqNl-B/iyAsU_4kQn1I'
+    url = urlBase
+    url += '?form=json'
+    url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'#,:fullEpisode
+    url += '&fileFields=duration,url,width,height'
+    url += '&count=true'
+    url += '&byCategories='+urllib.quote_plus(fullname)
+    #url += '&byCustomValue={fullEpisode}{false}'
+    data = common.getURL(url)
+    episodes = demjson.decode(data)['entries']
+    for episode in episodes:
+        print episode
+        name = episode['title']
+        description = episode['description']
+        thumb= episode['plmedia$defaultThumbnailUrl']
+        duration=str(int(episode['media$content'][0]['plfile$duration']))
+        url=episode['media$content'][0]['plfile$url']
         u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(videoid)+'"'
+        u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="oxygen"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
+        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
         item.setInfo( type="Video", infoLabels={ "Title":name,
                                                  #"Season":season,
                                                  #"Episode":episode,
                                                  "Plot":description,
-                                                 "premiered":airDate,
+                                                 #"premiered":airDate,
                                                  "Duration":duration,
                                                  "TVShowTitle":common.args.name
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
-def play(videoid=common.args.url):
-    config = 'http://videoservices.nbcuni.com/player/config?configId=27006&version=2&clear=true'
-    data = common.getURL(config)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
-    appname = tree.find('akamaiappname').string
-    rtmphost = tree.find('akamaihostname').string
-    netstore = tree.find('akamainetstorage').string
-    vurl = 'http://videoservices.nbcuni.com/player/clip'
-    vurl+= '?geoIP=US&domainReq=www%2Eoxygen%2Ecom&clipId='+videoid
-    data = common.getURL(vurl)
-    context = amf3.Context()
-    decoded = amf3.Decoder(data, context).readElement()
-    clipurl = netstore+decoded['clipurl']
-    swfUrl = 'http://video.nbcuni.com/outlet/extensions/inext_video_player/video_player_extension.swf'
-    data = common.getURL(clipurl)
+#Get SMIL url and play video
+def play():
+    smilurl=common.args.url
+    swfUrl = 'http://features.oxygen.com/videos/pdk/swf/flvPlayer.swf'
+    data = common.getURL(smilurl)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    items=tree.findAll('video')
-    hbitrate = -1
-    sbitrate = int(common.settings['quality']) * 1024
-    for item in items:
-        bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            playpath = item['src']
-            if '.mp4' in playpath:
-                playpath = 'mp4:'+playpath
-            else:
-                playpath = playpath.replace('.flv','')
-            finalurl = 'rtmpe://'+rtmphost+'/'+appname+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    print tree.prettify()
+    rtmpbase = tree.find('meta')
+    if rtmpbase:
+        rtmpbase = rtmpbase['base']
+        items=tree.find('switch').findAll('video')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality']) * 1024
+        for item in items:
+            bitrate = int(item['system-bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                playpath = item['src']
+                if '.mp4' in playpath:
+                    playpath = 'mp4:'+playpath
+                else:
+                    playpath = playpath.replace('.flv','')
+                finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    else:
+        items=tree.find('switch').findAll('video')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality']) * 1024
+        for item in items:
+            bitrate = int(item['system-bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                finalurl = item['src']
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-    

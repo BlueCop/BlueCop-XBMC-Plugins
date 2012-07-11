@@ -156,13 +156,22 @@ def getAUTH(aifp,window,tokentype,vid,filename):
 def GET_RTMP(vid):
         #url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
         #http://www.tnt.tv/video/content/services/cvpXML.do?titleId=828441
-        url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId='+vid
-        html=common.getURL(url)
-        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        print tree.prettify()
+        try:
+            url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId='+vid
+            html=common.getURL(url)
+            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            print tree.prettify()
+            files = tree.findAll('file')
+            if not files:
+                raise
+        except:
+            url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId=&id='+vid
+            html=common.getURL(url)
+            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            print tree.prettify()
+            files = tree.findAll('file')
         sbitrate = int(common.settings['quality'])
         hbitrate = -1
-        files = tree.findAll('file')
         for filenames in files:
                 try: bitrate = int(filenames['bitrate'])
                 except: bitrate = 1

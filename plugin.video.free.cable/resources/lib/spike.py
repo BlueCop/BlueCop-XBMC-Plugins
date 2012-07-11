@@ -90,30 +90,32 @@ def fullepisodes(url=common.args.url):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.find(attrs={'class' : 'clips'}).findAll('div',recursive=False)
     for episode in episodes:
-        uri = 'mgid:arc:episode:spike.com:'+episode['id'].replace('episode_','')
+        print episode.prettify()
+        #uri = 'mgid:arc:episode:spike.com:'+episode['id'].replace('episode_','')
+        uri = episode.find('a')['href']
         name = episode.find('img')['title']
         thumb = episode.find('img')['src'].split('?')[0]
         description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
         airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
-        try:
-            seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
-            if 3 == len(seasonepisode):
-                season = int(seasonepisode[:1])
-                episode = int(seasonepisode[-2:])
-            elif 4 == len(seasonepisode):
-                season = int(seasonepisode[:2])
-                episode = int(seasonepisode[-2:])
-            if season <> 0 or episode <> 0:
-                displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        except:
-            print 'no season data'
-            displayname = name
-            season = 0
-            episode = 0
+        #try:
+        seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
+        if 3 == len(seasonepisode):
+            season = int(seasonepisode[:1])
+            episode = int(seasonepisode[-2:])
+        elif 4 == len(seasonepisode):
+            season = int(seasonepisode[:2])
+            episode = int(seasonepisode[-2:])
+        if season <> 0 or episode <> 0:
+            displayname = '%sx%s - %s' % (str(season),str(episode),name)
+        #except:
+        #    print 'no season data'
+        #    displayname = name
+        #    season = 0
+        #    episode = 0
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(uri)+'"'
         u += '&mode="spike"'
-        u += '&sitemode="play"'
+        u += '&sitemode="playepisode"'
         item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
         item.setInfo( type="Video", infoLabels={ "Title":name,
                                                  "Season":season,
@@ -125,13 +127,22 @@ def fullepisodes(url=common.args.url):
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+    
+def playepisode(url = common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #print tree.prettify()
+    uri = tree.find('object',attrs={'id':'video_player'})['resource'].split('/')[-1]
+    play(uri)
 
-def play(uri = common.args.url):
-    configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:arc:episode:spike.com:/context1/config.xml'
-    configurl += '?uri=%s&type=network&ref=www.spike.com&geo=US&group=entertainment&site=spike.com' % uri
+def play(uri = common.args.url,referer='http://www.tvland.com'):
+    mtvn = 'http://media.mtvnservices.com/'+uri 
+    swfUrl = common.getRedirect(mtvn,referer=referer)
+    configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0])
     configxml = common.getURL(configurl)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&')
+    #print tree.prettify()
+    mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&').replace('{ref}','www.spike.com')
     mrssxml = common.getURL(mrssurl)
     tree=BeautifulStoneSoup(mrssxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     segmenturls = tree.findAll('media:content')
@@ -139,6 +150,7 @@ def play(uri = common.args.url):
     for segment in segmenturls:
         surl = segment['url']
         videos = common.getURL(surl)
+        #print videos
         videos = BeautifulStoneSoup(videos, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('rendition')
         hbitrate = -1
         sbitrate = int(common.settings['quality'])
@@ -155,8 +167,9 @@ def play(uri = common.args.url):
                     playpath = 'mp4:'+playpath.replace('.mp4','')
                 else:
                     playpath = playpath.replace('.flv','')
-                swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.6.0.swf"
-                rtmpurl = rtmp + app +" playpath=" + playpath + " swfurl=" + swfUrl + " swfvfy=true"
+                #swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.12.1.swf"
+                rtmpurl = rtmp+app+playpath +" playpath=" + playpath + " swfurl=" + swfUrl + " pageUrl=" + referer + " swfvfy=true"
+                print rtmpurl
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)
@@ -166,6 +179,6 @@ def playvideo(url = common.args.url):
     data=common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     uri = tree.find('meta',attrs={'property':'og:video'})['content'].split('://')[1].split('/')[1]
-    play(uri)
+    play(uri,referer=url)
 
 

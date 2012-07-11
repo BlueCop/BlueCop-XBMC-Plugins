@@ -16,7 +16,7 @@ pluginhandle = int (sys.argv[1])
 __plugin__ = "FREE CABLE"
 __authors__ = "BlueCop"
 __credits__ = ""
-__version__ = "0.0.6"
+__version__ = "0.3.1"
 
 
 print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"
@@ -29,8 +29,10 @@ def modes( ):
             #common.addDirectory(' All Shows','Masterlist')
         for name , network in common.site_dict.iteritems():
             station_icon = os.path.join(common.imagepath,network+'.png')
-            print station_icon
-            common.addDirectory(name, network, 'rootlist',thumb=station_icon)
+            if common.addoncompat.get_setting(network) == 'false':
+                continue
+            else:
+                common.addDirectory(name, network, 'rootlist',thumb=station_icon)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )
     elif common.args.mode is 'Masterlist':

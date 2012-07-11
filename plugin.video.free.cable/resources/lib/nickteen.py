@@ -28,7 +28,6 @@ def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    print tree.prettify()
     shows=tree.find('select',attrs={'id':'dropdown-by-show'}).findAll('option')
     for show in shows:
         name = show.string
@@ -64,10 +63,11 @@ def episodes():
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
-def play(uri = common.args.url):
-    configurl = 'http://media.mtvnservices.com/pmt/e1/players/mgid:cms:episode:teennick.com:/context1/config.xml'
-    configurl += '?uri=%s&type=network&ref=www.teennick.com&geo=US&group=kids&' % uri
-    configxml = common.getURL(configurl)
+def playuri(uri = common.args.url,referer='http://www.teennick.com'):
+    mtvn = 'http://media.mtvnservices.com/'+uri 
+    swfUrl = common.getRedirect(mtvn,referer=referer)
+    configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0]).strip()
+    configxml = common.getURL(configurl,referer=mtvn)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&').replace('{type}','network')
     mrssxml = common.getURL(mrssurl)
@@ -85,8 +85,7 @@ def play(uri = common.args.url):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 rtmpdata = video.find('src').string
-                swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.12.1.swf"
-                rtmpurl = rtmpdata + " swfurl=" + swfUrl + " swfvfy=true"
+                rtmpurl = rtmpdata + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)
@@ -94,5 +93,8 @@ def play(uri = common.args.url):
 
 def playvideo(url = common.args.url):
     data=common.getURL(url)
-    uri=re.compile('uri:"(.+?)",').findall(data)[0]
-    play(uri)
+    try:
+        uri = re.compile('<meta content="http://media.nick.com/(.+?)" itemprop="embedURL"/>').findall(data)[0]
+    except:
+        uri=re.compile("NICK.unlock.uri = '(.+?)';").findall(data)[0]
+    playuri(uri,referer=url)

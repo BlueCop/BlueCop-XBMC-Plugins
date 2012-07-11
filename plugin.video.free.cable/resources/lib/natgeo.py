@@ -7,6 +7,8 @@ import httplib
 import sys
 import os
 import re
+import random
+import string
 
 from BeautifulSoup import BeautifulStoneSoup
 from BeautifulSoup import BeautifulSoup
@@ -27,7 +29,7 @@ def rootlist(db=False):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.findAll('div',attrs={'class':'natgeov-cat-group'})
     for show in shows:
-        name = show.find('h3').contents[0].strip()
+        name = show.find('h3').contents[0].split('(')[0].strip()
         url = BASE + show.find('a')['href']
         common.addDirectory(name, 'natgeo', 'episodes', url)
 
@@ -58,7 +60,10 @@ def episodes():
                                                  })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-        
+
+def randomstring(N):
+    return ''.join(random.choice(string.ascii_uppercase) for x in range(N))
+
 def play(url = common.args.url):
     videoname = url.split('/')[-2]
     smil = 'http://video.nationalgeographic.com/video/player/data/xml/%s.smil' % videoname
@@ -66,6 +71,6 @@ def play(url = common.args.url):
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     base = tree.find('meta',attrs={'name':'httpBase'})['content']
     filepath = tree.find('video')['src']
-    final = base + filepath
+    final = base + filepath+'?v=1.2.17&fp=MAC%2011,1,102,62'+'&r='+randomstring(5)+'&g='+randomstring(12)
     item = xbmcgui.ListItem(path=final)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)

@@ -111,7 +111,8 @@ def play(uri=common.args.url):
     data = common.getURL(uri)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     uri = tree.find('link',attrs={'rel':'video_src'})['href'].split('/')[-1]
-    configurl = 'http://www.vh1.com/player/embed/AS3/configuration.jhtml?uri='+uri
+    configurl  = 'http://www.vh1.com/player/embed/AS3/configuration.jhtml?uri='+uri
+    configurl += '&type=network&ref=www.vh1.com&geo=US&&device=Other&ver=prime'
     data = common.getURL(configurl)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     feed = tree.find('player').find('feed')

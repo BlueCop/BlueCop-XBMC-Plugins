@@ -11,7 +11,11 @@ import demjson
 import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
-BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoint_pushes/852/feed.json'
+#BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoint_pushes/852/feed.json'
+#BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/554/custom_feed.json'
+#BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/533/custom_feed.json'
+
+BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/536/custom_feed.json'
 BASE = 'http://tv.gsn.com'
 
 def masterlist():

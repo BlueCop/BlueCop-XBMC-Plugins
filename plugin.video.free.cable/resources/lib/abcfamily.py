@@ -127,7 +127,7 @@ def play(url=common.args.url):
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     hosts = tree.findAll('host')
     for host in hosts:
-        if 'L3' in host['name']:
+        if 'Akamai' in host['name']:
             rtmp = 'rtmpe://%s/%s' % (host['url'], host['app'])
     filenames = tree.findAll('video')
     hbitrate = -1

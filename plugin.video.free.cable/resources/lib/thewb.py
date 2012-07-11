@@ -48,13 +48,19 @@ def fullepisodes(url=common.args.url):
         name = links[0].find('img')['title'].replace(showname,'').strip().encode('utf-8')
         thumb=links[0].find('img')['src']
         plot=episode.findAll('p')[1].string
-        seasonEpisode = episode.find('span',attrs={'class':'type'}).string
-        seasonSplit = seasonEpisode.split(': Ep. ')
-        season = int(seasonSplit[0].replace('Season','').strip())
-        episodeSplit = seasonSplit[1].split(' ')
-        episode = int(episodeSplit[0])
-        duration = episodeSplit[1].replace('(','').replace(')','').strip()
-        displayname = '%sx%s - %s' % (str(season),str(episode),name)
+        try:
+            seasonEpisode = episode.find('span',attrs={'class':'type'}).string
+            seasonSplit = seasonEpisode.split(': Ep. ')
+            season = int(seasonSplit[0].replace('Season','').strip())
+            episodeSplit = seasonSplit[1].split(' ')
+            episode = int(episodeSplit[0])
+            duration = episodeSplit[1].replace('(','').replace(')','').strip()
+            displayname = '%sx%s - %s' % (str(season),str(episode),name)
+        except:
+            season = 0
+            episode = 0
+            duration = ''
+            displayname = name
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="thewb"'

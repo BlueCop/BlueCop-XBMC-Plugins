@@ -32,21 +32,32 @@ def rootlist(db=False):
         url = item['plcategory$fullTitle']
         name = item['title']
         if db==True:
-            db_shows.append((name,'syfy','episodes',url))
+            db_shows.append((name,'syfy','showroot',url))
         else:
-            common.addDirectory(name, 'syfy', 'episodes', url)
+            common.addDirectory(name, 'syfy', 'showroot', url)
     if db==True:
         return db_shows
 
-def episodes(fullname = common.args.url):
+def showroot():
+    common.addDirectory('Full Episodes', 'syfy', 'episodes', common.args.url)
+    common.addDirectory('All Videos', 'syfy', 'allvideos', common.args.url)
+
+def allvideos():
+    process('http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6?')
+    
+def episodes():
+    process('http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6?&byCustomValue={fullEpisode}{true}')
+
+def process(urlBase, fullname = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    url = 'http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6/'
-    url += '?form=json'
-    url += '&fields=guid,title,description,categories,content,:fullEpisode,defaultThumbnailUrl'
+    #url = 'http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6/'
+    url = urlBase
+    url += '&form=json'
+    url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'
     url += '&fileFields=duration,url,width,height'
     url += '&count=true'
     url += '&byCategories='+urllib.quote_plus(fullname)
-    url += '&byCustomValue={fullEpisode}{true}'
+    #url += '&byCustomValue={fullEpisode}{true}'
     data = common.getURL(url)
     episodes = demjson.decode(data)['entries']
     for episode in episodes:

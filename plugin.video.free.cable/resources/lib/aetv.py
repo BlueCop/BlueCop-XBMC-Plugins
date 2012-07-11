@@ -7,6 +7,8 @@ import sys
 import os
 import re
 import httplib
+import base64
+import random
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
@@ -23,43 +25,148 @@ def masterlist():
 
 def rootlist(db=False):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASEURL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'av-list1','class':'all-videos_unordered'}).findAll('a')
     db_shows = []
+    blackListShows = ["Kirstie Alley's Big Life"]
+    subListShows = ['Cold Case Files',
+                    'Confessions of a Matchmaker',
+                    'CSI Miami',
+                    'Inked',
+                    'Random 1',
+                    'SWAT - Dallas, Detroit, KC',
+                    'Sons of Hollywood',
+                    'Jacked: Auto Theft Task Force',
+                    'The Two Coreys']
+    newListShows = ['Airline','Extreme Paranormal','Flight 93','King of Cars']
+    for name in newListShows:
+        url = 'http://www.aetv.com/videos/classic/?bcpid=65056640001&bclid=1747275989'
+        if db==True:
+            db_shows.append((name, 'aetv', 'show_cats_filter', url))
+        else:
+            common.addDirectory(name, 'aetv', 'show_cats_filter', url)
     for item in menu:
         name = item.string.encode('utf-8')
         url = item['href']
         if 'http://' not in item['href']:
             url = BASE + url
-        if db==True:
-            db_shows.append((name,'aetv','episodes',url))
+        if 'aetv.com/longmire/' in url:
+            url+='video/'
+        if name in subListShows:
+            mode = 'show_cats_filter'
+        elif name in blackListShows:
+            continue
         else:
-            common.addDirectory(name, 'aetv', 'episodes', url)
-    if db==True:
-        db_shows.append(('Breakout Kings','aetv','episodes','http://www.aetv.com/breakout-kings/video/'))
-    else:
-        common.addDirectory('Breakout Kings', 'aetv', 'episodes', 'http://www.aetv.com/breakout-kings/video/')
+            mode = 'show_cats'
+            
+        if db==True:
+            db_shows.append((name, 'aetv', mode, url))
+        else:
+            common.addDirectory(name, 'aetv', mode, url)
     if db==True:
         return db_shows
 
-def episodes(url=common.args.url):
-    data = common.getURL(url)
-    playerID = int(re.compile('bcpid=(.+?)&bclid').findall(data)[0])
-    configurl = BASE + re.compile('baseURL=(.+?)&baseDIR').findall(data)[0] + '/categories.xml'
-    id_data = common.getURL(configurl)
-    categories=BeautifulStoneSoup(id_data, convertEntities=BeautifulStoneSoup.XML_ENTITIES).findAll('category')
-    for category in categories:
-        try: name = category.find('title').contents[1].strip()
-        except: name = category.find('title').contents[0].strip()
-        refids = category.findAll('refid')
-        showstring=''
-        for refid in refids:
-            showstring += refid.string+'<strings>'
-        common.addDirectory(name, 'aetv', 'showsub', str(playerID)+'<split>'+showstring)
+def show_cats_filter():
+    if common.args.name == 'SWAT - Dallas, Detroit, KC':
+        common.args.name = 'S.W.A.T.'
+    elif common.args.name == 'CSI Miami':
+        common.args.name = 'CSI: Miami'
+    show_cats(filter=True)
 
-def showsub():
-    urldata=common.args.url.split('<split>')
+def show_cats(url=common.args.url,filter=False):
+    data = common.getURL(url)
+    try:
+        if 'bcpid=' in url:
+            playerID = url.split('bcpid=')[1].split('&')[0]
+        else:
+            playerID = int(re.compile('bcpid=(.+?)&bclid').findall(data)[0])
+        configurl = BASE + re.compile('baseURL=(.+?)&baseDIR').findall(data)[0] + '/categories.xml'
+        id_data = common.getURL(configurl)
+        categories=BeautifulStoneSoup(id_data, convertEntities=BeautifulStoneSoup.XML_ENTITIES).findAll('category')
+        for category in categories:
+            try: name = category.find('title').contents[1].strip()
+            except: name = category.find('title').contents[0].strip()
+            refids = category.findAll('refid')
+            showstring=''
+            for refid in refids:
+                showstring += refid.string+'<strings>'
+            if filter and common.args.name == name:
+                showsub(str(playerID)+'<split>'+showstring)
+                break
+            elif not filter:
+                common.addDirectory(name, 'aetv', 'showsub', str(playerID)+'<split>'+showstring)
+    except:
+        homedir = re.compile('<div id="video_home_dir" style="display : none">(.+?)</div>').findall(data)[0]
+        series_url  = 'http://www.aetv.com/minisite/videoajx.jsp'
+        series_url += '?homedir='+homedir
+        full_series_url = series_url+'&pfilter=FULL%20EPISODES'
+        clips_series_url = series_url+'&pfilter=CLIPS'
+        common.addDirectory('Full Episodes', 'aetv', 'showsubThePlatform', full_series_url)
+        common.addDirectory('Clips', 'aetv', 'showsubThePlatform', clips_series_url)
+
+def showsubThePlatform():
+    data = common.getURL(common.args.url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos=tree.findAll('div',attrs={'class':'video_playlist-item'})
+    for video in videos:
+        infoLabels={}
+        video_details = video.find('div',attrs={'class':'video_details'})
+        infoLabels['Title'] = video_details.find('p',attrs={'class':'video_details-title'}).string.encode('utf-8')
+        thumb = video.find('img')['src']
+        url = video.find('a')['onclick'].split(",'")[1].split("'")[0]
+        infoLabels['Plot'] = video_details.find('p',attrs={'class':'video_details-synopsis'}).string.encode('utf-8')
+        displayname=infoLabels['Title']
+        for p in video_details.findAll('p',attrs={'class':None}):
+            if p.find('span'):
+                infoLabels['Duration'] = p.find('span').string
+            else:
+                if 'Premiere Date: ' in p.string:
+                    infoLabels['premiered'] = p.string.replace('Premiere Date: ','')
+                elif 'Episode: ' in p.string:
+                    try:
+                        infoLabels['Episode'] = int(p.string.replace('Episode: ',''))
+                        displayname = str(infoLabels['Episode'])+'. '+infoLabels['Title']
+                    except:
+                        infoLabels['Episode'] = 0
+                        displayname = infoLabels['Title']
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="aetv"'
+        u += '&sitemode="playThePlatform"'
+        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
+        item.setInfo( type="Video", infoLabels=infoLabels)
+        item.setProperty('IsPlayable', 'true')
+        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+
+def playThePlatform():
+    data = common.getURL(common.args.url)
+    mrss = urllib.unquote_plus(base64.b64decode(re.compile('{ mrss: "(.+?)",').findall(data)[0]))
+    smil_url = re.compile('<media:text>smilUrl=(.+?)</media:text>').findall(mrss)[0]
+    signUrl  = 'http://www.history.com/components/get-signed-signature'
+    signUrl += '?url='+smil_url.split('/s/')[1].split('?')[0]
+    signUrl += '&cache='+str(random.randint(100, 999))
+    sig = str(common.getURL(signUrl))
+    smil_url += '&sig='+sig
+    data = common.getURL(smil_url)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    rtmp_base = tree.find('meta')['base']
+    filenames = tree.findAll('video')
+    hbitrate = -1
+    sbitrate = int(common.settings['quality'])
+    for filename in filenames:
+        bitrate = int(filename['system-bitrate'])/1024
+        if bitrate > hbitrate and bitrate <= sbitrate:
+            hbitrate = bitrate
+            playpath = filename['src']
+    swfUrl = 'http://www.aetv.com/js/minisite4g/VideoPlayer.swf'
+    rtmpurl = rtmp_base+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    item = xbmcgui.ListItem(path=rtmpurl)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+
+def showsub(url=common.args.url):
+    urldata=url.split('<split>')
     playerID = int(urldata[0])
     showstrings = urldata[1].split('<strings>')
     for showstring in showstrings:
@@ -100,7 +207,7 @@ def addvideos(playerID, showstring):
             item.setProperty('IsPlayable', 'true')
             xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
     except:
-        print 'Vidoe loading failure'
+        print 'Video loading failure'
 
 def choosertmp(renditions):
     hbitrate = -1

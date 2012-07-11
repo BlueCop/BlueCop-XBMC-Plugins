@@ -7,10 +7,20 @@ import httplib
 import sys
 import os
 import re
+import binascii
+import time
 
 from BeautifulSoup import BeautifulSoup
+from BeautifulSoup import BeautifulStoneSoup
 import resources.lib._common as common
 from pyamf import remoting
+import demjson
+
+import hmac
+try:
+    import hashlib.sha1 as sha1
+except:
+    import sha as sha1
 
 pluginhandle=int(sys.argv[1])
 
@@ -42,6 +52,10 @@ def episodes(url=common.args.url):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'fullEpisodesList'}).findAll(attrs={'data-video-id':True})
     for item in menu:
+        videoObject = demjson.decode(item.find('script',attrs={'class':'videoObject','type':'application/json'}).string)
+        thumb = videoObject['videoStillURL']
+        url = videoObject['videoURL']
+        
         videoid = str(item['data-video-id']).encode('utf-8')
         name = item.find(attrs={'class':'episodeName'}).find('a').string
         duration = item.find(attrs={'class':'episodeName'}).contents[2].string.replace('(','').replace(')','')
@@ -51,9 +65,9 @@ def episodes(url=common.args.url):
         description = item.find(attrs={'class':'description'}).string
         airDate = item.find(attrs={'class':'airDate'}).string
         displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        thumb = ''
+        
         u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(videoid)+'"'
+        u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="fox"'
         u += '&sitemode="play"'
         item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
@@ -68,8 +82,35 @@ def episodes(url=common.args.url):
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
+def FOXsig(smil_url):
+    relative_path = smil_url.split('theplatform.com/s/')[1].split('?')[0]
+    sha1_key = "#100FoxLock"
+    secret_name = "FoxKey"
+    final_sig = '00' #00 or 10 for parameter signing
+    final_sig += str(hex(int(time.time()+60))).split('x')[1]
+    hmacdata = final_sig+relative_path
+    final_sig += binascii.hexlify(hmac.new(sha1_key, hmacdata, sha1).digest())
+    final_sig += binascii.hexlify(secret_name)
+    return final_sig
 
 def play():
+    smil_url = common.args.url
+    smil_url += '&format=SMIL&Tracking=true&Embedded=true'
+    smil_url += 'sig='+FOXsig(smil_url)
+    data = common.getURL(smil_url)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
+    filenames = tree.findAll('video')
+    hbitrate = -1
+    sbitrate = int(common.settings['quality'])
+    for filename in filenames:
+        bitrate = int(filename['system-bitrate'])/1024
+        if bitrate > hbitrate and bitrate <= sbitrate:
+            hbitrate = bitrate
+            final_url = filename['src']
+    item = xbmcgui.ListItem(path=final_url)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)    
+
+def play_old():
     videoPlayer = int(common.args.url)
     const = '17e0633e86a5bc4dd47877ce3e556304d0a3e7ca'
     playerID = 644436256001

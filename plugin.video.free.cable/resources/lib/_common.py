@@ -51,20 +51,20 @@ site_dict = {'ABC': 'abc',
              'A&E':'aetv',
              'MTV Shows':'mtv',
              'VH1 Shows':'vh1',
-             #'TNT': 'tnt',
-             #'TBS': 'tbs',
+             'TNT': 'tnt',
+             'TBS': 'tbs',
              'History Channel':'history',
              'Lifetime':'lifetime',
              'Bravo':'bravo',
              'Oxygen':'oxygen',
              'Food Network':'food',
              'TV Land':'tvland',
-             #'Comedy Central':'comedy',
-             #'Adult Swim':'adultswim',
-             #'Cartoon Network':'cartoon',
-             #'FOX': 'fox',
-             #'FX': 'fx',
-             #'The Hub':'hub',
+             'Comedy Central':'comedy',
+             'Adult Swim':'adultswim',
+             'Cartoon Network':'cartoon',
+             'FOX': 'fox',
+             'FX': 'fx',
+             'The Hub':'hub',
              'AMC':'amc',
              'Biography':'bio',
              'The WB':'thewb',
@@ -74,7 +74,7 @@ site_dict = {'ABC': 'abc',
              'Nick Teen':'nickteen',
              'National Geographic':'natgeo',
              'Nat Geo Wild':'natgeowild',
-             #'HGTV':'hgtv'
+             'HGTV':'hgtv'
              }
 
 addoncompat.get_revision()
@@ -302,7 +302,7 @@ def cacheURL( url, values = None, proxy = False, max_age=(30*60),cache_dir=cache
     return data    
 
 
-def getURL( url , values = None ,proxy = False):
+def getURL( url , values = None ,proxy = False, referer=False):
     try:
         if proxy == True:
             us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
@@ -317,15 +317,44 @@ def getURL( url , values = None ,proxy = False):
         else:
             data = urllib.urlencode(values)
             req = urllib2.Request(url,data)
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+        if referer:
+            req.add_header('Referer', referer)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1')
         response = urllib2.urlopen(req)
         link=response.read()
         response.close()
-    except urllib2.URLError, e:
-        print 'Error reason: ', e
-        return False
+    except urllib2.HTTPError, error:
+        print 'Error reason: ', error
+        return error.read()
     else:
         return link
+    
+def getRedirect( url , values = None ,proxy = False, referer=False):
+    try:
+        if proxy == True:
+            us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
+            print 'Using proxy: ' + us_proxy
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            urllib2.install_opener(opener)
+
+        print 'FREE CABLE --> common :: getHTML :: url = '+url
+        if values == None:
+            req = urllib2.Request(url)
+        else:
+            data = urllib.urlencode(values)
+            req = urllib2.Request(url,data)
+        if referer:
+            req.add_header('Referer', referer)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1')
+        response = urllib2.urlopen(req)
+        finalurl=response.geturl()
+        response.close()
+    except urllib2.HTTPError, error:
+        print 'Error reason: ', error
+        return error.read()
+    else:
+        return finalurl
         
     
 

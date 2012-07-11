@@ -25,7 +25,7 @@ def rootlist(db=False):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     items=tree.find(attrs={'class':'playlists'}).findAll('a')
     for item in items:
-        name = item.string.split('-')[0].strip()
+        name = item.string.split('-')[0].replace('Full Episodes','').strip()
         url = BASE+item['href'].replace('channel-video/json/','feeds/channel-video/').replace(',00.json','_RA,00.json')
         common.addDirectory(name, 'food', 'show', url)
         

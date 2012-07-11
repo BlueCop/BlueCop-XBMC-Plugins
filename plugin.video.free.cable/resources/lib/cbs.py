@@ -58,10 +58,20 @@ def shows(catid = common.args.url):
             shows = item.findAll(attrs={'id' : 'show_block_interior'})
             for show in shows:
                 name = show.find('img')['alt'].encode('utf-8')
-                thumbnail = BASE_URL + show.find('img')['src']
+                thumbnail = BASE + show.find('img')['src']
                 url = show.find('a')['href']
                 if 'MacGyver' in name:
                     url += '?vs=Full%20Episodes'
+                if 'daytime/lets_make_a_deal' in url:
+                    url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
+                elif 'cbs_evening_news/video/' in url:
+                    url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
+                elif 'shows/dogs_in_the_city/' in url:
+                    url+='video/'
+                elif '/shows/3/' in url:
+                    url+='video/'
+                elif '/shows/nyc_22/' in url:
+                    name = 'NYC 22'
                 common.addDirectory(name, 'cbs', 'showcats', url, thumb=thumbnail)
             break
     if catid == 'classics':
@@ -79,7 +89,9 @@ def stShows(url = common.args.url):
         name = show['class'].replace('-',' ').title()
         thumb = stbase+show.find('img')['src']
         url = stbase+show.find('a')['href']
-        common.addDirectory(name+' (startrek.com)', 'cbs', 'stshowcats', url, thumb=thumb)
+        if 'Star Trek' not in name:
+            name = 'Star Trek '+name
+        common.addDirectory(name, 'cbs', 'stshowcats', url, thumb=thumb)
  
 def stshowcats(url = common.args.url):
     stbase = 'http://www.startrek.com'

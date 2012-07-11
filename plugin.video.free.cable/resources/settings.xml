@@ -1,7 +1,53 @@
 <settings>
-   <setting id="quality" type="enum" lvalues="30002|30003|30004|30005|30006|30007|30008|30009|30010|30011|30012|30013" label="30001" default="11"/>
-   <setting id="enablesubtitles" type="bool" label="30014" default="false"/>
-   <setting id="us_proxy_enable" type="bool" label="30039" default="false"/>
-   <setting id="us_proxy" type="text" label="30040" default="208.100.40.34"/>
-   <setting id="us_proxy_port" type="text" label="30041" default="80"/>
+	<category label="30015">
+		<setting type="sep" />
+		<setting id="quality" type="enum" lvalues="30002|30003|30004|30005|30006|30007|30008|30009|30010|30011|30012|30013" label="30001" default="11"/>
+		<setting id="enablesubtitles" type="bool" label="30014" default="false"/>
+		<setting type="sep" />
+		<setting id="us_proxy_enable" type="bool" label="30039" default="false"/>
+		<setting id="us_proxy" type="text" label="30040" default=""/>
+		<setting id="us_proxy_port" type="text" label="30041" default=""/>
+		<setting type="sep" />
+	</category>
+
+	<category label="30016">
+		<setting type="sep" />
+		<setting id="aetv" type="bool" label="A&amp;E" default="true"/>
+		<setting id="abc" type="bool" label="ABC" default="true"/>
+		<setting id="abcfamily" type="bool" label="ABC Family" default="true"/>
+		<setting id="adultswim" type="bool" label="Adult Swim" default="false"/>
+		<setting id="amc" type="bool" label="AMC" default="true"/>
+		<setting id="bio" type="bool" label="Biography" default="true"/>
+		<setting id="bravo" type="bool" label="Bravo" default="true"/>
+		<setting id="cartoon" type="bool" label="Cartoon Network" default="false"/>
+		<setting id="cbs" type="bool" label="CBS" default="true"/>
+		<setting id="comedy" type="bool" label="Comedy Central" default="false"/>
+		<setting id="thecw" type="bool" label="The CW" default="true"/>
+		<setting id="food" type="bool" label="Food Network" default="true"/>
+		<setting id="fox" type="bool" label="FOX" default="false"/>
+		<setting id="fx" type="bool" label="FX" default="false"/>
+		<setting id="gsn" type="bool" label="Game Show Network" default="false"/>
+		<setting id="hgtv" type="bool" label="HGTV" default="false"/>
+		<setting id="history" type="bool" label="History Channel" default="true"/>
+		<setting id="hub" type="bool" label="The Hub" default="false"/>
+		<setting id="lifetime" type="bool" label="Lifetime" default="true"/>
+		<setting id="mtv" type="bool" label="MTV Shows" default="true"/>
+		<setting id="natgeo" type="bool" label="National Geographic" default="true"/>
+		<setting id="natgeowild" type="bool" label="Nat Geo Wild" default="true"/>
+		<setting id="nbc" type="bool" label="NBC" default="true"/>
+		<setting id="nickteen" type="bool" label="Nick Teen" default="false"/>
+		<setting id="nicktoons" type="bool" label="Nick Toons" default="false"/>
+		<setting id="nick" type="bool" label="Nickelodeon" default="true"/>
+		<setting id="oxygen" type="bool" label="Oxygen" default="true"/>
+		<setting id="spike" type="bool" label="Spike" default="false"/>
+		<setting id="syfy" type="bool" label="SyFy" default="true"/>
+		<setting id="tbs" type="bool" label="TBS" default="false"/>
+		<setting id="tnt" type="bool" label="TNT" default="false"/>
+		<setting id="tvland" type="bool" label="TV Land" default="false"/>
+		<setting id="usa" type="bool" label="USA" default="true"/>
+		<setting id="vh1" type="bool" label="VH1 Shows" default="false"/>
+		<setting id="thewb" type="bool" label="The WB" default="true"/>
+		<setting type="sep" />
+	</category>
+   
 </settings>

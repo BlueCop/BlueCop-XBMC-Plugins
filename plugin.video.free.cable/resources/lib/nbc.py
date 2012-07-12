@@ -6,6 +6,7 @@ import urllib2
 import sys
 import os
 import re
+import time
 
 from BeautifulSoup import BeautifulSoup
 from pyamf.remoting.client import RemotingService
@@ -23,7 +24,6 @@ def rootlist():
     shows(BASE_URL,'Show Library')
 
 def shows(url = common.args.url, choosenCat='Show Library', db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'class' : 'scet-gallery-nav'})
@@ -42,10 +42,12 @@ def shows(url = common.args.url, choosenCat='Show Library', db=False):
         if db==True:
             db_shows.append((name,'nbc','showroot',url))
         else:
-            common.addDirectory(name, 'nbc', 'showroot', url)
+            common.addShow(name, 'nbc', 'showroot', url)
     if db==True:
         return db_shows
-    
+    else:
+        common.setView('tvshows')
+
 def showroot(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'shows')
     data = common.getURL(url)
@@ -63,6 +65,7 @@ def showroot(url = common.args.url):
             name = link.string.strip()
             url = BASE+link['href'].split('?')[0]+'?view=detail'
             common.addDirectory(name, 'nbc', mode, url)
+    common.setView('seasons')
 
 def showsubFullEpisode(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
@@ -79,7 +82,10 @@ def showsubFullEpisode(url = common.args.url):
         thumb = video.find('img')['src'].replace('w=131&h=74','w=446&h=248')
         name = video.find('div',attrs={'class' : 'title'}).string.strip()
         description = video.find('p',attrs={'class' : 'description'}).find('span').string
-        airDate = video.find('div',attrs={'class' : 'air-date'}).string.split(':')[1].strip()
+        airDateData = video.find('div',attrs={'class' : 'air-date'}).string.split(':')[1].strip()
+        airDate = time.strftime('%Y-%d-%m', time.strptime(airDateData, '%m/%d/%y') )
+        year = int(time.strftime('%Y', time.strptime(airDateData, '%m/%d/%y') ))
+        date = time.strftime('%d.%m.%Y', time.strptime(airDateData, '%m/%d/%y') )
         duration = video.find('div',attrs={'class' : 'runtime'}).string.split(':',1)[1].strip()
         mpaa = video.find('div',attrs={'class' : 'meta rating'}).string
         if mpaa == None:
@@ -88,19 +94,19 @@ def showsubFullEpisode(url = common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="nbc"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "MPAA":mpaa,
-                                                 #"Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
-    
+        infoLabels={ "Title":name,
+                     "Season":season,
+                     "MPAA":mpaa,
+                     #"Episode":episode,
+                     "Plot":description,
+                     "date'":date,
+                     "aired":airDate,
+                     "year":year,
+                     "Duration":duration,
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def showsubClips(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
@@ -119,17 +125,16 @@ def showsubClips(url = common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="nbc"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":description,
-                                                 #"premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":description,
+                     #"premiered":airDate,
+                     "Duration":duration,
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 #Get SMIL url and play video
 def play():

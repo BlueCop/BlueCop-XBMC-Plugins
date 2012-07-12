@@ -35,10 +35,12 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'amc','showcats',url))
         else:
-            common.addDirectory(name, 'amc', 'showcats', url)
+            common.addShow(name, 'amc', 'showcats', url)
     if db==True:
         return db_shows
-
+    else:
+        common.setView('tvshows')
+        
 def showcats():
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -56,6 +58,7 @@ def showcats():
                     url += '&rb-video-browser-show='+show['value']
                     url += '&rb-video-browser-content_type='+type['value']
                     common.addDirectory(name, 'amc', 'videos', url)
+    common.setView('seasons')
 
 def videos():
     url = 'http://www.amctv.com/index.php'
@@ -80,15 +83,15 @@ def videos():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="amc"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":plot,
-                                                 #"TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":plot,
+                     #"TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
+
 
 def play(url=common.args.url):
    swfUrl = 'http://admin.brightcove.com/viewer/us20120228.1146/federatedVideoUI/BrightcovePlayer.swf'

@@ -24,7 +24,7 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    #xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASEURL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -46,7 +46,7 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name, 'aetv', 'show_cats_filter', url))
         else:
-            common.addDirectory(name, 'aetv', 'show_cats_filter', url)
+            common.addShow(name, 'aetv', 'show_cats_filter', url)
     for item in menu:
         name = item.string.encode('utf-8')
         url = item['href']
@@ -64,9 +64,11 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name, 'aetv', mode, url))
         else:
-            common.addDirectory(name, 'aetv', mode, url)
+            common.addShow(name, 'aetv', mode, url)
     if db==True:
         return db_shows
+    else:
+        common.setView('tvshows')
 
 def show_cats_filter():
     if common.args.name == 'SWAT - Dallas, Detroit, KC':
@@ -97,6 +99,7 @@ def show_cats(url=common.args.url,filter=False):
                 break
             elif not filter:
                 common.addDirectory(name, 'aetv', 'showsub', str(playerID)+'<split>'+showstring)
+            common.setView('seasons')
     except:
         homedir = re.compile('<div id="video_home_dir" style="display : none">(.+?)</div>').findall(data)[0]
         series_url  = 'http://www.aetv.com/minisite/videoajx.jsp'
@@ -105,6 +108,7 @@ def show_cats(url=common.args.url,filter=False):
         clips_series_url = series_url+'&pfilter=CLIPS'
         common.addDirectory('Full Episodes', 'aetv', 'showsubThePlatform', full_series_url)
         common.addDirectory('Clips', 'aetv', 'showsubThePlatform', clips_series_url)
+        common.setView('seasons')
 
 def showsubThePlatform():
     data = common.getURL(common.args.url)
@@ -135,10 +139,8 @@ def showsubThePlatform():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="aetv"'
         u += '&sitemode="playThePlatform"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels=infoLabels)
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def playThePlatform():
     data = common.getURL(common.args.url)
@@ -195,17 +197,16 @@ def addvideos(playerID, showstring):
                 url = choosertmp(item['renditions'])
             else:
                 url = processrtmp(item['FLVFullLengthURL'])
-            item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     "Season":season,
-                                                     "Episode":episode,
-                                                     "Plot":description,
-                                                     "premiered":airDate,
-                                                     #"Duration":duration,
-                                                     "TVShowTitle":showtitle
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
+            infoLabels={ "Title":name,
+                         "Season":season,
+                         "Episode":episode,
+                         "Plot":description,
+                         "premiered":airDate,
+                         #"Duration":duration,
+                         "TVShowTitle":showtitle
+                         }
+            common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
+        common.setView('episodes')
     except:
         print 'Video loading failure'
 

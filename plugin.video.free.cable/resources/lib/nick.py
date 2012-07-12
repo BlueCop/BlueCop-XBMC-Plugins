@@ -22,17 +22,23 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.findAll('div',attrs={'class':'filter-content-more'})[3].findAll('li')
+    db_shows = []
     for show in shows:
         name = show.find('span',attrs={'class':'filter-name'}).string
-        url = show['data-value']
-        common.addDirectory(name, 'nick', 'episodes', url)        
+        url = show['data-value']        
+        if db==True:
+            db_shows.append((name, 'nick', 'episodes', url))
+        else:
+            common.addShow(name, 'nick', 'episodes', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
 
 def episodes():
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     url = 'http://www.nick.com/ajax/videos/full-episode-videos'
     url += '?sort=date+desc&start=0&viewType=videoContentList&rows=25&artist=&show='+common.args.url+'&f_type=&f_contenttype='
     data = common.getURL(url)
@@ -49,16 +55,15 @@ def episodes():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="nick"'
         u += '&sitemode="playvideo"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Duration":duration,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":str(plot),
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Duration":duration,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":str(plot),
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def playuri(uri = common.args.url,referer='http://www.nick.com'):
     mtvn = 'http://media.nick.com/'+uri 

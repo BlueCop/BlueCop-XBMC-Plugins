@@ -14,13 +14,10 @@ getCollectionByContentId = 'http://www.cartoonnetwork.com/cntv/mvpd/services/get
 cvpXML = 'http://www.cartoonnetwork.com/cntv/mvpd/services/cvpXML.do?id='
 tokenurl = 'http://www.cartoonnetwork.com/cntv/mvpd/processors/services/token.do'
 
-
-
 def masterlist():
         return rootlist(db=True)
                 
 def rootlist(db=False):
-        xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         html=common.getURL(getCollectionsFull)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -35,10 +32,12 @@ def rootlist(db=False):
                         if db==True:
                                 db_shows.append((name,'cartoon', 'episodes',scid))
                         else:
-                                common.addDirectory(name, 'cartoon', 'episodes', scid)
+                                common.addShow(name, 'cartoon', 'episodes', scid)
         if db==True:
                 return db_shows
-
+        else:
+            common.setView('tvshows')
+            
 def episodes():
         cid = common.args.url
         showname = common.args.name
@@ -75,29 +74,36 @@ def episodes():
                 if len(segments) == 0:
                     url = episodeId
                     mode = 'play'
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
+                    u = sys.argv[0]
+                    u += '?url="'+urllib.quote_plus(url)+'"'
+                    u += '&mode="cartoon"'
+                    u += '&sitemode="'+mode+'"'
+                    infoLabels={ "Title":name,
+                                 "Plot":plot,
+                                 "Season":seasonNum,
+                                 "Episode":episodeNum,
+                                 "Duration":duration,
+                                 "TVShowTitle":showname
+                                 }
+                    common.addVideo(u,name,thumbnail,infoLabels=infoLabels)     
                 else:
                     url = ''
                     for segment in segments:
                             url += segment['id']+'<segment>'
                     mode = 'playepisode' #PLAYEPISODE
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
-
-def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',duration=''):
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="cartoon"'
-        u += '&sitemode="'+mode+'"'
-        item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Plot":plot,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+                    u = sys.argv[0]
+                    u += '?url="'+urllib.quote_plus(url)+'"'
+                    u += '&mode="cartoon"'
+                    u += '&sitemode="'+mode+'"'
+                    infoLabels={ "Title":name,
+                                 "Plot":plot,
+                                 "Season":seasonNum,
+                                 "Episode":episodeNum,
+                                 "Duration":duration,
+                                 "TVShowTitle":showname
+                                 }
+                    common.addVideo(u,name,thumbnail,infoLabels=infoLabels)          
+        common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
         authUrl = 'http://www.tbs.com/processors/cvp/token.jsp'

@@ -21,29 +21,29 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASE_URL)
     shows = demjson.decode(data)['entries']
     db_shows = []
     dupes = []
     for item in shows:
-        print item
         name = item['pl1$show'][0]
         if name not in dupes:
             if db==True:
                 db_shows.append((name,'bravo','episodes',name))
             else:
-                common.addDirectory(name, 'bravo', 'episodes', name)
+                common.addShow(name, 'bravo', 'episodes', name)
             dupes.append(name)
     if db==True:
         return db_shows
-
+    else:
+        common.setView('tvshows')
+        
 def episodes():
     process('http://feed.theplatform.com/f/PHSl-B/hOMhFl_Iu3_G?')
+    common.setView('episodes')
 
 def process(urlBase, fullname = common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     url = urlBase
     url += '&form=json'
     #url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'#,:fullEpisode
@@ -64,17 +64,15 @@ def process(urlBase, fullname = common.args.url):
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="bravo"'
             u += '&sitemode="play"'
-            item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     #"Season":season,
-                                                     #"Episode":episode,
-                                                     "Plot":description,
-                                                     #"premiered":airDate,
-                                                     "Duration":duration,
-                                                     "TVShowTitle":common.args.name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+            infoLabels={ "Title":name,
+                         #"Season":season,
+                         #"Episode":episode,
+                         "Plot":description,
+                         #"premiered":airDate,
+                         "Duration":duration,
+                         "TVShowTitle":common.args.name
+                         }
+            common.addVideo(u,name,thumb,infoLabels=infoLabels)
 
 #Get SMIL url and play video
 def play():

@@ -32,6 +32,7 @@ def rootlist(): # No mode - Root Listing
                 if name == 'feature - not show in nav':
                         continue
                 common.addDirectory(name.title(), 'tbs', 'shows', cid)
+        common.setView('seasons')
 
 def shows(cid = common.args.url,db=False):
         name = common.args.name
@@ -52,9 +53,11 @@ def shows(cid = common.args.url,db=False):
                 if db==True:
                         db_shows.append((name,'tbs', mode,cid))
                 else:
-                        common.addDirectory(name, 'tbs', mode, cid)
+                        common.addShow(name, 'tbs', mode, cid)
         if db==True:
-                return db_shows 
+                return db_shows
+        else:
+                common.setView('tvshows')
 
 def show(cid = common.args.url): 
         xbmcplugin.setContent(pluginhandle, 'shows')
@@ -71,10 +74,10 @@ def show(cid = common.args.url):
                 name = collection.find('name').string
                 mode = episode
                 common.addDirectory(name, 'tbs', 'episode', cid)
+        common.setView('seasons')
         
 def episode(cid = common.args.url):
         showname = common.args.name
-        xbmcplugin.setContent(pluginhandle, 'episodes')
         url = getCollectionById + '&id=' + cid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -95,30 +98,23 @@ def episode(cid = common.args.url):
                 if len(segments) == 0:
                     url = episodeId
                     mode = 'play'
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
                 else:
                     url = ''
                     for segment in segments:
                             url += segment['id']+'<segment>'
                     mode = 'playepisode' #PLAYEPISODE
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname)
-
-                    
-def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',duration=''):
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="tbs"'
-        u += '&sitemode="'+mode+'"'
-        item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Plot":plot,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+                u = sys.argv[0]
+                u += '?url="'+urllib.quote_plus(url)+'"'
+                u += '&mode="tbs"'
+                u += '&sitemode="'+mode+'"'
+                infoLabels={ "Title":name,
+                             "Plot":plot,
+                             "Season":seasonNum,
+                             "Episode":episodeNum,
+                             "TVShowTitle":showname
+                             }
+                common.addVideo(u,name,thumbnail,infoLabels=infoLabels)
+        common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
         authUrl = 'http://www.tbs.com/processors/cvp/token.jsp'

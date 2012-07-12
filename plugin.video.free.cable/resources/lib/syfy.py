@@ -34,22 +34,26 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'syfy','showroot',url))
         else:
-            common.addDirectory(name, 'syfy', 'showroot', url)
+            common.addShow(name, 'syfy', 'showroot', url)
     if db==True:
         return db_shows
-
+    else:
+        common.setView('tvshows')
+        
 def showroot():
     common.addDirectory('Full Episodes', 'syfy', 'episodes', common.args.url)
     common.addDirectory('All Videos', 'syfy', 'allvideos', common.args.url)
+    common.setView('seasons')
 
 def allvideos():
     process('http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6?')
+    common.setView('episodes')
     
 def episodes():
     process('http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6?&byCustomValue={fullEpisode}{true}')
-
+    common.setView('episodes')
+    
 def process(urlBase, fullname = common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     #url = 'http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6/'
     url = urlBase
     url += '&form=json'
@@ -70,17 +74,15 @@ def process(urlBase, fullname = common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="syfy"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":description,
-                                                 #"premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":description,
+                     #"premiered":airDate,
+                     "Duration":duration,
+                     "TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
 
 #Get SMIL url and play video
 def play():

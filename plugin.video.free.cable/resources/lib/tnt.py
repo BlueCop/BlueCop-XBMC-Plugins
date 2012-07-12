@@ -28,10 +28,10 @@ def rootlist():
                 if name == 'Featured':
                         continue
                 common.addDirectory(name, 'tnt', 'shows', cid)
+        common.setView('seasons')
 
 def shows(cid = common.args.url,db=False):
         name = common.args.name
-        xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         if name == 'Full Episodes' or name == 'Web Exclusives':
             mode = 'episode' #EPISODE() Mode
@@ -47,17 +47,18 @@ def shows(cid = common.args.url,db=False):
                         subcollections = collection.findAll('subcollection')
                         for subcollection in subcollections:
                                 scid = subcollection['id']
-                                name = subcollection.find('name').string.replace('- Full Episodes','')
+                                name = subcollection.find('name').string.split('-')[0].replace('Full Episodes','').strip()
                                 if db==True:
                                         db_shows.append((name,'tnt',mode,scid))
                                 else:
-                                        common.addDirectory(name, 'tnt', mode, scid)
+                                        common.addShow(name, 'tnt', mode, scid)
         if db==True:
-                return db_shows  
+                return db_shows
+        else:
+                common.setView('tvshows') 
 
 def show():
         scid = common.args.url
-        xbmcplugin.setContent(pluginhandle, 'shows')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
         html=common.getURL(BASE_URL)
@@ -72,11 +73,11 @@ def show():
                                         sscid = subsubcollection['id']
                                         name = subsubcollection.find('name').string
                                         common.addDirectory(name, 'tnt', 'episode', sscid)
+        common.setView('seasons')
         
 def episode():
         cid = common.args.url
         showname = common.args.name
-        xbmcplugin.setContent(pluginhandle, 'episodes')
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         #url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
         #url = 'http://www.tnt.tv/content/services/getCollectionByContentId.do?site=true&offset=0&sort=&limit=200&id='+cid
@@ -108,30 +109,23 @@ def episode():
                 if len(segments) == 0:
                     url = episodeId
                     mode = 'play'
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
                 else:
                     url = ''
                     for segment in segments:
                             url += segment['id']+'<segment>'
                     mode = 'playepisode' #PLAYEPISODE
-                    addLink(name,url,mode,thumbnail,plot,seasonNum,episodeNum,showname,duration)
-
-def addLink(name,url,mode,iconimage='',plot='',season=0,episode=0,showname='',duration=''):
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="tnt"'
-        u += '&sitemode="'+mode+'"'
-        item=xbmcgui.ListItem(name, iconImage=iconimage, thumbnailImage=iconimage)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Plot":plot,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
-
+                u = sys.argv[0]
+                u += '?url="'+urllib.quote_plus(url)+'"'
+                u += '&mode="tnt"'
+                u += '&sitemode="'+mode+'"'
+                infoLabels={ "Title":name,
+                             "Plot":plot,
+                             "Season":seasonNum,
+                             "Episode":episodeNum,
+                             "TVShowTitle":showname
+                             }
+                common.addVideo(u,name,thumbnail,infoLabels=infoLabels)
+        common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
         authUrl = 'http://www.tnt.tv/processors/services/token.do'
@@ -150,7 +144,6 @@ def getAUTH(aifp,window,tokentype,vid,filename):
         response = urllib2.urlopen(request)
         link = response.read(200000)
         response.close()
-        print link
         return re.compile('<token>(.+?)</token>').findall(link)[0]
 
 def GET_RTMP(vid):

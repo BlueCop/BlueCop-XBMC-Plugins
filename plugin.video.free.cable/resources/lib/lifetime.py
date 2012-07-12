@@ -30,9 +30,9 @@ def rootlist():
         name = item.find('a',attrs={'href':'#'}).string
         common.addDirectory(name, 'lifetime', 'shows', name )
     common.addDirectory('Full Movies', 'lifetime', 'movies', '')
+    common.setView('seasons')
 
 def shows(url=common.args.url,db=False):
-    #xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(showlist)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu = tree.find('div',attrs={'id':'accordion','class':'view-content'}).findAll('h3')
@@ -52,15 +52,21 @@ def shows(url=common.args.url,db=False):
         name = showdata[0].a.string
         showid = showdata[1].string
         if db == False:
-            common.addDirectory(name, 'lifetime', 'showroot', showid)
+            if 'Movies' in common.args.name:
+                common.addDirectory(name, 'lifetime', 'showroot', showid)
+            else:
+                common.addShow(name, 'lifetime', 'showroot', showid)
         elif db == True:
-            dbshows.append(name, 'lifetime', 'showroot', showid)
+            dbshows.append((name, 'lifetime', 'showroot', showid))
     if db == True:
         return dbshows
+    else:
+        common.setView('tvshows')
         
 def showroot(showid=common.args.url):
     common.addDirectory('Episodes', 'lifetime', 'episodes', showid )
     common.addDirectory('Clips', 'lifetime', 'clips', showid )
+    common.setView('seasons')
 
 def episodes(showid=common.args.url):
     url = 'http://www.mylifetime.com/d6/views/ajax'
@@ -77,7 +83,8 @@ def episodes(showid=common.args.url):
     url += '&view_base_path=null'
     url += '&view_dom_id=video-homepage-video-list-block-1'
     url += '&pager_element=0'
-    return processEpisodes(url)
+    processEpisodes(url)
+    common.setView('episodes')
         
 def movies(showid=common.args.url):
     url = 'http://www.mylifetime.com/d6/views/ajax'
@@ -93,7 +100,8 @@ def movies(showid=common.args.url):
     url += '&view_base_path=null'
     url += '&view_dom_id=video-homepage-video-list-block-1'
     url += '&pager_element=0'
-    return processEpisodes(url)
+    processEpisodes(url)
+    common.setView('episodes')
 
 def clips(showid=common.args.url):
     url = 'http://www.mylifetime.com/d6/views/ajax'
@@ -109,7 +117,8 @@ def clips(showid=common.args.url):
     url += '&view_base_path=null'
     url += '&view_dom_id=video-homepage-video-list-block-1'
     url += '&pager_element=0'
-    return processEpisodes(url)
+    processEpisodes(url)
+    common.setView('episodes')
 
 def processEpisodes(url):
     data = common.getURL(url)
@@ -134,17 +143,9 @@ def processEpisodes(url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="lifetime"'
         u += '&sitemode="playepisode"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 #"Plot":description,
-                                                 #"premiered":airDate,
-                                                 #"Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                    "TVShowTitle":common.args.name}
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
     return True
     
 def playepisode(url=common.args.url):

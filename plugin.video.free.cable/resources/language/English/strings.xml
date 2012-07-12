@@ -18,6 +18,22 @@
 	
 	<string id="30015">General</string>
 	<string id="30016">Stations</string>
+	<string id="30017">Views</string>
+
+	<string id="30023">Thumbnail</string>
+	<string id="30024">Poster Wrap</string>
+	<string id="30025">List</string>
+	<string id="30026">Media Info 2</string>
+	<string id="30027">Media Info</string>
+	<string id="30028">Fanart</string>
+	<string id="30034">Big List</string>
+	
+	<string id="30029">Root View</string>
+	<string id="30030">Show View</string>
+	<string id="30031">Category View</string>
+	<string id="30032">Episode View</string>
+	
+	<string id="30035">Enable Views</string>
 
 	<string id="30041">U.S. Proxy port</string>
 	<string id="30040">U.S. Proxy IP</string>

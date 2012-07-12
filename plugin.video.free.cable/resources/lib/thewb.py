@@ -25,18 +25,24 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.find('div',attrs={'id':'show-directory'}).findAll('li')
+    db_shows = []
     for show in shows:
         link=show.find('a')
         name = link.contents[0].strip()
         url = BASE+link['href']
-        common.addDirectory(name, 'thewb', 'fullepisodes', url)
-        
+        if db==True:
+            db_shows.append((name, 'thewb', 'fullepisodes', url))
+        else:
+            common.addShow(name, 'thewb', 'fullepisodes', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
+
 def fullepisodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.find('div',attrs={'id':'full_ep_car'}).findAll('div',attrs={'id':True,'class':True})
@@ -65,16 +71,15 @@ def fullepisodes(url=common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="thewb"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Duration":duration,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":plot,
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Duration":duration,
+                     "Season":season,
+                     "Episode":episode,
+                     "Plot":plot,
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def play(url=common.args.url):
     jsonurl = 'http://metaframe.digitalsmiths.tv/v2/WBtv/assets/'+url.split('/')[-1]+'/partner/146?format=json'

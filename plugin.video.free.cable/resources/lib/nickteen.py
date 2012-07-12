@@ -64,7 +64,7 @@ def episodes():
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
 def playuri(uri = common.args.url,referer='http://www.teennick.com'):
-    mtvn = 'http://media.mtvnservices.com/'+uri 
+    mtvn = 'http://media.nick.com/'+uri 
     swfUrl = common.getRedirect(mtvn,referer=referer)
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0]).strip()
     configxml = common.getURL(configurl,referer=mtvn)

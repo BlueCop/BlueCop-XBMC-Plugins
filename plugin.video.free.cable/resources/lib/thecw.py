@@ -21,7 +21,6 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'videoshowslist'}).findAll('li',recursive=False)
@@ -35,9 +34,11 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((showname,'thecw','show',url))
         else:
-            common.addDirectory(showname, 'thecw', 'show', url, thumb)
+            common.addShow(showname, 'thecw', 'show', url, thumb)
     if db==True:
         return db_shows
+    else:
+        common.setView('tvshows')
 
 def show(url=common.args.url):
     data = common.getURL(url)
@@ -47,10 +48,9 @@ def show(url=common.args.url):
         itemurl = url +'<videotab>'+ item['id'].replace('videotab_','')
         name = item.find('a').contents[0].title()
         common.addDirectory(name, 'thecw', 'episodes', itemurl)
-
+    common.setView('seasons')
 
 def episodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     urldata = url.split('<videotab>')
     tabid = int(urldata[1])
     url = urldata[0]
@@ -95,17 +95,16 @@ def episodes(url=common.args.url):
                 u += '?url="'+urllib.quote_plus(url)+'"'
                 u += '&mode="thecw"'
                 u += '&sitemode="play"'
-                item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-                item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                         "Season":season,
-                                                         "Episode":episode,
-                                                         "Plot":description,
-                                                         "premiered":airdate,
-                                                         "Duration":duration,
-                                                         #"TVShowTitle":common.args.name
-                                                         })
-                item.setProperty('IsPlayable', 'true')
-                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+                infoLabels={ "Title":name,
+                             "Season":season,
+                             "Episode":episode,
+                             "Plot":description,
+                             "premiered":airdate,
+                             "Duration":duration,
+                             #"TVShowTitle":common.args.name
+                             }
+                common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def play():
     swfurl = 'http://pdl.warnerbros.com/cwtv/digital-smiths/production_player/vsplayer.swf'

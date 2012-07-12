@@ -24,11 +24,19 @@ def rootlist(db=False):
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     items=tree.find(attrs={'class':'playlists'}).findAll('a')
+    db_shows = []
     for item in items:
         name = item.string.split('-')[0].replace('Full Episodes','').strip()
         url = BASE+item['href'].replace('channel-video/json/','feeds/channel-video/').replace(',00.json','_RA,00.json')
-        common.addDirectory(name, 'food', 'show', url)
-        
+        if db==True:
+            db_shows.append((name, 'food', 'show', url))
+        else:
+            common.addShow(name, 'food', 'show', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
+
 def show(url=common.args.url):
     data = common.getURL(url)
     videos = demjson.decode(data.split(' = ')[1])[0]['videos']
@@ -49,14 +57,13 @@ def show(url=common.args.url):
         url = 'rtmp://flash.scrippsnetworks.com:1935/ondemand?ovpfv=1.1'
         url+= ' swfUrl=http://common.scrippsnetworks.com/common/snap/snap-3.0.3.swf playpath='+playpath
         displayname = name
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Season":season,
+                     #"Episode":episode,
+                     "Plot":description,
+                     "premiered":airDate,
+                     "Duration":duration,
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')

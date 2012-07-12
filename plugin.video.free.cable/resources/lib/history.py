@@ -28,7 +28,7 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'history','showcats',url))
         else:
-            common.addDirectory(name, 'history', 'showcats', url)
+            common.addShow(name, 'history', 'showcats', url)
     data = common.getURL(H2URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     showpages = tree.findAll(attrs={'class':'watch more'})
@@ -39,9 +39,11 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'history','showcats',url))
         else:
-            common.addDirectory(name, 'history', 'showcats', url)
+            common.addShow(name, 'history', 'showcats', url)
     if db==True:
         return db_shows    
+    else:
+        common.setView('tvshows')
 
 def showcats(url=common.args.url):
     data = common.getURL(url)
@@ -56,6 +58,7 @@ def showcats(url=common.args.url):
                 url = BASE + url
             name = link.string
             common.addDirectory(name, 'history', 'videos', url)
+        common.setView('seasons')
     except:
         videos()
 
@@ -78,17 +81,16 @@ def videos(url=common.args.url):
         u += '?url="'+urllib.quote_plus(smil)+'"'
         u += '&mode="history"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(title, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":plot,
-                                                 #"premiered":airdate,
-                                                 "Duration":duration,
-                                                 #"TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":title,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":plot,
+                     #"premiered":airdate,
+                     "Duration":duration,
+                     #"TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,title,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def play():
     sig = common.getURL('http://www.history.com/components/get-signed-signature?url='+re.compile('/s/(.+)\?').findall(common.args.url)[0]+'&cache=889')

@@ -24,25 +24,28 @@ print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"
 def modes( ):
     if sys.argv[2]=='':
         #Plug-in Root List
-        if common.sqliteAvailable == True:
-            pass
-            #common.addDirectory(' All Shows','Masterlist')
-        for name , network in common.site_dict.iteritems():
+        common.addDirectory(' Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon)
+        common.addDirectory(' All Shows','Masterlist','NoUrl',thumb=common.all_icon)
+        for network, name  in common.site_dict.iteritems():
             station_icon = os.path.join(common.imagepath,network+'.png')
-            if common.addoncompat.get_setting(network) == 'false':
-                continue
-            else:
-                common.addDirectory(name, network, 'rootlist',thumb=station_icon)
+            if common.addoncompat.get_setting(network) == 'true':
+                common.addDirectory(name, network, 'rootlist',thumb=station_icon,fanart=common.plugin_fanart)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         xbmcplugin.endOfDirectory( pluginhandle )
-    elif common.args.mode is 'Masterlist':
-        xbmcplugin.setContent(int(sys.argv[1]), 'TVShows')
+        common.setView()
+    elif common.args.mode == 'Masterlist':
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-        shows = common.load_db()
-        for tvdb_id, name, mode, sitemode, url, description, poster, fanart, aired, genre, rating in shows:
-            common.addDirectory(name.encode('utf8'), mode, sitemode, url, poster, fanart, description, aired, genre)
+        common.load_showlist()
+        common.setView('tvshows')
         xbmcplugin.endOfDirectory(pluginhandle)
-    elif common.args.mode in common.site_dict.values():
+    elif common.args.mode == 'Favorlist':   
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        common.load_showlist(favored=True)
+        common.setView('tvshows')
+        xbmcplugin.endOfDirectory(pluginhandle)
+    elif common.args.mode == 'common':
+        exec 'common.%s()' % common.args.sitemode
+    elif common.args.mode in common.site_dict.keys():
         exec 'import resources.lib.%s as sitemodule' % common.args.mode
         exec 'sitemodule.%s()' % common.args.sitemode
         if not common.args.sitemode.startswith('play'):

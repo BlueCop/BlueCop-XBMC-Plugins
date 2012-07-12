@@ -34,7 +34,21 @@ def masterlist():
             name = show.find('img')['alt'].encode('utf-8')
             thumb = BASE_URL + show.find('img')['src']
             url = BASE + show.find('a')['href']
+            if 'MacGyver' in name:
+                url += '?vs=Full%20Episodes'
+            if 'daytime/lets_make_a_deal' in url:
+                url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
+            elif 'cbs_evening_news/video/' in url:
+                url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
+            elif 'shows/dogs_in_the_city/' in url:
+                url+='video/'
+            elif '/shows/3/' in url:
+                url+='video/'
+            elif '/shows/nyc_22/' in url:
+                name = 'NYC 22'
             db_shows.append((name,'cbs','showcats',url))
+    for show in stShows('http://startrek.com/videos',db=True):
+        db_shows.append(show)
     return db_shows
 
 def rootlist():
@@ -46,6 +60,7 @@ def rootlist():
         catid = item['onclick'].replace("showDaypart('",'').replace("');",'')
         name = catid.title()
         common.addDirectory(name, 'cbs', 'shows', catid)
+    common.setView('seasons')
 
 def shows(catid = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
@@ -72,26 +87,33 @@ def shows(catid = common.args.url):
                     url+='video/'
                 elif '/shows/nyc_22/' in url:
                     name = 'NYC 22'
-                common.addDirectory(name, 'cbs', 'showcats', url, thumb=thumbnail)
+                common.addShow(name, 'cbs', 'showcats', url)#, thumb=thumbnail)
             break
     if catid == 'classics':
         stShows('http://startrek.com/videos')
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
+    common.setView('tvshows')
 
-def stShows(url = common.args.url):
+def stShows(url = common.args.url,db=False):
     stbase = 'http://www.startrek.com'
     data = common.getURL(url)
     remove = re.compile('<!.*?">')
     data = re.sub(remove, '', data)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    stshows=tree.find('div',attrs={'id' : 'channels'}).findAll('li', attrs={'class' : True})       
+    stshows=tree.find('div',attrs={'id' : 'channels'}).findAll('li', attrs={'class' : True})
+    st_shows = []      
     for show in stshows:
         name = show['class'].replace('-',' ').title()
         thumb = stbase+show.find('img')['src']
         url = stbase+show.find('a')['href']
         if 'Star Trek' not in name:
             name = 'Star Trek '+name
-        common.addDirectory(name, 'cbs', 'stshowcats', url, thumb=thumb)
+        if db:
+            st_shows.append((name,'cbs','stshowcats',url))
+        else:
+            common.addShow(name, 'cbs', 'stshowcats', url)#, thumb=thumb)
+    if db:
+        return st_shows
  
 def stshowcats(url = common.args.url):
     stbase = 'http://www.startrek.com'
@@ -103,6 +125,7 @@ def stshowcats(url = common.args.url):
     for cat in stcats:
         name = cat.find('h4').contents[1].strip()
         common.addDirectory(name, 'cbs', 'stvideos', url+'<name>'+name)
+    common.setView('seasons')
 
 def stvideos(url = common.args.url):
     stbase = 'http://www.startrek.com'
@@ -121,6 +144,7 @@ def stvideos(url = common.args.url):
             if 'Full Episodes' in argname:
                 titleUrl += '/page_full/1'
             stprocessvideos(titleUrl)
+    common.setView('episodes')
 
 def stprocessvideos(purl):
     print "enter stprocessvideos"
@@ -155,16 +179,14 @@ def stprocessvideos(purl):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="cbs"'
         u += '&sitemode="playST"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":displayname,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 #"premiered":aired,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":showname
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":displayname,
+                     "Season":season,
+                     "Episode":episode,
+                     #"premiered":aired,
+                     "Duration":duration,
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     if len(videos) == 4:
         if '/page_full/' not in purl and '/page_other/' not in purl:
             nurl = purl+'/page_other/2'
@@ -207,7 +229,8 @@ def showcats(url = common.args.url):
             for option in options:
                 moduleid = option['id']
                 name = option.find(attrs={'class' : 'hdr'}).string
-                common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
+                common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid) 
+    common.setView('seasons')                                      
 
 def showsubcats(url = common.args.url):
     moduleid = url.split('<moduleid>')[1]
@@ -216,7 +239,7 @@ def showsubcats(url = common.args.url):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     vid_module = tree.find(attrs={'id' : moduleid})
     PAGES(vid_module)
-
+    common.setView('episodes')
     
 def videos(url = common.args.url):
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
@@ -234,9 +257,9 @@ def videos(url = common.args.url):
                 common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)                                        
     except:
         PAGES(tree)
+    common.setView('episodes')
  
 def newvideos(url = common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     itemList = demjson.decode(data)['itemList']
     for video in itemList:
@@ -257,18 +280,17 @@ def newvideos(url = common.args.url):
         u += '&mode="cbs"'
         u += '&sitemode="play"'
         displayname = '%sx%s - %s' % (seasonNum,episodeNum,title)
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                 "Plot":description,
-                                                 "Season":seasonNum,
-                                                 "Episode":episodeNum,
-                                                 "premiered":airDate,
-                                                 "Duration":duration,
-                                                 "mpaa":rating,
-                                                 "TVShowTitle":seriesTitle
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)  
+        infoLabels={ "Title":title,
+                     "Plot":description,
+                     "Season":seasonNum,
+                     "Episode":episodeNum,
+                     "premiered":airDate,
+                     "Duration":str(duration),
+                     "mpaa":rating,
+                     "TVShowTitle":seriesTitle
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')  
         
 def PAGES( tree ):
     try:
@@ -347,16 +369,15 @@ def VIDEOLINKS( data ):
         u += '?url="'+urllib.quote_plus(pid)+'"'
         u += '&mode="cbs"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":title,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "premiered":aired,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":series
-                                                 }) 
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":title,
+                     "Season":season,
+                     "Episode":episode,
+                     "premiered":aired,
+                     "Duration":duration,
+                     "TVShowTitle":series
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
         
 def getHTML( url ):

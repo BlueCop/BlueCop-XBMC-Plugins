@@ -218,6 +218,9 @@ def load_showlist(favored=False):
         infoLabels={}
         if TVDBfanart:
             fanart=TVDBfanart
+        else:
+            if args.__dict__.has_key('fanart'): fanart = args.fanart
+            else: fanart=''
         if TVDBbanner:
             thumb=TVDBbanner
         infoLabels['Title']=series_title.encode('utf-8', 'ignore')
@@ -404,7 +407,7 @@ def addVideo(u,displayname,thumb=False,fanart=False,infoLabels=False):
 def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, description='', aired='', genre=''):
     if not fanart:
         if args.__dict__.has_key('fanart'): fanart = args.fanart
-        else: fanart = ''
+        else: fanart = plugin_fanart
     if not thumb:
         if args.__dict__.has_key('poster'): thumb = args.poster
         elif args.__dict__.has_key('thumb'): thumb = args.thumb
@@ -435,6 +438,9 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         series_title,mode,sitemode,url,TVDB_ID,IMDB_ID,TVDBbanner,TVDBposter,TVDBfanart,first_aired,date,year,actors,genres,network,plot,runtime,rating,Airs_DayOfWeek,Airs_Time,status,has_full_episodes,favor,hide = showdata
         if TVDBfanart:
             fanart=TVDBfanart
+        else:
+            if args.__dict__.has_key('fanart'): fanart = args.fanart
+            else: fanart=''
         if TVDBbanner:
             thumb=TVDBbanner
         else:

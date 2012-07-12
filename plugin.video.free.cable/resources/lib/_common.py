@@ -223,11 +223,15 @@ def load_showlist(favored=False):
         infoLabels['Title']=series_title.encode('utf-8', 'ignore')
         infoLabels['TVShowTitle']=series_title.encode('utf-8', 'ignore')
         prefixplot=''
-        if status<>None:
-            prefixplot+='Status: %s' % status
-            prefixplot+='               '
+        if network<>None:
+            prefixplot+='Station: %s' % network
+            prefixplot+='\n'
         if Airs_DayOfWeek<>None and Airs_Time<>None:
             prefixplot+='Airs: %s @ %s' % (Airs_DayOfWeek,Airs_Time)
+            prefixplot+='\n'
+        if status<>None:
+            prefixplot+='Status: %s' % status
+            prefixplot+='\n'
         if prefixplot <> '':
             prefixplot+='\n'
         if plot<>None:
@@ -439,11 +443,15 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         infoLabels['Title']=series_title.encode('utf-8', 'ignore')
         infoLabels['TVShowTitle']=series_title.encode('utf-8', 'ignore')
         prefixplot=''
-        if status<>None:
-            prefixplot+='Status: %s' % status
-            prefixplot+='               '
+        if network<>None:
+            prefixplot+='Station: %s' % network
+            prefixplot+='\n'
         if Airs_DayOfWeek<>None and Airs_Time<>None:
             prefixplot+='Airs: %s @ %s' % (Airs_DayOfWeek,Airs_Time)
+            prefixplot+='\n'
+        if status<>None:
+            prefixplot+='Status: %s' % status
+            prefixplot+='\n'
         if prefixplot <> '':
             prefixplot+='\n'
         if plot<>None:

@@ -71,7 +71,7 @@ def rootlist(db=False):
         return db_shows
     else:
         for name, mode, submode, url in db_shows:
-            common.addDirectory(name,mode,submode,url)
+            common.addShow(name,mode,submode,url)
         common.setView('tvshows')
             
 def grabShowlist(tree,shows,multishow):

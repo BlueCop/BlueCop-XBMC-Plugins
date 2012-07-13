@@ -36,7 +36,7 @@
 		<setting id="food" type="bool" label="Food Network" default="true"/>
 		<setting id="fox" type="bool" label="FOX" default="false"/>
 		<setting id="fx" type="bool" label="FX" default="false"/>
-		<setting id="gsn" type="bool" label="Game Show Network" default="false"/>
+		<setting id="gsn" type="bool" label="Game Show Network" default="true"/>
 		<setting id="hgtv" type="bool" label="HGTV" default="false"/>
 		<setting id="history" type="bool" label="History Channel" default="true"/>
 		<setting id="hub" type="bool" label="The Hub" default="false"/>
@@ -45,8 +45,8 @@
 		<setting id="natgeo" type="bool" label="National Geographic" default="false"/>
 		<setting id="natgeowild" type="bool" label="Nat Geo Wild" default="false"/>
 		<setting id="nbc" type="bool" label="NBC" default="true"/>
-		<setting id="nickteen" type="bool" label="Nick Teen" default="false"/>
-		<setting id="nicktoons" type="bool" label="Nick Toons" default="false"/>
+		<setting id="nickteen" type="bool" label="Nick Teen" default="true"/>
+		<setting id="nicktoons" type="bool" label="Nick Toons" default="true"/>
 		<setting id="nick" type="bool" label="Nickelodeon" default="true"/>
 		<setting id="oxygen" type="bool" label="Oxygen" default="true"/>
 		<setting id="spike" type="bool" label="Spike" default="false"/>

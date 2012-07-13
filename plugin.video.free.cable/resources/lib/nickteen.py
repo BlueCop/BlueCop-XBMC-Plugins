@@ -25,18 +25,24 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    db_shows = []
     shows=tree.find('select',attrs={'id':'dropdown-by-show'}).findAll('option')
     for show in shows:
         name = show.string
         if name <> 'All Shows':
-            url = show['value']
-            common.addDirectory(name, 'nickteen', 'episodes', url)        
+            url = show['value']      
+            if db==True:
+                db_shows.append((name, 'nickteen', 'episodes', url))
+            else:
+                common.addShow(name, 'nickteen', 'episodes', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
 
 def episodes():
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     url = 'http://www.teennick.com/ajax/videos/all-videos/'+common.args.url
     url += '?sort=date+desc&start=0&page=1&viewType=collectionAll&type=fullEpisodeItem'
     data = common.getURL(url)
@@ -52,16 +58,15 @@ def episodes():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="nickteen"'
         u += '&sitemode="playvideo"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Duration":duration,
-                                                 "Season":0,
-                                                 "Episode":0,
-                                                 "Plot":str(plot),
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Duration":duration,
+                     #"Season":0,
+                     #"Episode":0,
+                     "Plot":str(plot),
+                     "TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def playuri(uri = common.args.url,referer='http://www.teennick.com'):
     mtvn = 'http://media.nick.com/'+uri 
@@ -69,7 +74,7 @@ def playuri(uri = common.args.url,referer='http://www.teennick.com'):
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0]).strip()
     configxml = common.getURL(configurl,referer=mtvn)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&').replace('{type}','network')
+    mrssurl = tree.find('feed').string.replace('{uri}',uri).replace('&amp;','&').replace('{type}','network').replace('mode=episode','mode=clip')
     mrssxml = common.getURL(mrssurl)
     tree=BeautifulStoneSoup(mrssxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     segmenturls = tree.findAll('media:content')

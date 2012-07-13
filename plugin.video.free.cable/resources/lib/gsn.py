@@ -5,56 +5,74 @@ import urllib
 import urllib2
 import sys
 import os
+import re
 
 import demjson
+from BeautifulSoup import BeautifulSoup
 
 import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
 #BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoint_pushes/852/feed.json'
-#BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/554/custom_feed.json'
-#BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/533/custom_feed.json'
-
-BASE_URL = 'https://s3.amazonaws.com/ddp-digitaria-public/public/cache/endpoints/536/custom_feed.json'
-BASE = 'http://tv.gsn.com'
+BASE = 'http://gsntv.com'
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    data = common.getURL(BASE_URL)
-    items = demjson.decode(data)['media']['items']
-    shows = []
-    for item in items:
-        name = item['title'].split('Season')[0].strip()
-        if name not in shows:
-            shows.append(name)
+    data = common.getURL(BASE)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    shows=tree.find('ul',attrs={'class':'sub-menu sub-menu-1'}).findAll('a')
+    db_shows = []
     for show in shows:
-        common.addDirectory(show, 'gsn', 'episodes', show.replace("'",''))
+        print show.prettify()
+        url = BASE+show['href']+'videos/'
+        name = show.find('span').string
+        if db==True:
+            db_shows.append((name, 'gsn', 'show', url))
+        else:
+            common.addShow(name, 'gsn', 'show', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
 
-def episodes(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    data = common.getURL(BASE_URL)
+def show():
+    data = common.getURL(common.args.url)
+    full = re.compile('f:"(.*?)",').findall(data)
+    clip = re.compile('c:"(.*?)",').findall(data)
+    if len(full) > 0:
+        if full[0] <> '':
+            common.addDirectory('Full Episodes', 'gsn', 'episodes', full[0])
+    if len(clip) > 0:
+        if clip[0] <> '':
+            common.addDirectory('Clips', 'gsn', 'episodes', clip[0])
+    common.setView('seasons')
+
+def episodes():
+    data = common.getURL(common.args.url)
     items = demjson.decode(data)['media']['items']
     for item in items:
-        name = item['title']
-        if common.args.url in name.replace("'",''):
+        name = item['title'].encode('utf-8')
+        try:
             season = int(name.split('Season')[1].split('Episode')[0].strip())
             episode = int(name.split('Episode')[1].strip())
             name = name.split('Season')[0].strip()+' %sx%s' % (str(season),str(episode))
-            plot = item['description']
-            thumb = item['thumbnail_url']
-            #url = item['url']
-            urls = item['conversions']
-            url = urls[len(urls)-1]['streaming_url']
-            item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     #"Duration":duration
-                                                     "Season":season,
-                                                     "Episode":episode,
-                                                     "Plot":plot,
-                                                     "TVShowTitle":name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=url,listitem=item,isFolder=False)
+        except:
+            season = 0
+            episode = 0
+        try:plot = item['description'].encode('utf-8')
+        except:plot = item['description'][0].encode('utf-8')
+        thumb = item['thumbnail_url']
+        #url = item['url']
+        urls = item['conversions']
+        url = urls[len(urls)-1]['streaming_url']
+        infoLabels={ "Title":name,
+                     #"Duration":duration
+                     "Season":season,
+                     "Episode":episode,
+                     "Plot":plot,
+                     "TVShowTitle":name
+                     }
+        common.addVideo(url,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')

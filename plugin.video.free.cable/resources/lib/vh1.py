@@ -76,7 +76,7 @@ def showsubcats(url=common.args.url):
                 u = sys.argv[0]
                 u += '?url="'+urllib.quote_plus(url)+'"'
                 u += '&mode="vh1"'
-                u += '&sitemode="play"'
+                u += '&sitemode="playurl"'
                 item=xbmcgui.ListItem(name)
                 item.setInfo( type="Video", infoLabels={ "Title":name })
                 item.setProperty('IsPlayable', 'true')
@@ -101,13 +101,74 @@ def videos(url=common.args.url):
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="vh1"'
-        u += '&sitemode="play"'
+        u += '&sitemode="playurl"'
         item=xbmcgui.ListItem(name)
         item.setInfo( type="Video", infoLabels={ "Title":name })
         item.setProperty('IsPlayable', 'true')
         xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
 
-def play(uri=common.args.url):
+def playuri(uri = common.args.url,referer='http://www.tvland.com'):
+    mtvn = 'http://media.mtvnservices.com/'+uri 
+    swfUrl = common.getRedirect(mtvn,referer=referer)
+    configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0])
+    configxml = common.getURL(configurl)
+    tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    feed = tree.find('player').find('feed')
+    try:
+        mrssurl = feed.string.replace('{uri}',uri).replace('&amp;','&')
+        mrssxml = common.getURL(feedurl)
+        mrsstree = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    except:
+        mrsstree = feed
+    segmenturls = tree.findAll('media:content')
+    stacked_url = 'stack://'
+    for segment in segmenturls:
+        surl = segment['url']
+        videos = common.getURL(surl)
+        videos = BeautifulStoneSoup(videos, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('rendition')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality'])
+        for video in videos:
+            bitrate = int(video['bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                rtmpdata = video.find('src').string
+                
+                protocall = rtmpdata.split('://')[0]
+                host = rtmpdata.split('://')[1].split('/')[0]
+                app = rtmpdata.split('://')[1].split('/')[1]
+                playpath = rtmpdata.split(app+'/')[1]
+                if '.mp4' in playpath:
+                    playpath = 'mp4:'+playpath#.replace('.mp4','')
+                else:
+                    playpath = playpath#.replace('.flv','')
+                rtmpurl = 'rtmpe://'+host+':1935/'+app
+                rtmpurl += ' playpath=' + playpath + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
+                
+                #app = rtmpdata.split('://')[1].split('/')[1]
+                #rtmpdata = rtmpdata.split(app)
+                #rtmp = rtmpdata[0]
+                #playpath = rtmpdata[1]
+                #if '.mp4' in playpath:
+                #    playpath = 'mp4:'+playpath.replace('.mp4','')
+                #else:
+                #    playpath = playpath.replace('.flv','')
+                #swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.6.0.swf"
+                #rtmpurl = rtmpdata + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
+        stacked_url += rtmpurl.replace(',',',,')+' , '
+    stacked_url = stacked_url[:-3]
+    print stacked_url
+    item = xbmcgui.ListItem(path=stacked_url)
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+
+def playurl(url = common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    uri = tree.find('link',attrs={'rel':'video_src'})['href'].split('/')[-1]
+    playuri(uri,referer=url)
+
+
+def playold(uri=common.args.url):
     data = common.getURL(uri)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     uri = tree.find('link',attrs={'rel':'video_src'})['href'].split('/')[-1]
@@ -130,8 +191,7 @@ def play(uri=common.args.url):
         stacked_url += rtmp.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-     
+    xbmcplugin.setResolvedUrl(pluginhandle, True, item)    
 
 def grabrtmp(url):
     uri = url.split('uri=')[1].split('&')[0]

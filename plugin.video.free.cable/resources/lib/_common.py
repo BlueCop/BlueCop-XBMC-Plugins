@@ -241,7 +241,7 @@ def load_showlist(favored=False):
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.encode('utf-8', 'ignore')
         else:
             infoLabels['Plot']=prefixplot
-        #if date: infoLabels['date']=date
+        if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
         if actors<>None:
@@ -380,6 +380,13 @@ def setView(type='root'):
     confluence_views = [500,501,502,503,504,508]
     #types: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
     if type <> 'root':
+        if type == 'tvshows':
+            xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+            #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO)
+            #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_GENRE)
+            #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DURATION)
+            #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
+            #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DATE)
         xbmcplugin.setContent(pluginhandle, type)
     #xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
     viewenable=addoncompat.get_setting("viewenable")
@@ -464,7 +471,7 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.decode("utf-8").encode('utf-8', 'ignore')
         else:
             infoLabels['Plot']=prefixplot
-        #if date: infoLabels['date']=date
+        if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
         if actors<>None:

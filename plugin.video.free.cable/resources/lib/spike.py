@@ -11,8 +11,6 @@ def masterlist():
     return rootlist(db=True)
         
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     url = BASE + '/shows/'
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -29,15 +27,16 @@ def rootlist(db=False):
             if db==True:
                 db_shows.append((name,'spike','episodes',url))
             else:
-                common.addDirectory(name, 'spike', 'episodes', url)
+                common.addShow(name, 'spike', 'episodes', url)
     if db==True:
         return db_shows
+    else:
+        common.setView('tvshows')
 
 def episodes(url=common.args.url):
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #try:
     seeall=tree.find('a', attrs={'class' : 'see_all'})
     categories=tree.findAll('a',attrs={'class' : 'read_full'})
     categories.append(seeall)
@@ -50,15 +49,16 @@ def episodes(url=common.args.url):
                     common.addDirectory(name, 'spike', 'videos', url)
                 elif name == 'Full Episodes':
                     common.addDirectory(name, 'spike', 'fullepisodes', url)
+        common.setView('seasons')
     except:
         video=tree.find(attrs={'class' : 'see_all_videos clearfix'}).find('a')
         url = video['href']
         name = video.contents[1].contents[0].replace('See All ','')
         common.addDirectory(name, 'spike', 'videos', url)
+        common.setView('seasons')
 
 
 def videos(url=common.args.url):
-    xbmcplugin.setContent(pluginhandle, 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.find(attrs={'id' : 'show_clips_res'}).findAll(attrs={'class' : 'block'})
@@ -72,17 +72,17 @@ def videos(url=common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="spike"'
         u += '&sitemode="playvideo"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 "Plot":description
-                                                 #"premiered":airDate,
-                                                 #"Duration":duration,
-                                                 #"TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     #"Season":season,
+                     #"Episode":episode,
+                     "Plot":description
+                     #"premiered":airDate,
+                     #"Duration":duration,
+                     #"TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
+
 
 def fullepisodes(url=common.args.url):
     xbmcplugin.setContent(pluginhandle, 'episodes')
@@ -92,21 +92,27 @@ def fullepisodes(url=common.args.url):
     for episode in episodes:
         print episode.prettify()
         #uri = 'mgid:arc:episode:spike.com:'+episode['id'].replace('episode_','')
-        uri = episode.find('a')['href']
+        try:uri = episode.find('a')['href']
+        except: uri='BAD'
         name = episode.find('img')['title']
         thumb = episode.find('img')['src'].split('?')[0]
         description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
         airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
-        #try:
-        seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
-        if 3 == len(seasonepisode):
-            season = int(seasonepisode[:1])
-            episode = int(seasonepisode[-2:])
-        elif 4 == len(seasonepisode):
-            season = int(seasonepisode[:2])
-            episode = int(seasonepisode[-2:])
+        try:
+            seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
+            if 3 == len(seasonepisode):
+                season = int(seasonepisode[:1])
+                episode = int(seasonepisode[-2:])
+            elif 4 == len(seasonepisode):
+                season = int(seasonepisode[:2])
+                episode = int(seasonepisode[-2:])
+        except:
+            season=0
+            episode=0
         if season <> 0 or episode <> 0:
             displayname = '%sx%s - %s' % (str(season),str(episode),name)
+        else:
+            displayname = name
         #except:
         #    print 'no season data'
         #    displayname = name
@@ -116,17 +122,16 @@ def fullepisodes(url=common.args.url):
         u += '?url="'+urllib.quote_plus(uri)+'"'
         u += '&mode="spike"'
         u += '&sitemode="playepisode"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate
-                                                 #"Duration":duration,
-                                                 #"TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Season":season,
+                     "Episode":episode,
+                     "Plot":description,
+                     "premiered":airDate
+                     #"Duration":duration,
+                     #"TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
     
 def playepisode(url = common.args.url):
     data = common.getURL(url)

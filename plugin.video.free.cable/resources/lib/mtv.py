@@ -12,6 +12,9 @@ from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import resources.lib._common as common
 
+try: from sqlite3 import dbapi2 as sqlite
+except: from pysqlite2 import dbapi2 as sqlite
+
 pluginhandle=int(sys.argv[1])
 
 BASE_URL = 'http://www.mtv.com/ontv/all/'
@@ -21,28 +24,23 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    shows = []
+    multishow = {}
+    
+    # Grab Current Shows
+    data = common.getURL('http://www.mtv.com/ontv/all/current.jhtml')
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    shows,multishow = grabShowlist(tree,shows,multishow)
+
+    # Grab Current Shows MTV2
+    data = common.getURL('http://www.mtv.com/ontv/all/currentMtv2.jhtml')
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    shows,multishow = grabShowlist(tree,shows,multishow)
+     
+    # Process Full Show List
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find('ol',attrs={'class':'lst '}).findAll('a')
-    db_shows = []
-    multiseason = []
-    db_shows.append(('Beavis and Butthead','mtv','showsub','http://www.mtv.com/shows/beavis_and_butthead/series.jhtml'))
-    db_shows.append(('Real World: San Diego','mtv','showsub','http://www.mtv.com/shows/real_world/san_diego/series.jhtml'))
-    for item in menu:
-        name = item.contents[2]
-        if ' (Season' in name:
-            name = name.split(' (Season')[0]
-            mode = 'seasons'
-            if name in multiseason:
-                continue
-            else:
-                multiseason.append(name)
-        else:
-            mode = 'showsub'
-        url = BASE + item['href']
-        db_shows.append((name,'mtv',mode,url))
+    shows,multishow = grabShowlist(tree,shows,multishow)
     pagintation=tree.find(attrs={'class':'pagintation'}).findAll('a')
     for page in pagintation:
         if 'Next' in page.string:
@@ -50,77 +48,93 @@ def rootlist(db=False):
         url = BASE_URL + page['href']
         data = common.getURL(url)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        menu=tree.find('ol',attrs={'class':'lst '}).findAll('a')
-        for item in menu:
-            name = item.contents[2]
-            if ' (Season' in name:
-                name = name.split(' (Season')[0]
-                mode = 'seasons'
-                if name in multiseason:
-                    continue
-                else:
-                    multiseason.append(name)
-            else:
-                mode = 'showsub'
+        shows,multishow = grabShowlist(tree,shows,multishow)
+    
+    # Grab Popular Shows
+    popularShows = tree.find('div',attrs={'id':'shows-grid','class':'grid'}).find('ul').findAll('a')
+    for item in popularShows:
+        name = item.string
+        if 'All Shows' not in name:
             url = BASE + item['href']
-            db_shows.append((name,'mtv',mode,url))           
+            cleanname = name.split(' (Season')[0]
+            if cleanname in multishow.keys():
+                multishow[cleanname]=True
+            else:
+                multishow[cleanname]=False
+                shows.append((cleanname,url))
+            
+    db_shows=[]
+    for name,url in shows:
+        mode = 'showsub'
+        db_shows.append((name, 'mtv', mode, url))
     if db==True:
         return db_shows
     else:
         for name, mode, submode, url in db_shows:
             common.addDirectory(name,mode,submode,url)
-
-def seasons():
-    showname=common.args.name
-    data = common.getURL(BASE_URL)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        common.setView('tvshows')
+            
+def grabShowlist(tree,shows,multishow):
     menu=tree.find('ol',attrs={'class':'lst '}).findAll('a')
     for item in menu:
-        name = item.contents[2].replace("'",'')
-        if showname in name:
-            try: name = name.split(' (')[1].replace(')','')
-            except: name = name
-            url = BASE + item['href']
-            common.addDirectory(name,'mtv','showsub',url)
-    pagintation=tree.find(attrs={'class':'pagintation'}).findAll('a')
-    for page in pagintation:
-        if 'Next' in page.string:
-            continue
-        url = BASE_URL + page['href']
-        data = common.getURL(url)
-        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        menu=tree.find('ol',attrs={'class':'lst '}).findAll('a')
-        for item in menu:
-            name = item.contents[2].replace("'",'')
-            if showname in name:
-                try: name = name.split(' (')[1].replace(')','')
-                except: name = name
-                url = BASE + item['href']
-                common.addDirectory(name,'mtv','showsub',url)
+        name = item.contents[2]
+        url = BASE + item['href']
+        cleanname = name.split(' (Season')[0]
+        #if '(Season' in name:
+        #    season = int(name.split(' (Season')[1]).replace(')',''))
+        if cleanname in multishow.keys():
+            multishow[cleanname]=True
+        else:
+            multishow[cleanname]=False
+            shows.append((cleanname,url))
+    return (shows,multishow)
 
-def showsub(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    data = common.getURL(url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.findAll('li',attrs={'class':re.compile('itemList-subItem')})
-    if len(menu) == 0:
-        url = url.replace('series.jhtml','video.jhtml')
-        videos(url)
-    elif len(menu) == 1:
-        url = BASE + menu[0].find('a')['href']
-        videos(url)
+def showsub():
+    showname=common.args.name
+    if 'series.jhtml' in common.args.url:
+        videos_url = common.args.url.replace('series.jhtml','video.jhtml')
+    elif common.args.url.endswith('/'):
+        redirect_url = common.args.url+'video.jhtml'
+        videos_url = common.getRedirect(redirect_url).replace('series.jhtml','video.jhtml')
     else:
-        for item in menu:
-            link = item.find('a')
-            name = link.contents[2]
-            url = BASE + link['href']
-            common.addDirectory(name,'mtv','videos',url)
+        videos_url = common.args.url
+    data = common.getURL(videos_url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    seasonmenu=tree.find('select',attrs={'id':'videolist_id'})
+    if seasonmenu:
+        seasons = seasonmenu.findAll('option')
+        for season in seasons:
+            url = BASE + season['value']
+            name = season.string
+            common.addDirectory(name,'mtv','seasonOptions',url)
+        common.setView('seasons')
+    else:
+        seasonOptions(videos_url+'?filter=')
 
-def videos(url=common.args.url):
-    try:
+def seasonOptions(url=common.args.url):
+    #options=[]
+    #vidmenu=tree.findAll('li',attrs={'class':re.compile('itemList-subItem')})
+    #for item in menu:
+    #    link = item.find('a')
+    #    name = link.contents[2]
+    #    url = BASE + link['href']
+    #    if '?' in url:
+    #        parameters = '?'+url.split('?')[1]
+    #        options.append((name,parameters))
+    common.addDirectory('All Videos','mtv','videos',url)
+    common.addDirectory('Full Episodes','mtv','videos',url+'fulleps')
+    common.addDirectory('Bonus Clips','mtv','videos',url+'bonusclips')
+    common.addDirectory('After Shows','mtv','videos',url+'aftershows')
+    common.addDirectory('Sneak Peeks','mtv','videos',url+'sneakpeeks')
+    common.setView('seasons')
+
+def videos(url=common.args.url,tree=False):
+    if not tree:
         data = common.getURL(url)
         tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        videos=tree.find('ol',attrs={'id':'vid_mod_1'}).findAll('li',attrs={'id':re.compile('vidlist')})    
+    videos=tree.find('ol',attrs={'id':'vid_mod_1'})
+    if videos:
+        videos=videos.findAll('li',attrs={'id':re.compile('vidlist')})    
         for video in videos:
             thumb = BASE + video.find('img')['src']
             name = video['maintitle']
@@ -134,54 +148,54 @@ def videos(url=common.args.url):
             u += '?url="'+urllib.quote_plus(uri)+'"'
             u += '&mode="mtv"'
             u += '&sitemode="play"'
-            item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     #"Season":season,
-                                                     #"Episode":episode,
-                                                     "Plot":description,
-                                                     "premiered":airDate
-                                                     #"Duration":duration,
-                                                     #"TVShowTitle":common.args.name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+            infoLabels={ "Title":name,
+                         #"Season":season,
+                         #"Episode":episode,
+                         "Plot":description,
+                         "premiered":airDate
+                         #"Duration":duration,
+                         #"TVShowTitle":common.args.name
+                         }
+            common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
+    
+def play(uri = common.args.url,referer='http://www.mtv.com'):
+    mtvn = 'http://media.mtvnservices.com/'+uri 
+    swfUrl = common.getRedirect(mtvn,referer=referer)
+    configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0]).strip()
+    configxml = common.getURL(configurl,referer=mtvn)
+    tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    feed = tree.find('player').find('feed')
+    try:
+        mrssurl = feed.string.replace('{uri}',uri).replace('&amp;','&')
+        mrssxml = common.getURL(feedurl)
+        mrsstree = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     except:
-        print 'videos failed'
-
-def play(uri=common.args.url):
-    if 'http://' in uri:
-        data = common.getURL(uri)
-        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        uri = tree.find('meta',attrs={'name':'mtvn_uri'})['content']
-        url = 'http://www.mtv.com/player/includes/mediaGen.jhtml?uri='+uri
-        stacked_url = grabrtmp(url)
-    else:
-        rssurl = 'http://www.mtv.com/player/embed/AS3/fullepisode/rss/?id='+uri.split(':')[-1]+'&uri='+uri+'&instance=fullepisode'
-        data = common.getURL(rssurl)
-        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        mcurls=tree.findAll('media:content')
-        stacked_url = 'stack://'
-        for mcurl in mcurls:
-            rtmp = grabrtmp(mcurl['url'].split('&')[0])
-            stacked_url += rtmp.replace(',',',,')+' , '
-        stacked_url = stacked_url[:-3]
+        mrsstree = feed
+    segmenturls = mrsstree.findAll('media:content')
+    stacked_url = 'stack://'
+    for segment in segmenturls:
+        surl = segment['url']
+        videos = common.getURL(surl)
+        videos = BeautifulStoneSoup(videos, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('rendition')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality'])
+        for video in videos:
+            bitrate = int(video['bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                rtmpdata = video.find('src').string
+                rtmpurl = rtmpdata + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
+        stacked_url += rtmpurl.replace(',',',,')+' , '
+    stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-     
 
-def grabrtmp(url):
-    swfurl = "http://media.mtvnservices.com/player/release/?v=4.5.3"
-    data = common.getURL(url)
-    bitrates = re.compile('bitrate="(.+?)"').findall(data)
-    rtmps = re.compile('<src>rtmp(.+?)</src>').findall(data)
-    mbitrate = -1
-    lbitrate = 0
-    for rtmp in rtmps:
-        marker = rtmps.index(rtmp)
-        bitrate = int(bitrates[marker])
-        if bitrate == 0:
-            continue
-        elif bitrate > mbitrate:
-            mbitrate = bitrate
-            furl = 'rtmp'+ rtmp + " swfurl=" + swfurl + " swfvfy=true"
-    return furl
+def playurl(url = common.args.url):
+    #BROKEN
+    data=common.getURL(url)
+    #try:
+    #    uri = re.compile('<meta content="http://(.+?)" itemprop="embedURL"/>').findall(data)[0]
+    #except:
+    #    uri=re.compile("\= '(.+?)';").findall(data)[0]
+    playuri(uri,referer=url)

@@ -18,8 +18,14 @@ BASE_URL = 'http://www.vh1.com/video/browse/shows.jhtml'
 BASE = 'http://www.vh1.com'
 
 blacklist = [   "14th Annual Critics' Choice Awards (2009)",
+                "17th Annual Critics' Choice Movie Awards",
+                "40 Winningest Winners of 2011 (Hour 2)",
                 '2009 Hip Hop Honors',
                 '2010 Hip Hop Honors',
+                "America's Most Smartest Model",
+                'Behind the Crime Scene: Tupac Shakur',
+                'Top 40 Videos of 2009 Hour 2 (20-1)',
+                'Top 40 Videos of 2009 Hour 1 (40-21)',
                 "Critics' Choice Movie Awards (2010)",
                 "Critics' Choice Movie Awards (2011)",
                 'DIVAS (2010)',
@@ -31,38 +37,97 @@ blacklist = [   "14th Annual Critics' Choice Awards (2009)",
                 'Posted',
                 'Rock Honors: The Who',
                 'Stand Up To Cancer',
+                'Top 40 Videos of 2009 Hour 1',
+                'Top 40 Videos of 2009 Hour 2',
                 'VH1 Big In 2006 Awards',
                 'VH1 Divas (2009)',
                 'VH1 Divas Celebrates Soul',
                 'VH1 Pop Up Video'
                 ]
 
+multiseason = [ ['Basketball Wives','Basketball Wives'],
+                ['Brandy & Ray J: A Family Business','Brandy & Ray J: A Family Business 2'],
+                ['Celebrity Rehab','Celebrity Rehab 5'],
+                ['Fantasia For Real','Fantasia For Real 2'],
+                ["La La's Full Court Life","La La's Full Court Life"],
+                ['Love & Hip Hop','Love & Hip Hop'],
+                ['Mob Wives','Mob Wives'],
+                ["Rock N' Roll Fantasy Camp","Rock N' Roll Fantasy Camp -  2"],
+                ["RuPaul's Drag Race","RuPaul's Drag Race 3"],
+                ['Scream Queens','Scream Queens 2'],
+                ['Single Ladies','Single Ladies'],
+                ['The T.O. Show','The T.O. Show 3'],
+                ['Tough Love','Tough Love New Orleans'],
+                ['What Chilli Wants','What Chilli Wants 2'],
+                ["You're Cut Off!","You're Cut Off!"]
+                ]
+
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     url = 'http://www.vh1.com/shows/all_vh1_shows.jhtml'
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #print tree.prettify()
     shows=tree.find('div',attrs={'id':'azshows'}).findAll('a')
-    goodshows = []
-    novideos = []
-    failedshows = []
+    db_shows=[]
     for show in shows:
-        name = show.string
-        if name in blacklist:
-            continue
-        url = show['href']
+        name = show.string.replace('Season','').strip()
+        url = show['href'].replace('series.jhtml','video.jhtml?sort=descend')
+        mode = 'showsubcats'
         if BASE not in url:
             url = BASE + url
-        common.addDirectory(name,'vh1','showsubcats',url)
+        if name in blacklist:
+            continue
+        elif '/shows/events' in url:
+            continue
 
-def showsubcats(url=common.args.url):
+        docontinue=False
+        for series_name,choosen in multiseason:
+            if series_name in name:
+                if choosen <> name:
+                    docontinue=True
+                elif choosen == name:
+                    name = series_name
+                    mode = 'seasons'
+        if docontinue:
+            continue
+        if '(' in name:
+            name=name.split('(')[0].strip()
+            
+        if db:
+            db_shows.append((name, 'mtv', mode, url))
+        else:
+            common.addShow(name,'vh1',mode,url)
+    if db:
+        return db_shows
+    else:
+        common.setView('tvshows')
+        
+def seasons(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #print tree.prettify()
+    seasonmenu=tree.find('select',attrs={'id':'videolist_id'})
+    if seasonmenu:
+        seasons = seasonmenu.findAll('option')
+        for season in seasons:
+            url = BASE + season['value']
+            name = season.string
+            common.addDirectory(name,'vh1','seasonOptions',url)
+        common.setView('seasons')
+
+def seasonOptions(url=common.args.url):
+    common.addDirectory('All Videos','vh1','videos',url)
+    common.addDirectory('Full Episodes','vh1','videos',url+'fulleps')
+    common.addDirectory('Bonus Clips','vh1','videos',url+'bonusclips')
+    common.addDirectory('After Shows','vh1','videos',url+'aftershows')
+    common.addDirectory('Sneak Peeks','vh1','videos',url+'sneakpeeks')
+    common.setView('seasons')
+
+def showsubcats(url=common.args.url):
+    #Add season options
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     subs=tree.find(attrs={'class':'group-a'}).findAll('a')
     for sub in subs:
         name = sub.string
@@ -83,29 +148,31 @@ def showsubcats(url=common.args.url):
                 xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
             else:
                 common.addDirectory(name,'vh1','videos',url)
+    common.setView('seasons')
 
 def videos(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #print tree.prettify()
     subs=tree.find(attrs={'class':'group-b'})
-    try:finalsubs = subs.find(attrs={'class':'video-list'}).findAll('tr',attrs={'class':True})
-    except:finalsubs = subs.find(attrs={'id':"vid_mod_1"}).findAll(attrs={'itemscope':True})
-    for sub in finalsubs:
-        print sub
-        sub = sub.find('a')
-        name = sub.string
-        url = sub['href']
-        if BASE not in url:
-            url = BASE + url
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(url)+'"'
-        u += '&mode="vh1"'
-        u += '&sitemode="playurl"'
-        item=xbmcgui.ListItem(name)
-        item.setInfo( type="Video", infoLabels={ "Title":name })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+    try:
+        try:finalsubs = subs.find(attrs={'class':'video-list'}).findAll('tr',attrs={'class':True})
+        except:
+            try:finalsubs = subs.find(attrs={'id':"vid_mod_1"}).findAll(attrs={'itemscope':True})
+            except:finalsubs = tree.find(attrs={'id':"vid_mod_1"}).findAll(attrs={'itemscope':True})
+        for sub in finalsubs:
+            sub = sub.find('a')
+            name = sub.string
+            url = sub['href']
+            if BASE not in url:
+                url = BASE + url
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="vh1"'
+            u += '&sitemode="playurl"'
+            common.addVideo(u,name,'',infoLabels={ "Title":name })
+        common.setView('episodes')
+    except:
+        print 'No videos'
 
 def playuri(uri = common.args.url,referer='http://www.tvland.com'):
     mtvn = 'http://media.mtvnservices.com/'+uri 
@@ -120,7 +187,7 @@ def playuri(uri = common.args.url,referer='http://www.tvland.com'):
         mrsstree = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     except:
         mrsstree = feed
-    segmenturls = tree.findAll('media:content')
+    segmenturls = mrsstree.findAll('media:content')
     stacked_url = 'stack://'
     for segment in segmenturls:
         surl = segment['url']
@@ -133,7 +200,6 @@ def playuri(uri = common.args.url,referer='http://www.tvland.com'):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 rtmpdata = video.find('src').string
-                
                 protocall = rtmpdata.split('://')[0]
                 host = rtmpdata.split('://')[1].split('/')[0]
                 app = rtmpdata.split('://')[1].split('/')[1]
@@ -144,20 +210,8 @@ def playuri(uri = common.args.url,referer='http://www.tvland.com'):
                     playpath = playpath#.replace('.flv','')
                 rtmpurl = 'rtmpe://'+host+':1935/'+app
                 rtmpurl += ' playpath=' + playpath + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
-                
-                #app = rtmpdata.split('://')[1].split('/')[1]
-                #rtmpdata = rtmpdata.split(app)
-                #rtmp = rtmpdata[0]
-                #playpath = rtmpdata[1]
-                #if '.mp4' in playpath:
-                #    playpath = 'mp4:'+playpath.replace('.mp4','')
-                #else:
-                #    playpath = playpath.replace('.flv','')
-                #swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.6.0.swf"
-                #rtmpurl = rtmpdata + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
-    print stacked_url
     item = xbmcgui.ListItem(path=stacked_url)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
@@ -166,57 +220,3 @@ def playurl(url = common.args.url):
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     uri = tree.find('link',attrs={'rel':'video_src'})['href'].split('/')[-1]
     playuri(uri,referer=url)
-
-
-def playold(uri=common.args.url):
-    data = common.getURL(uri)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    uri = tree.find('link',attrs={'rel':'video_src'})['href'].split('/')[-1]
-    configurl  = 'http://www.vh1.com/player/embed/AS3/configuration.jhtml?uri='+uri
-    configurl += '&type=network&ref=www.vh1.com&geo=US&&device=Other&ver=prime'
-    data = common.getURL(configurl)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    feed = tree.find('player').find('feed')
-    try:
-        feedurl = feed.string
-        feeddata = common.getURL(feedurl)
-        feeddata = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    except:
-        feeddata = feed
-    segmenturls=feeddata.findAll('media:content')
-    stacked_url = 'stack://'
-    for segment in segmenturls:
-        surl = segment['url']
-        rtmp = grabrtmp(surl)
-        stacked_url += rtmp.replace(',',',,')+' , '
-    stacked_url = stacked_url[:-3]
-    item = xbmcgui.ListItem(path=stacked_url)
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item)    
-
-def grabrtmp(url):
-    uri = url.split('uri=')[1].split('&')[0]
-    videos = common.getURL(url)
-    videos = BeautifulStoneSoup(videos, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('rendition')
-    hbitrate = -1
-    sbitrate = int(common.settings['quality'])
-    for video in videos:
-        bitrate = int(video['bitrate'])
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            rtmpdata = video.find('src').string
-            protocall = rtmpdata.split('://')[0]
-            host = rtmpdata.split('://')[1].split('/')[0]
-            app = rtmpdata.split('://')[1].split('/')[1]
-            playpath = rtmpdata.split(app+'/')[1]
-            if '.mp4' in playpath:
-                playpath = 'mp4:'+playpath#.replace('.mp4','')
-            else:
-                playpath = playpath#.replace('.flv','')
-            swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.8.5.swf?uri="+uri
-            rtmpurl = 'rtmpe://'+host+':1935/'+app
-            #rtmpurl += ' conn=O:1 conn=NB:0:0 conn=NS:1:'+playpath+' conn=O:0'
-            rtmpurl += ' playpath=' + playpath + ' swfurl=' + swfUrl + ' swfvfy=1'
-            # -C O:1 -C NB:0:0 -C NS:1:mp4:gsp.vhonecomstor/vh1.com/shows/celebrity_rehab_5/vh_cr_51_rt242902_clip_s1_640x480_1600_m30.mp4 -C O:0
-            
-    print rtmpurl
-    return rtmpurl

@@ -28,13 +28,21 @@ def rootlist(db=False):
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.findAll('div',attrs={'class':'natgeov-cat-group'})
+    db_shows=[]
     for show in shows:
         name = show.find('h3').contents[0].split('(')[0].strip()
         url = BASE + show.find('a')['href']
-        common.addDirectory(name, 'natgeowild', 'episodes', url)
+        if db==True:
+            db_shows.append((name, 'natgeowild', 'episodes', url))
+        else:
+            common.addShow(name, 'natgeowild', 'episodes', url)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
+
 
 def episodes():
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     url = common.args.url
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -50,16 +58,15 @@ def episodes():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="natgeowild"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Duration":duration,
-                                                 #"Season":season,
-                                                 #"Episode":episode,
-                                                 #"Plot":str(plot),
-                                                 "TVShowTitle":showname
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Duration":duration,
+                     #"Season":season,
+                     #"Episode":episode,
+                     #"Plot":str(plot),
+                     "TVShowTitle":showname
+                     }
+        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
         
 def randomstring(N):
     return ''.join(random.choice(string.ascii_uppercase) for x in range(N))

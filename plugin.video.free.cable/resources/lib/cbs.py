@@ -46,6 +46,7 @@ def masterlist():
                 url+='video/'
             elif '/shows/nyc_22/' in url:
                 name = 'NYC 22'
+                url+='video/'
             db_shows.append((name,'cbs','showcats',url))
     for show in stShows('http://startrek.com/videos',db=True):
         db_shows.append(show)

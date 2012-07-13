@@ -17,7 +17,6 @@ pluginhandle=int(sys.argv[1])
 BASE_URL = 'http://www.comedycentral.com'
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     data = unicode(data, 'utf-8', errors='ignore')
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
@@ -34,12 +33,13 @@ def rootlist(db=False):
             if db==True:
                 db_shows.append((name,'comedy',mode,url))
             else:
-                common.addDirectory(name,'comedy',mode,url)
+                common.addShow(name,'comedy',mode,url)
     if db==True:
         return db_shows
+    else:
+        common.setView('tvshows')
 
 def episodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.findAll(attrs={'id':True,'class':True,'href':'#'})
@@ -79,18 +79,16 @@ def episodes(url=common.args.url):
                 u = sys.argv[0]
                 u += '?url="'+urllib.quote_plus(url)+'"'
                 u += '&mode="comedy"'
-                u += '&sitemode="play"'
-                item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-                item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                         "Season":season,
-                                                         "Episode":episode,
-                                                         "Plot":description,
-                                                         "premiered":airDate,
-                                                         #"Duration":duration,
-                                                         "TVShowTitle":common.args.name
-                                                         })
-                item.setProperty('IsPlayable', 'true')
-                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+                u += '&sitemode="playurl"'
+                infoLabels={ "Title":name,
+                             "Season":season,
+                             "Episode":episode,
+                             "Plot":description,
+                             "premiered":airDate,
+                             #"Duration":duration,
+                             "TVShowTitle":common.args.name
+                             }
+                common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
         else:
             eurl = item['id'].replace('www.comedycentral.com','www.thedailyshow.com')
             data = common.getURL(eurl)
@@ -127,29 +125,27 @@ def episodes(url=common.args.url):
                 u += '?url="'+urllib.quote_plus(url)+'"'
                 u += '&mode="comedy"'
                 u += '&sitemode="playurl"'
-                item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-                item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                         "Season":season,
-                                                         "Episode":episode,
-                                                         "Plot":description,
-                                                         "premiered":airDate,
-                                                         #"Duration":duration,
-                                                         "TVShowTitle":common.args.name
-                                                         })
-                item.setProperty('IsPlayable', 'true')
-                xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+                infoLabels={ "Title":name,
+                             "Season":season,
+                             "Episode":episode,
+                             "Plot":description,
+                             "premiered":airDate,
+                             #"Duration":duration,
+                             "TVShowTitle":common.args.name
+                             }
+                common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def sp_seasons(url=common.args.url):
-    xbmcplugin.setContent(pluginhandle, 'seasons')
     for sn in range(1,17):
         sn = str(sn)
         name = 'Season '+sn
         url = sn
         common.addDirectory(name,'comedy','sp_episodes',url)
+    common.setView('seasons')
 
 def sp_episodes():
     import demjson
-    xbmcplugin.setContent(pluginhandle, 'episodes')
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
     url = 'http://www.southparkstudios.com/feeds/full-episode/carousel/'+common.args.url+'/342853'
     json = common.getURL(url)
@@ -173,16 +169,15 @@ def sp_episodes():
         u += '?url="'+urllib.quote_plus(episodeid)+'"'
         u += '&mode="comedy"'
         u += '&sitemode="sp_play"'
-        liz=xbmcgui.ListItem(title, iconImage="DefaultFolder.png", thumbnailImage=thumbnail)
-        liz.setInfo( type="Video", infoLabels={ "Title": title,
-                                                "Season":season,
-                                                "Episode":episode,
-                                                "premiered":date,
-                                                "Plot":description,
-                                                "TVShowTitle":"South Park"
-                                                })
-        liz.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=liz)
+        infoLabels={ "Title": title,
+                    "Season":season,
+                    "Episode":episode,
+                    "premiered":date,
+                    "Plot":description,
+                    "TVShowTitle":"South Park"
+                    }
+        common.addVideo(u,title,thumbnail,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def sp_play():
     uri =  'mgid:cms:content:southparkstudios.com:'+common.args.url
@@ -210,15 +205,15 @@ def playuri(uri = common.args.url,referer='http://www.comedycentral.com'):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 rtmpdata = video.find('src').string
-                #app = rtmpdata.split('://')[1].split('/')[1]
-                #rtmpdata = rtmpdata.split('/'+app+'/')
-                #rtmp = rtmpdata[0]
-                #playpath = rtmpdata[1]
-                #if '.mp4' in playpath:
-                #    playpath = 'mp4:'+playpath.replace('.mp4','')
-                #else:
-                #    playpath = playpath.replace('.flv','')
-                rtmpurl = rtmpdata + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
+                app = rtmpdata.split('://')[1].split('/')[1]
+                rtmpdata = rtmpdata.split('/'+app+'/')
+                rtmp = rtmpdata[0]
+                playpath = rtmpdata[1]
+                if '.mp4' in playpath:
+                    playpath = 'mp4:'+playpath.replace('.mp4','')
+                else:
+                    playpath = playpath.replace('.flv','')
+                rtmpurl = rtmp+'/'+app+ ' playpath='+playpath + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
                 print rtmpurl
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]

@@ -11,8 +11,6 @@ def masterlist():
     return rootlist(db=True)
         
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASE)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     categories=tree.find('div',attrs={'class' : 'showsList'}).findAll('a')
@@ -27,12 +25,13 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'tvland',mode,url))
         else:
-            common.addDirectory(name, 'tvland', mode, url)
+            common.addShow(name, 'tvland', mode, url)
     if db==True:
         return db_shows
+    else:
+        common.setView('tvshows')
 
 def episodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.findAll(attrs={'class' : 'episodeContainer'})
@@ -66,17 +65,16 @@ def episodes(url=common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="tvland"'
         u += '&sitemode="playurl"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Season":season,
+                     "Episode":episode,
+                     "Plot":description,
+                     "premiered":airDate,
+                     "Duration":duration,
+                     "TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def hic_episodes():
     epoch = str(int(time.mktime(time.gmtime())*1000))
@@ -86,6 +84,7 @@ def hic_episodes():
     #episodes(s1url)
     episodes(s2url)
     episodes(s3url)
+    common.setView('episodes')
     
 def playuri(uri = common.args.url,referer='http://www.tvland.com'):
     mtvn = 'http://media.mtvnservices.com/'+uri 

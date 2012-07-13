@@ -31,7 +31,6 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'fullEpisodesListing'}).findAll(attrs={'class' : 'showInfo'})
@@ -42,12 +41,13 @@ def rootlist(db=False):
         if db==True:
             db_shows.append((name,'fox','episodes',url))
         else:
-            common.addDirectory(name, 'fox', 'episodes', url)
+            common.addShow(name, 'fox', 'episodes', url)
     if db==True:
         return db_shows
-
+    else:
+        common.setView('tvshows')
+        
 def episodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'fullEpisodesList'}).findAll(attrs={'data-video-id':True})
@@ -70,17 +70,16 @@ def episodes(url=common.args.url):
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="fox"'
         u += '&sitemode="play"'
-        item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-        item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                 "Season":season,
-                                                 "Episode":episode,
-                                                 "Plot":description,
-                                                 "premiered":airDate,
-                                                 "Duration":duration,
-                                                 "TVShowTitle":common.args.name
-                                                 })
-        item.setProperty('IsPlayable', 'true')
-        xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+        infoLabels={ "Title":name,
+                     "Season":season,
+                     "Episode":episode,
+                     "Plot":description,
+                     "premiered":airDate,
+                     "Duration":duration,
+                     "TVShowTitle":common.args.name
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def FOXsig(smil_url):
     relative_path = smil_url.split('theplatform.com/s/')[1].split('?')[0]

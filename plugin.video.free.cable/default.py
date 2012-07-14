@@ -37,8 +37,8 @@ def modes( ):
                 common.addDirectory(name, network, 'rootlist',thumb=station_icon,fanart=common.plugin_fanart,description=common.site_descriptions[network],count=count)
             count+=1
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
-        xbmcplugin.endOfDirectory( pluginhandle )
         common.setView()
+        xbmcplugin.endOfDirectory( pluginhandle )
     elif common.args.mode == 'Masterlist':
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         common.load_showlist()

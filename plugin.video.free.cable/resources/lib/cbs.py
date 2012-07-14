@@ -44,7 +44,7 @@ def masterlist():
                 url+='video/'
             elif '/shows/3/' in url:
                 url+='video/'
-            elif '/shows/nyc_22/' in url:
+            elif '/shows/nyc_22' in url:
                 name = 'NYC 22'
                 url+='video/'
             db_shows.append((name,'cbs','showcats',url))
@@ -86,8 +86,9 @@ def shows(catid = common.args.url):
                     url+='video/'
                 elif '/shows/3/' in url:
                     url+='video/'
-                elif '/shows/nyc_22/' in url:
+                elif '/shows/nyc_22' in url:
                     name = 'NYC 22'
+                    url+='video/'
                 common.addShow(name, 'cbs', 'showcats', url)#, thumb=thumbnail)
             break
     if catid == 'classics':

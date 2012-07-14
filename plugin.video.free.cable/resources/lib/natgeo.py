@@ -71,11 +71,46 @@ def randomstring(N):
 
 def play(url = common.args.url):
     videoname = url.split('/')[-2]
+    'http://channelhd-f.akamaihd.net/control/channel/feed/362/225.flv_0_0@1?cmd=sendingNewToken&v=2.7.6+'+'&r='+randomstring(5)+'&g='+randomstring(12)
     smil = 'http://video.nationalgeographic.com/video/player/data/xml/%s.smil' % videoname
     data = common.getURL(smil)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     base = tree.find('meta',attrs={'name':'httpBase'})['content']
     filepath = tree.find('video')['src']
     final = base + filepath+'?v=1.2.17&fp=MAC%2011,1,102,62'+'&r='+randomstring(5)+'&g='+randomstring(12)
+    finalControl = base + filepath.replace('/feed/','/control/')+'_0_0@1?cmd=sendingNewToken&v=2.7.6'+'&r='+randomstring(5)+'&g='+randomstring(12)
+    common.getURL(smil)
     item = xbmcgui.ListItem(path=final)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    xbmc.sleep(10000)
+    if xbmc.Player().isPlaying():
+        data = common.getURL(finalControl)
+    
+    
+def getURLTOKEN( url , values = None ,proxy = False, referer=False):
+    try:
+        if proxy == True:
+            us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
+            print 'Using proxy: ' + us_proxy
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            urllib2.install_opener(opener)
+
+        print 'FREE CABLE --> common :: getURL :: url = '+url
+        if values == None:
+            req = urllib2.Request(url)
+        else:
+            data = urllib.urlencode(values)
+            req = urllib2.Request(url,data)
+        if referer:
+            req.add_header('Referer', referer)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1')
+        response = urllib2.urlopen(req)
+        link=response.read()
+        response.close()
+    except urllib2.HTTPError, error:
+        print 'Error reason: ', error
+        return error.read()
+    else:
+        return link
+    

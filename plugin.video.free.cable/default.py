@@ -9,9 +9,10 @@ import sys
 import os
 import resources.lib._common as common
 import urllib
+import operator
 
 pluginhandle = int (sys.argv[1])
-
+ 
 #plugin constants
 __plugin__ = "FREE CABLE"
 __authors__ = "BlueCop"
@@ -24,13 +25,18 @@ print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"
 def modes( ):
     if sys.argv[2]=='':
         #Plug-in Root List
-        common.addDirectory(' Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon)
-        common.addDirectory(' All Shows','Masterlist','NoUrl',thumb=common.all_icon)
-        for network, name  in common.site_dict.iteritems():
+        count=0
+        common.addDirectory('Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon,count=count)
+        count+=1
+        common.addDirectory('All Shows','Masterlist','NoUrl',thumb=common.all_icon,count=count)
+        count+=1
+        #for network, name  in common.site_dict.iteritems():
+        for network, name  in sorted(common.site_dict.iteritems(), key=operator.itemgetter(1)):
             station_icon = os.path.join(common.imagepath,network+'.png')
             if common.addoncompat.get_setting(network) == 'true':
-                common.addDirectory(name, network, 'rootlist',thumb=station_icon,fanart=common.plugin_fanart)
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+                common.addDirectory(name, network, 'rootlist',thumb=station_icon,fanart=common.plugin_fanart,description=common.site_descriptions[network],count=count)
+            count+=1
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_PLAYLIST_ORDER)
         xbmcplugin.endOfDirectory( pluginhandle )
         common.setView()
     elif common.args.mode == 'Masterlist':

@@ -27,7 +27,7 @@ class _Info:
         print kwargs
         self.__dict__.update( kwargs )
 
-exec '''args = _Info(%s)''' % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace('"','\'').replace('%5C', '%5C%5C')) , )
+exec '''args = _Info(%s)''' % (urllib.unquote_plus(sys.argv[2][1:].replace("&", ", ").replace("'","\'").replace('%5C', '%5C%5C')).replace('%A9',u'\xae').replace('%E9',u'\xe9').replace('%99',u'\u2122') , )
 
 """
     DEFINE
@@ -71,8 +71,10 @@ site_dict= {'fox': 'FOX',
 
 addoncompat.get_revision()
 pluginpath = addoncompat.get_path()
+db_path = 'special://home/addons/script.module.free.cable.database/lib/'
 
-db_file = os.path.join(xbmc.translatePath(pluginpath),'resources','shows.db')
+
+db_file = os.path.join(xbmc.translatePath(db_path),'shows.db')
 cachepath = os.path.join(xbmc.translatePath(pluginpath),'resources','cache')
 imagepath = os.path.join(xbmc.translatePath(pluginpath),'resources','images')
 fanartpath = os.path.join(xbmc.translatePath(pluginpath),'resources','FAimages')
@@ -283,6 +285,15 @@ def refreshShow():
     series_title,mode,submode,url = args.url.split('<join>')
     lookup_db(series_title,mode,submode,url,forceRefresh=True)
 
+def deleteShow():
+    series_title,mode,submode,url = args.url.split('<join>')
+    conn = sqlite.connect(db_file)
+    conn.text_factory = str
+    c = conn.cursor()
+    c.execute('delete from shows where where series_title=? and mode=? and submode =?', (series_title,mode,submode))
+    conn.commit()
+    c.close()
+
 def favorShow():
     series_title,mode,submode,url = args.url.split('<join>')
     conn = sqlite.connect(db_file)
@@ -425,7 +436,7 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, 
     u += '&sitemode="'+sitemode+'"'
     u += '&thumb="'+urllib.quote_plus(thumb)+'"'
     u += '&fanart="'+urllib.quote_plus(fanart)+'"'
-    u += '&name="'+urllib.quote_plus(name.replace("'",''))+'"'
+    u += '&name="'+urllib.quote_plus(name)+'"'
     item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     item.setProperty('fanart_image',fanart)
     item.setInfo( type="Video", infoLabels={ "Title":name,
@@ -437,7 +448,6 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, 
 def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVDBposter=False, infoLabels=False, favor=False, hide=False):
     if not os.path.exists(db_file):
         create_db()
-    #           series_title,mode,submode,url,TVDB_ID,IMDB_ID,TVDBbanner,TVDBposter,TVDBfanart,first_aired,date,year,actors,genres,network,plot,runtime,rating,Airs_DayOfWeek,Airs_Time,status,has_full_episodes,favor
     if not infoLabels:
         infoLabels={}
         showdata = lookup_db(series_title,mode,sitemode,url)
@@ -482,33 +492,36 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         if network<>None: infoLabels['studio']=network.encode('utf-8', 'ignore')
         if runtime<>None: infoLabels['duration']=runtime
         if rating<>None: infoLabels['rating']=rating
+    name = series_title
+    series_title = series_title.replace(u'\xae','%A9').replace(u'\xe9','%E9').replace(u'\u2122','%99')
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
     u += '&thumb="'+urllib.quote_plus(thumb)+'"'
-    u += '&fanart="'+urllib.quote_plus(fanart)+'"'
+    if plugin_fanart <> fanart:
+        u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     if TVDBposter:
         u += '&poster="'+urllib.quote_plus(TVDBposter)+'"'
-    u += '&name="'+urllib.quote_plus(series_title.encode('ascii', 'ignore').replace("'",""))+'"'
+    u += '&name="'+urllib.quote_plus(series_title)+'"'
     
     cm=[]
     if favor:
-        fav_u=sys.argv[0]+"?url='"+urllib.quote_plus('<join>'.join([series_title.encode('ascii', 'ignore').replace("'",""),mode,sitemode,url]))+"'&mode='common'"+"&sitemode='unfavorShow'"
-        cm.append( ('Remove Favorite %s' % series_title.encode('ascii', 'ignore'), "XBMC.RunPlugin(%s)" % fav_u) )
+        fav_u=sys.argv[0]+"?url=\""+urllib.quote_plus('<join>'.join([series_title,mode,sitemode,url]))+"\"&mode='common'"+"&sitemode='unfavorShow'"
+        cm.append( ('Remove Favorite %s' % name, "XBMC.RunPlugin(%s)" % fav_u) )
     else:
-        fav_u=sys.argv[0]+"?url='"+urllib.quote_plus('<join>'.join([series_title.encode('ascii', 'ignore').replace("'",""),mode,sitemode,url]))+"'&mode='common'"+"&sitemode='favorShow'"
-        cm.append( ('Favorite %s' % series_title.encode('ascii', 'ignore'), "XBMC.RunPlugin(%s)" % fav_u) )
-    refresh_u=sys.argv[0]+"?url='"+urllib.quote_plus('<join>'.join([series_title.encode('ascii', 'ignore').replace("'",""),mode,sitemode,url]))+"'&mode='common'"+"&sitemode='refreshShow'"
+        fav_u=sys.argv[0]+"?url=\""+urllib.quote_plus('<join>'.join([series_title,mode,sitemode,url]))+"\"&mode='common'"+"&sitemode='favorShow'"
+        cm.append( ('Favorite %s' % name, "XBMC.RunPlugin(%s)" % fav_u) )
+    refresh_u=sys.argv[0]+"?url=\""+urllib.quote_plus('<join>'.join([series_title,mode,sitemode,url]))+"\"&mode='common'"+"&sitemode='refreshShow'"
     cm.append( ('Refresh TVDB Data', "XBMC.RunPlugin(%s)" % refresh_u) )
     if hide:
-        hide_u=sys.argv[0]+"?url='"+urllib.quote_plus('<join>'.join([series_title.encode('ascii', 'ignore').replace("'",""),mode,sitemode,url]))+"'&mode='common'"+"&sitemode='unhideShow'"
+        hide_u=sys.argv[0]+"?url=\""+urllib.quote_plus('<join>'.join([series_title,mode,sitemode,url]))+"\"&mode='common'"+"&sitemode='unhideShow'"
         cm.append( ('UnHide Show', "XBMC.RunPlugin(%s)" % hide_u) )
     else:  
-        hide_u=sys.argv[0]+"?url='"+urllib.quote_plus('<join>'.join([series_title.encode('ascii', 'ignore').replace("'",""),mode,sitemode,url]))+"'&mode='common'"+"&sitemode='hideShow'"
+        hide_u=sys.argv[0]+"?url=\""+urllib.quote_plus('<join>'.join([series_title,mode,sitemode,url]))+"\"&mode='common'"+"&sitemode='hideShow'"
         cm.append( ('Hide Show', "XBMC.RunPlugin(%s)" % hide_u) )
 
-    item=xbmcgui.ListItem(series_title, iconImage=thumb, thumbnailImage=thumb)
+    item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     item.addContextMenuItems( cm )
     item.setProperty('fanart_image',fanart)
     item.setInfo( type="Video", infoLabels=infoLabels)

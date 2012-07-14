@@ -88,12 +88,13 @@
 
 <addon id="plugin.video.free.cable"
        name="Free Cable"
-       version="0.4.1"
+       version="0.4.2"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
     <import addon="script.module.beautifulsoup" version="3.0.8"/>
     <import addon="script.module.demjson" version="1.4"/>
+    <import addon="script.module.free.cable.database" version="0.0.1"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
             library="default.py">
@@ -294,6 +295,20 @@
        name="demjson"
        version="1.4"
        provider-name="deron.meranda.us">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+  </requires>
+  <extension point="xbmc.python.module"
+             library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
+</addon>
+
+<addon id="script.module.free.cable.database"
+       name="Free Cable Database"
+       version="0.0.1"
+       provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
   </requires>

@@ -54,7 +54,7 @@ def rootlist(db=False):
                     subcats=sub.findAll('li')
                     for cat in subcats:
                         link = cat.find('a')
-                        name = '- '+link.find('span').string
+                        name = link.find('span').string
                         url = link['href']
                         if db==True:
                             pass

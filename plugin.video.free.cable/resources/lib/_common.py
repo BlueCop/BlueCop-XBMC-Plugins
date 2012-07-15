@@ -44,14 +44,14 @@ site_dict= {'aetv':'A&E',
             'cartoon': 'Cartoon Network',
             'cbs': 'CBS',
             'comedy': 'Comedy Central',
-            'thecw': 'The CW',
+            'thecw': 'CW, The',
             'food': 'Food Network',
             'fox': 'FOX',
             'fx': 'FX',
             'gsn': 'Game Show Network',
             'hgtv': 'HGTV',
             'history': 'History Channel',
-            'hub':'The Hub',
+            'hub':'Hub, The',
             'lifetime': 'Lifetime',
             'mtv': 'MTV Shows',
             'natgeo': 'National Geographic',
@@ -68,7 +68,7 @@ site_dict= {'aetv':'A&E',
             'tvland': 'TV Land',
             'usa': 'USA',
             'vh1': 'VH1 Shows',
-            'thewb': 'The WB',
+            'thewb': 'WB, The',
             }
 
 site_descriptions= {'aetv': "A&E is Real Life. Drama.  Now reaching more than 99 million homes, A&E is television that you can't turn away from; where unscripted shows are dramatic and scripted dramas are authentic.  A&E offers a diverse mix of high quality entertainment ranging from the network's original scripted series to signature non-fiction franchises, including the Emmy-winning \'Intervention,\' \'Dog The Bounty Hunter,\' \'Hoarders,\' \'Paranormal State\' and \'Criss Angel Mindfreak,\' and the most successful justice shows on cable, including \'The First 48\' and \'Manhunters.\'  The A&E website is located at www.aetv.com.",
@@ -296,7 +296,7 @@ def load_showlist(favored=False):
         addShow(series_title, mode, sitemode, url, thumb, fanart,TVDBposter, infoLabels,favor=favor,hide=hide)
 
 def lookup_db(series_title,mode,submode,url,forceRefresh=False):
-    print 'Looking Up: %s for %s' % (series_title,mode)
+    #print 'Looking Up: %s for %s' % (series_title,mode)
     conn = sqlite.connect(db_file)
     conn.text_factory = str
     c = conn.cursor()
@@ -319,6 +319,29 @@ def lookup_db(series_title,mode,submode,url,forceRefresh=False):
         c.execute('insert or replace into shows values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', showdata)
         conn.commit()
         return c.execute('select * from shows where series_title=? and mode=? and submode =?', (series_title,mode,submode)).fetchone()
+
+def lookup_by_TVDBID_plot(tvdb_id):
+    conn = sqlite.connect(db_file)
+    conn.text_factory = str
+    c = conn.cursor()
+    showdata = c.execute('select * from shows where TVDB_ID =?', (tvdb_id,)).fetchone()
+    prefixplot=''
+    if showdata:
+        series_title,mode,sitemode,url,TVDB_ID,IMDB_ID,TVDBbanner,TVDBposter,TVDBfanart,first_aired,date,year,actors,genres,network,plot,runtime,rating,Airs_DayOfWeek,Airs_Time,status,has_full_episodes,favor,hide = showdata
+        if network<>None:
+            prefixplot+='Station: %s' % network
+            prefixplot+='\n'
+        if Airs_DayOfWeek<>None and Airs_Time<>None:
+            prefixplot+='Airs: %s @ %s' % (Airs_DayOfWeek,Airs_Time)
+            prefixplot+='\n'
+        if status<>None:
+            prefixplot+='Status: %s' % status
+            prefixplot+='\n'
+        if prefixplot <> '':
+            prefixplot+='\n'
+        if plot<>None:
+            prefixplot=prefixplot.encode('utf-8', 'ignore')+plot.decode("utf-8").encode('utf-8', 'ignore')
+    return prefixplot
         
 def refreshShow():
     series_title,mode,submode,url = args.url.split('<join>')
@@ -429,7 +452,11 @@ def refresh_db():
 def setView(type='root'):
     confluence_views = [500,501,502,503,504,508]
     #types: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
-    if type <> 'root':
+    if type == 'root':
+        xbmcplugin.setContent(pluginhandle, 'movies')
+    elif type == 'seasons':
+        xbmcplugin.setContent(pluginhandle, 'movies')
+    else:
         if type == 'tvshows':
             xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
             #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_STUDIO)
@@ -438,9 +465,6 @@ def setView(type='root'):
             #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_VIDEO_RATING)
             #xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_DATE)
         xbmcplugin.setContent(pluginhandle, type)
-    else:
-        xbmcplugin.setContent(pluginhandle, 'movies')
-    #xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
     viewenable=addoncompat.get_setting("viewenable")
     if viewenable == 'true':
         view=int(addoncompat.get_setting(type+'view'))
@@ -463,7 +487,7 @@ def addVideo(u,displayname,thumb=False,fanart=False,infoLabels=False):
     ADD DIRECTORY
 """
 
-def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, description='', aired='', genre='',count=0):
+def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, description=False, aired='', genre='',count=0):
     if not fanart:
         if args.__dict__.has_key('fanart'): fanart = args.fanart
         else: fanart = plugin_fanart
@@ -471,6 +495,24 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, 
         if args.__dict__.has_key('poster'): thumb = args.poster
         elif args.__dict__.has_key('thumb'): thumb = args.thumb
         else: thumb = ''
+    if args.__dict__.has_key('name'): showname = args.name
+    else:showname=''
+    if not description:
+        if args.__dict__.has_key('tvdb_id'):
+            description=lookup_by_TVDBID_plot(args.tvdb_id)
+        elif site_descriptions.has_key(mode):
+            description=site_descriptions[mode]
+        else:
+            description=''
+    
+
+    infoLabels={ "Title":name,
+                 "TVShowTitle":showname,
+                 "Genre":genre,
+                 "premiered":aired,
+                 "Plot":description,
+                 "count":count}
+    
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'
@@ -480,14 +522,10 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, 
     u += '&name="'+urllib.quote_plus(name)+'"'
     item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     item.setProperty('fanart_image',fanart)
-    item.setInfo( type="Video", infoLabels={ "Title":name,
-                                             "Genre":genre,
-                                             "premiered":aired,
-                                             "Plot":description,
-                                             "count":count})
+    item.setInfo( type="Video", infoLabels=infoLabels)
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True)
     
-def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVDBposter=False, infoLabels=False, favor=False, hide=False):
+def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVDBposter=False, TVDB_ID=False, infoLabels=False, favor=False, hide=False):
     if not os.path.exists(db_file):
         create_db()
     if not infoLabels:
@@ -541,6 +579,8 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
     u += '&mode="'+mode+'"'
     u += '&sitemode="'+sitemode+'"'
     u += '&thumb="'+urllib.quote_plus(thumb)+'"'
+    if TVDB_ID:
+        u += '&tvdb_id="'+urllib.quote_plus(TVDB_ID)+'"'
     if plugin_fanart <> fanart:
         u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     if TVDBposter:

@@ -25,14 +25,22 @@ print "\n\n\n\n\n\n\nstart of FREE CABLE plugin\n\n\n\n\n\n"
 def modes( ):
     if sys.argv[2]=='':
         #Plug-in Root List
+        allDescription = ''
+        for network, name  in sorted(common.site_dict.iteritems(), key=operator.itemgetter(1)):
+            if common.addoncompat.get_setting(network) == 'true':
+                if name.endswith(', The'):
+                    name = 'The '+name.replace(', The','')
+                allDescription +=name+', '
         count=0
-        common.addDirectory('Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon,count=count)
+        common.addDirectory('Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon,count=count,description='Your Favorite Shows From:\n'+allDescription)
         count+=1
-        common.addDirectory('All Shows','Masterlist','NoUrl',thumb=common.all_icon,count=count)
+        common.addDirectory('All Shows','Masterlist','NoUrl',thumb=common.all_icon,count=count,description='All Shows Available On:\n'+allDescription)
         count+=1
         #for network, name  in common.site_dict.iteritems():
         for network, name  in sorted(common.site_dict.iteritems(), key=operator.itemgetter(1)):
             station_icon = os.path.join(common.imagepath,network+'.png')
+            if name.endswith(', The'):
+                name = 'The '+name.replace(', The','')
             if common.addoncompat.get_setting(network) == 'true':
                 common.addDirectory(name, network, 'rootlist',thumb=station_icon,fanart=common.plugin_fanart,description=common.site_descriptions[network],count=count)
             count+=1

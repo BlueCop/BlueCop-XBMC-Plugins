@@ -766,7 +766,7 @@ def toursRightNow():
     max = maxperpage
     page = int(params['page'])
     offset = (page-1)*max
-    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)#+'&extended=true'
+    fetch_url=url+'&offset='+str(offset)+'&max='+str(max)+'&extended=true'
     #if total >= max:
     #    addDir('*Next Page*', url,    'toursRightNow', page=str(page+1))
     listTours(fetch_url)
@@ -1400,7 +1400,8 @@ def getFBAuth():
     br.addheaders = [('User-agent', user)]
     #redirect = urllib.quote('fbconnect://success')
     redirect = urllib.quote('https://www.vevo.com')
-    scope = urllib.quote('email,user_birthday,user_likes,user_interests,publish_actions')
+    #scope = urllib.quote('email,user_birthday,user_likes,user_interests,publish_actions')
+    scope = urllib.quote('email')
     url = 'https://graph.facebook.com/oauth/authorize?client_id=184548202936&local_client_id=vevo&redirect_uri=%s&type=user_agent&scope=%s&sdk=ios&display=touch' % (redirect,scope)
     br.open(url)
     response = br.response()

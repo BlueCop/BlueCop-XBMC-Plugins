@@ -1438,7 +1438,20 @@ def getURL( url , postdata=False, method=False, extendTimeout=False, VEVOToken=F
         #proxy = 'http://localhost:8888'
         #proxy_handler = urllib2.ProxyHandler({'http':proxy})
         #opener = urllib2.build_opener(proxy_handler)
-        opener = urllib2.build_opener()
+        if addon.getSetting('us_proxy_enable') == 'true':
+            us_proxy = 'http://' + addon.getSetting('us_proxy') + ':' + addon.getSetting('us_proxy_port')
+            proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
+            if addon.getSetting('us_proxy_pass') <> '' and addon.getSetting('us_proxy_user') <> '':
+                print 'Using authenticated proxy: ' + us_proxy
+                password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                password_mgr.add_password(None, us_proxy, addon.getSetting('us_proxy_user'), addon.getSetting('us_proxy_pass'))
+                proxy_auth_handler = urllib2.ProxyBasicAuthHandler(password_mgr)
+                opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
+            else:
+                print 'Using proxy: ' + us_proxy
+                opener = urllib2.build_opener(proxy_handler)
+        else:   
+            opener = urllib2.build_opener()
         if browser:
             opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0')]
         else:

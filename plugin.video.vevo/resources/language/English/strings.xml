@@ -35,6 +35,13 @@
 	<string id="30028">Rick Roll!</string>
 	<string id="30029">RTMP Mode</string>
 	
+	<string id="30030">Proxy</string>
+	<string id="30040">Proxy IP</string>
+	<string id="30041">Port</string>
+	<string id="30042">Enable Proxy</string>
+	<string id="30043">User Name</string>
+	<string id="30044">Password</string>
+	
 	<string id="30050">Enable Set View</string>
 	<string id="30058">Default View</string>
 

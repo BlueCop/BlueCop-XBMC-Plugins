@@ -87,13 +87,26 @@ def episode(cid = common.args.url):
                 name = episode.find('title').string.encode( "utf-8" )
                 thumbnail = episode.find('thumbnailurl').string.encode( "utf-8" )
                 plot = episode.find('description').string.encode( "utf-8" )
+                try:seasonNum = int(episode.find('seasonnumber').string)
+                except:seasonNum = 0
                 try:
-                    season_episode = thumbnail.split('_')[1]
-                    seasonNum = int(season_episode[:-2])
-                    episodeNum = int(season_episode[-2:])
-                except:
-                    seasonNum = 0
-                    episodeNum = 0
+                    episodeNum = episode.find('episodenumber').string
+                    if len(episodeNum) > 2 and episodeNum.startswith(str(seasonNum)):
+                        episodeNum = episodeNum[1:]
+                    if len(episodeNum) > 2:
+                        episodeNum = episodeNum[-2:]
+                        print episodeNum
+                    episodeNum = int(episodeNum)
+                except:episodeNum = 0
+                try:duration = episode.find('duration').string.strip()
+                except: duration = ''
+                try: mpaa = episode.find('tvratingcode').string.strip()
+                except: mpaa = ''
+                try: airdate = common.formatDate(episode.find('expirationdate').string,'%m/%d/%Y')
+                except: airdate = ''
+                displayname=name
+                if episodeNum <> 0 or seasonNum <> 0:
+                    displayname = str(seasonNum)+'x'+str(episodeNum)+' - '+name
                 segments = episode.findAll('segment')
                 if len(segments) == 0:
                     url = episodeId
@@ -111,9 +124,12 @@ def episode(cid = common.args.url):
                              "Plot":plot,
                              "Season":seasonNum,
                              "Episode":episodeNum,
+                             "MPAA":mpaa,
+                             "premiered":airdate,
+                             "Episode":episodeNum,
                              "TVShowTitle":showname
                              }
-                common.addVideo(u,name,thumbnail,infoLabels=infoLabels)
+                common.addVideo(u,displayname,thumbnail,infoLabels=infoLabels)
         common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
@@ -138,31 +154,43 @@ def GET_RTMP(vid):
         url = 'http://www.tbs.com/tveverywhere/content/services/cvpXML.do?titleId='+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        print tree.prettify()
-        sbitrate = int(common.settings['quality'])
-        hbitrate = -1
+        #print tree.prettify()
         files = tree.findAll('file')
-        for filenames in files:
-                try: bitrate = int(filenames['bitrate'])
-                except: bitrate = 1
-                if bitrate > hbitrate and bitrate <= sbitrate:
-                        hbitrate = bitrate
-                        filename = filenames.string
-        if 'http://' in filename:
-            filename = filename
-            return filename
-        else:
-            filename = filename[1:len(filename)-4]
-            serverDetails = tree.find('akamai')
-            server = serverDetails.find('src').string.split('://')[1]
-            #get auth
-            tokentype = serverDetails.find('authtokentype').string
-            window = serverDetails.find('window').string
-            aifp = serverDetails.find('aifp').string
-            auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
-            swfUrl = 'http://www.tbs.com/cvp/tbs_video.swf'
-            rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
-            return rtmp
+        if not files:
+            url = 'http://www.tbs.com/tveverywhere/content/services/cvpXML.do?titleId=&id='+vid
+            html=common.getURL(url)
+            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            #print tree.prettify()
+            files = tree.findAll('file')
+        if files:
+            html=common.getURL(url)
+            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+            print tree.prettify()
+            sbitrate = int(common.settings['quality'])
+            hbitrate = -1
+            files = tree.findAll('file')
+            for filenames in files:
+                    try: bitrate = int(filenames['bitrate'])
+                    except: bitrate = 1
+                    if bitrate > hbitrate and bitrate <= sbitrate:
+                            hbitrate = bitrate
+                            filename = filenames.string            
+            if 'rtmp://' in filename:
+                filename = filename[1:len(filename)-4]
+                serverDetails = tree.find('akamai')
+                server = serverDetails.find('src').string.split('://')[1]
+                #get auth
+                tokentype = serverDetails.find('authtokentype').string
+                window = serverDetails.find('window').string
+                aifp = serverDetails.find('aifp').string
+                auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
+                swfUrl = 'http://www.tbs.com/cvp/tbs_video.swf'
+                link = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
+            elif 'http://' in filename:
+                link = filename
+            else:
+                link = 'http://ht.cdn.turner.com/tbs/big'+filename
+            return link
 
 def playepisode():
         vids = common.args.url.split('<segment>')

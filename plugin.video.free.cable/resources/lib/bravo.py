@@ -55,24 +55,29 @@ def process(urlBase, fullname = common.args.url):
     episodes = demjson.decode(data)['entries']
     for episode in episodes:
         if fullname == episode['pl1$show'][0]:
-            name = episode['title']
+            name = episode['description'].split('-')[1].strip()
+            showname = episode['pl1$subtitle']
             description = episode['description']
             thumb= episode['plmedia$defaultThumbnailUrl']
+            season = episode['pl1$season'][0]
+            episodeNum = episode['pl1$episode'][0]
             duration=str(int(episode['media$content'][0]['plfile$duration']))
             url=episode['media$content'][0]['plfile$url']
+            airDate = common.formatDate(epoch=episode['pubDate']/1000)
+            displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
             u = sys.argv[0]
             u += '?url="'+urllib.quote_plus(url)+'"'
             u += '&mode="bravo"'
             u += '&sitemode="play"'
             infoLabels={ "Title":name,
-                         #"Season":season,
-                         #"Episode":episode,
+                         "Season":season,
+                         "Episode":episodeNum,
                          "Plot":description,
-                         #"premiered":airDate,
+                         "premiered":airDate,
                          "Duration":duration,
-                         "TVShowTitle":common.args.name
+                         "TVShowTitle":showname
                          }
-            common.addVideo(u,name,thumb,infoLabels=infoLabels)
+            common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
 
 #Get SMIL url and play video
 def play():

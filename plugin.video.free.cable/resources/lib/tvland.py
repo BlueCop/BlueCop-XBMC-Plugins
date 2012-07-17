@@ -87,6 +87,7 @@ def hic_episodes():
     common.setView('episodes')
     
 def playuri(uri = common.args.url,referer='http://www.tvland.com'):
+    mp4_url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=/44620/mtvnorigin"
     mtvn = 'http://media.mtvnservices.com/'+uri 
     swfUrl = common.getRedirect(mtvn,referer=referer)
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0])
@@ -108,16 +109,16 @@ def playuri(uri = common.args.url,referer='http://www.tvland.com'):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 rtmpdata = video.find('src').string
-                app = rtmpdata.split('://')[1].split('/')[1]
-                rtmpdata = rtmpdata.split(app)
-                rtmp = rtmpdata[0]
-                playpath = rtmpdata[1]
-                if '.mp4' in playpath:
-                    playpath = 'mp4:'+playpath.replace('.mp4','')
-                else:
-                    playpath = playpath.replace('.flv','')
-                #swfUrl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.1.6.0.swf"
-                rtmpurl = rtmp + app +" playpath=" + playpath + " swfurl=" + swfUrl + " swfvfy=true"
+                rtmpurl = mp4_url+rtmpdata.split('e20')[1]
+                #app = rtmpdata.split('://')[1].split('/')[1]
+                #rtmpdata = rtmpdata.split(app)
+                #rtmp = rtmpdata[0]
+                #playpath = rtmpdata[1]
+                #if '.mp4' in playpath:
+                #    playpath = 'mp4:'+playpath.replace('.mp4','')
+                #else:
+                #    playpath = playpath.replace('.flv','')
+                #rtmpurl = rtmp + app +" playpath=" + playpath + " swfurl=" + swfUrl + " swfvfy=true"
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)

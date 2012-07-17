@@ -5,6 +5,7 @@ from BeautifulSoup import BeautifulStoneSoup
 pluginhandle = int(sys.argv[1])
 
 BASE_URL = 'http://www.tnt.tv/video/content/services/getCollections.do?id=58127'
+BASE = 'http://www.tnt.tv'
 
 def masterlist():
         url = 'http://www.tnt.tv/content/services/getCollections.do?site=true&id=58127'
@@ -78,7 +79,6 @@ def show():
 def episode():
         cid = common.args.url
         showname = common.args.name
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         #url = 'http://www.tnt.tv/processors/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
         #url = 'http://www.tnt.tv/content/services/getCollectionByContentId.do?site=true&offset=0&sort=&limit=200&id='+cid
         url = 'http://www.tnt.tv/video/content/services/getCollectionByContentId.do?offset=0&sort=&limit=200&id='+cid
@@ -91,20 +91,26 @@ def episode():
                 thumbnail = episode.find('thumbnailurl').string
                 plot = episode.find('description').string
                 duration = episode.find('duration').string
+                try:seasonNum = int(episode.find('seasonnumber').string)
+                except:seasonNum = 0
                 try:
-                    seasonNum = int(episode.find('seasonnumber').string)
-                    print seasonNum
-                except:
-                    seasonNum = 0
-                try:
-                    episodeNum = int(episode.find('episodenumber').string)
-                    print episodeNum
-                except:
-                    episodeNum = 0
-                if episodeNum == 0 or seasonNum == 0:
-                    print 'bad season or episode value'
-                else:
-                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
+                    episodeNum = episode.find('episodenumber').string
+                    if len(episodeNum) > 2 and episodeNum.startswith(str(seasonNum)):
+                        episodeNum = episodeNum[1:]
+                    if len(episodeNum) > 2:
+                        episodeNum = episodeNum[-2:]
+                        print episodeNum
+                    episodeNum = int(episodeNum)
+                except:episodeNum = 0
+                try:duration = episode.find('duration').string.strip()
+                except: duration = ''
+                try: mpaa = episode.find('tvratingcode').string.strip()
+                except: mpaa = ''
+                try: airdate = common.formatDate(episode.find('expirationdate').string,'%m/%d/%Y')
+                except: airdate = ''
+                displayname=name
+                if episodeNum <> 0 or seasonNum <> 0:
+                    displayname = str(seasonNum)+'x'+str(episodeNum)+' - '+name
                 segments = episode.findAll('segment')
                 if len(segments) == 0:
                     url = episodeId
@@ -121,10 +127,13 @@ def episode():
                 infoLabels={ "Title":name,
                              "Plot":plot,
                              "Season":seasonNum,
+                             "Duration":duration,
+                             "MPAA":mpaa,
+                             "premiered":airdate,
                              "Episode":episodeNum,
                              "TVShowTitle":showname
                              }
-                common.addVideo(u,name,thumbnail,infoLabels=infoLabels)
+                common.addVideo(u,displayname,thumbnail,infoLabels=infoLabels)
         common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
@@ -149,19 +158,16 @@ def getAUTH(aifp,window,tokentype,vid,filename):
 def GET_RTMP(vid):
         #url = 'http://www.tnt.tv/video_cvp/cvp/videoData/?id='+vid
         #http://www.tnt.tv/video/content/services/cvpXML.do?titleId=828441
-        try:
-            url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId='+vid
-            html=common.getURL(url)
-            tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            print tree.prettify()
-            files = tree.findAll('file')
-            if not files:
-                raise
-        except:
+        url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId='+vid
+        html=common.getURL(url)
+        tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        #print tree.prettify()
+        files = tree.findAll('file')
+        if not files:
             url = 'http://www.tnt.tv/video/content/services/cvpXML.do?titleId=&id='+vid
             html=common.getURL(url)
             tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-            print tree.prettify()
+            #print tree.prettify()
             files = tree.findAll('file')
         sbitrate = int(common.settings['quality'])
         hbitrate = -1
@@ -171,10 +177,7 @@ def GET_RTMP(vid):
                 if bitrate > hbitrate and bitrate <= sbitrate:
                         hbitrate = bitrate
                         filename = filenames.string
-        if 'http://' in filename:
-            filename = filename
-            return filename
-        else:
+        if 'rtmp://' in filename:
             filename = filename[1:len(filename)-4]#.replace('mp4:','')
             serverDetails = tree.find('akamai')
             server = serverDetails.find('src').string.split('://')[1]
@@ -185,8 +188,12 @@ def GET_RTMP(vid):
             
             auth=getAUTH(aifp,window,tokentype,vid,filename.replace('mp4:',''))      
             swfUrl = 'http://www.tnt.tv/dramavision/tnt_video.swf'
-            rtmp = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
-            return rtmp
+            link = 'rtmpe://'+server+'?'+auth+" swfurl="+swfUrl+" swfvfy=true"+' playpath='+filename
+        elif 'http://' in filename:
+            link = filename
+        else:
+            link = 'http://ht.cdn.turner.com/tnt/big/'+filename
+        return link
 
 def playepisode():
         vids = common.args.url.split('<segment>')

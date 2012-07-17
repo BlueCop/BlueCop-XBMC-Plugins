@@ -55,7 +55,7 @@ def process(urlBase, fullname = common.args.url):
     #url = 'http://feed.theplatform.com/f/AqNl-B/iyAsU_4kQn1I'
     url = urlBase
     url += '?form=json'
-    url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'#,:fullEpisode
+    #url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'#,:fullEpisode
     url += '&fileFields=duration,url,width,height'
     url += '&count=true'
     url += '&byCategories='+urllib.quote_plus(fullname)
@@ -63,24 +63,53 @@ def process(urlBase, fullname = common.args.url):
     data = common.getURL(url)
     episodes = demjson.decode(data)['entries']
     for episode in episodes:
-        name = episode['title']
+        if ':' in episode['title']:
+            name = episode['title'].split(':')[1].strip()
+        else:
+            name = episode['title']
         description = episode['description']
+        if ' Episode ' in episode['title'] and ' Episode Preview' not in episode['title']:
+            showname=episode['title'].split('Episode')[0].strip()
+            seasonEpisode = episode['title'].split(':')[0].split('Episode')[-1].strip()
+            season = int(seasonEpisode[:1])
+            episodeNum = int(seasonEpisode[1:])
+            displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
+        elif ' Season ' in episode['title']:
+            showname=episode['title'].split('Season')[0].strip()
+            season = int(episode['title'].split(':')[0].split('Season')[-1].strip().split(' ')[0].strip())
+            episodeNum = 0
+            displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
+        else:
+            try:
+                seasonEpisode = episode['title'].split(':')[0].split(' ')[-1].strip()
+                showname=episode['title'].split(seasonEpisode)[0].strip()
+                season = int(seasonEpisode[:1])
+                episodeNum = int(seasonEpisode[1:])
+                displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
+            except:
+                name = episode['title']
+                showname = name.split(' ')[0]
+                displayname = name
+                season = 0
+                episodeNum = 0
         thumb= episode['plmedia$defaultThumbnailUrl']
         duration=str(int(episode['media$content'][0]['plfile$duration']))
         url=episode['media$content'][0]['plfile$url']
+        airDate = common.formatDate(epoch=episode['pubDate']/1000)
+        
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="oxygen"'
         u += '&sitemode="play"'
         infoLabels={ "Title":name,
-                     #"Season":season,
-                     #"Episode":episode,
+                     "Season":season,
+                     "Episode":episodeNum,
                      "Plot":description,
-                     #"premiered":airDate,
+                     "premiered":airDate,
                      "Duration":duration,
-                     "TVShowTitle":common.args.name
+                     "TVShowTitle":showname
                      }
-        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
 
 #Get SMIL url and play video
 def play():

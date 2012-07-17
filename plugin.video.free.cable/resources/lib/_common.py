@@ -53,7 +53,7 @@ site_dict= {'aetv':'A&E',
             'history': 'History Channel',
             'hub':'Hub, The',
             'lifetime': 'Lifetime',
-            'mtv': 'MTV Shows',
+            'mtv': 'MTV',
             'natgeo': 'National Geographic',
             'natgeowild': 'Nat Geo Wild',
             'nbc': 'NBC',
@@ -67,7 +67,7 @@ site_dict= {'aetv':'A&E',
             'tnt': 'TNT',
             'tvland': 'TV Land',
             'usa': 'USA',
-            'vh1': 'VH1 Shows',
+            'vh1': 'VH1',
             'thewb': 'WB, The',
             }
 
@@ -264,6 +264,8 @@ def load_showlist(favored=False):
             else: fanart=''
         if TVDBbanner:
             thumb=TVDBbanner
+        elif TVDBposter:
+            thumb=TVDBposter
         infoLabels['Title']=series_title.encode('utf-8', 'ignore')
         infoLabels['TVShowTitle']=series_title.encode('utf-8', 'ignore')
         prefixplot=''
@@ -281,7 +283,7 @@ def load_showlist(favored=False):
         if plot<>None:
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.encode('utf-8', 'ignore')
         else:
-            infoLabels['Plot']=prefixplot
+            infoLabels['Plot']=prefixplot+"\"%s\" on %s" % (series_title,site_dict[mode])
         if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
@@ -448,6 +450,12 @@ def refresh_db():
                 if (dialog.iscanceled()):
                     return False
         current += 1
+        
+def formatDate(inputDate='',inputFormat='',outputFormat='%Y-%m-%d',epoch=False):
+    if epoch:
+        return time.strftime(outputFormat,time.localtime(epoch))
+    else:
+        return time.strftime(outputFormat,time.strptime(inputDate, inputFormat))
 
 def setView(type='root'):
     confluence_views = [500,501,502,503,504,508]
@@ -520,6 +528,8 @@ def addDirectory(name, mode='', sitemode='', url='', thumb=False, fanart=False, 
     u += '&thumb="'+urllib.quote_plus(thumb)+'"'
     u += '&fanart="'+urllib.quote_plus(fanart)+'"'
     u += '&name="'+urllib.quote_plus(name)+'"'
+    if args.__dict__.has_key('tvdb_id'):
+        u += '&tvdb_id="'+urllib.quote_plus(args.tvdb_id)+'"'
     item=xbmcgui.ListItem(name, iconImage=thumb, thumbnailImage=thumb)
     item.setProperty('fanart_image',fanart)
     item.setInfo( type="Video", infoLabels=infoLabels)
@@ -540,6 +550,8 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
             else: fanart=''
         if TVDBbanner:
             thumb=TVDBbanner
+        elif TVDBposter:
+            thumb=TVDBposter
         else:
             thumb=os.path.join(imagepath,mode+'.png')
         series_title = series_title.decode("utf-8")
@@ -560,7 +572,7 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         if plot<>None:
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.decode("utf-8").encode('utf-8', 'ignore')
         else:
-            infoLabels['Plot']=prefixplot
+            infoLabels['Plot']=prefixplot+"\"%s\" on %s" % (series_title,site_dict[mode])
         if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
@@ -613,11 +625,18 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
 
 def getURL( url , values = None ,proxy = False, referer=False):
     try:
-        if proxy == True:
+        if addoncompat.get_setting('us_proxy_enable') == 'true':
             us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
-            print 'Using proxy: ' + us_proxy
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-            opener = urllib2.build_opener(proxy_handler)
+            if addoncompat.get_setting('us_proxy_pass') <> '' and addoncompat.get_setting('us_proxy_user') <> '':
+                print 'Using authenticated proxy: ' + us_proxy
+                password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                password_mgr.add_password(None, us_proxy, addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
+                proxy_auth_handler = urllib2.ProxyBasicAuthHandler(password_mgr)
+                opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
+            else:
+                print 'Using proxy: ' + us_proxy
+                opener = urllib2.build_opener(proxy_handler)
             urllib2.install_opener(opener)
 
         print 'FREE CABLE --> common :: getURL :: url = '+url
@@ -640,11 +659,18 @@ def getURL( url , values = None ,proxy = False, referer=False):
     
 def getRedirect( url , values = None ,proxy = False, referer=False):
     try:
-        if proxy == True:
+        if addoncompat.get_setting('us_proxy_enable') == 'true':
             us_proxy = 'http://' + addoncompat.get_setting('us_proxy') + ':' + addoncompat.get_setting('us_proxy_port')
-            print 'Using proxy: ' + us_proxy
             proxy_handler = urllib2.ProxyHandler({'http':us_proxy})
-            opener = urllib2.build_opener(proxy_handler)
+            if addoncompat.get_setting('us_proxy_pass') <> '' and addoncompat.get_setting('us_proxy_user') <> '':
+                print 'Using authenticated proxy: ' + us_proxy
+                password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                password_mgr.add_password(None, us_proxy, addoncompat.get_setting('us_proxy_user'), addoncompat.get_setting('us_proxy_pass'))
+                proxy_auth_handler = urllib2.ProxyBasicAuthHandler(password_mgr)
+                opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
+            else:
+                print 'Using proxy: ' + us_proxy
+                opener = urllib2.build_opener(proxy_handler)
             urllib2.install_opener(opener)
 
         print 'FREE CABLE --> common :: getRedirect :: url = '+url

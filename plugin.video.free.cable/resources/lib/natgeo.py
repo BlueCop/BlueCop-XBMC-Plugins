@@ -17,33 +17,55 @@ import demjson
 import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
-BASE_URL = 'http://video.nationalgeographic.com/video/national-geographic-channel/full-episodes/'
+#BASE_URL = 'http://video.nationalgeographic.com/video/national-geographic-channel/full-episodes/'
+BASE_URL = 'http://video.nationalgeographic.com/video/national-geographic-channel/shows/'
+SPECIALS_BASE_URL = 'http://video.nationalgeographic.com/video/national-geographic-channel/specials-1/'
 BASE = 'http://video.nationalgeographic.com'
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    data = common.getURL(BASE_URL)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    shows=tree.findAll('div',attrs={'class':'natgeov-cat-group'})
-    db_shows=[]
-    for show in shows:
-        name = show.find('h3').contents[0].split('(')[0].strip()
-        url = BASE + show.find('a')['href']
-        if db==True:
-            db_shows.append((name, 'natgeo', 'episodes', url))
-        else:
-            common.addShow(name, 'natgeo', 'episodes', url)
+    for url in (BASE_URL,SPECIALS_BASE_URL):
+        data = common.getURL(url)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        shows=tree.findAll('div',attrs={'class':'natgeov-cat-group'})
+        db_shows=[]
+        for show in shows:
+            name = show.find('h3').contents[0].split('(')[0].strip()
+            url = BASE + show.find('a')['href']
+            if db==True:
+                db_shows.append((name, 'natgeo', 'showsub', url))
+            else:
+                common.addShow(name, 'natgeo', 'showsub', url)
     if db==True:
         return db_shows
     else:
         common.setView('tvshows')
 
-def episodes():
-    url = common.args.url
+def showsub():
+    if common.args.url.endswith('-1'):
+        common.addDirectory('Full Episodes', 'natgeo' , 'episodes', common.args.url[:-2])
+    common.addDirectory('All Videos', 'natgeo', 'episodes', common.args.url)
+    common.setView('seasons')
+
+
+def episodes(url = common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    addVideos(tree)
+    pagedata = re.compile('new Paginator\((.+?),(.+?)\)').findall(data)
+    if pagedata:
+        total   = int(pagedata[0][0])
+        current = int(pagedata[0][1])
+        if total > 1:
+            for page in range(1,total):
+                data = common.getURL(url+'/'+str(page)+'/')
+                tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+                addVideos(tree)
+    common.setView('episodes')
+
+def addVideos(tree):
     episodes=tree.find('ul',attrs={'class':'grid cf'}).findAll('li',recursive=False)
     showname = tree.find('h3',attrs={'id':'natgeov-section-title'}).contents[0]
     for episode in episodes:
@@ -64,7 +86,6 @@ def episodes():
                      "TVShowTitle":showname
                      }
         common.addVideo(u,name,thumb,infoLabels=infoLabels)
-    common.setView('episodes')
 
 def randomstring(N):
     return ''.join(random.choice(string.ascii_uppercase) for x in range(N))

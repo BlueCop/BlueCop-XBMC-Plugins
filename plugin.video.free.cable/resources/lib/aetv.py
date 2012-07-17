@@ -24,8 +24,6 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    #xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(BASEURL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'av-list1','class':'all-videos_unordered'}).findAll('a')
@@ -101,21 +99,42 @@ def show_cats(url=common.args.url,filter=False):
                 common.addDirectory(name, 'aetv', 'showsub', str(playerID)+'<split>'+showstring)
             common.setView('seasons')
     except:
-        homedir = re.compile('<div id="video_home_dir" style="display : none">(.+?)</div>').findall(data)[0]
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        homedir = tree.find('div',attrs={'id':'video_home_dir','style':'display : none'}).string
+        #homedir = re.compile('<div id="video_home_dir" style="display : none">(.+?)</div>').findall(data)[0]
         series_url  = 'http://www.aetv.com/minisite/videoajx.jsp'
         series_url += '?homedir='+homedir
         full_series_url = series_url+'&pfilter=FULL%20EPISODES'
         clips_series_url = series_url+'&pfilter=CLIPS'
-        common.addDirectory('Full Episodes', 'aetv', 'showsubThePlatform', full_series_url)
-        common.addDirectory('Clips', 'aetv', 'showsubThePlatform', clips_series_url)
+        common.addDirectory('Full Episodes', 'aetv', 'showseasonThePlatform', full_series_url)
+        common.addDirectory('Clips', 'aetv', 'showseasonThePlatform', clips_series_url)
         common.setView('seasons')
 
-def showsubThePlatform():
-    data = common.getURL(common.args.url)
+def showseasonThePlatform(url=common.args.url):
+    data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    seasons = tree.findAll('div',attrs={'class':'fake-select inactive'})[1].findAll('li',attrs={'class':None})
+    if len(seasons) > 0:
+        for season in seasons:
+            link = season.find('a')
+            season_url = url+'&sfilter='+link.string.strip().replace(' ','%20')
+            common.addDirectory(link.string, 'aetv', 'showsubThePlatform', season_url)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        common.setView('seasons')
+    else:
+        showsubThePlatform(tree=tree)
+    
+
+def showsubThePlatform(url=common.args.url,tree=False):
+    if not tree:
+        data = common.getURL(url)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos=tree.findAll('li',attrs={'class':'selected'})
+    try:season = int(tree.findAll('li',attrs={'class':'selected'})[1].find('a').string.replace('Season ',''))
+    except:season = 0
     videos=tree.findAll('div',attrs={'class':'video_playlist-item'})
     for video in videos:
-        infoLabels={}
+        infoLabels={'Season':season}
         video_details = video.find('div',attrs={'class':'video_details'})
         infoLabels['Title'] = video_details.find('p',attrs={'class':'video_details-title'}).string.encode('utf-8')
         thumb = video.find('img')['src']
@@ -131,7 +150,10 @@ def showsubThePlatform():
                 elif 'Episode: ' in p.string:
                     try:
                         infoLabels['Episode'] = int(p.string.replace('Episode: ',''))
-                        displayname = str(infoLabels['Episode'])+'. '+infoLabels['Title']
+                        if infoLabels['Season'] <> 0:
+                            displayname = '%sx%s - %s' % (str(infoLabels['Season']),str(infoLabels['Episode']),infoLabels['Title'])
+                        else:
+                            displayname = str(infoLabels['Episode'])+' - '+infoLabels['Title']
                     except:
                         infoLabels['Episode'] = 0
                         displayname = infoLabels['Title']
@@ -139,7 +161,7 @@ def showsubThePlatform():
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="aetv"'
         u += '&sitemode="playThePlatform"'
-        common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')
 
 def playThePlatform():

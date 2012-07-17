@@ -82,34 +82,50 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
         episodeType = episode['episodetype']
         try:seasonNum = int(episode['episeasonnumber'])
         except:seasonNum = 0
-        try:episodeNum = int(episode['episodenumber'])
-        except:episodeNum = 0
+        try:
+            episodeNum = episode['episodenumber']
+            if episodeNum == '0':
+                episodeNum = episode['subepisodenumber']
+        except:
+            try:episodeNum = episode['subepisodenumber']
+            except:episodeNum = '0'
+        if len(episodeNum) > 2 and episodeNum.startswith(str(seasonNum)):
+            episodeNum = episodeNum[1:]
+        if len(episodeNum) > 2:
+            episodeNum = episodeNum[-2:]
+        episodeNum = int(episodeNum)
+
         thumbnailUrl = episode['thumbnailurl']
         genre = episode['collectioncategorytype']
         ranking = episode['ranking']
         rating = episode['rating']
-        expirationDate = episode['expirationdate'].replace(' 12:00 AM','')
+        if episode.has_key('originalpremieredate'):
+            airDate = episode['originalpremieredate'].replace(' 12:00 AM','').replace('/','-')
+        else:
+            airDate =  ''
         description = cleanxml(episode.find('description').contents[1].strip())
         segids = episode.find('value').string
         videoid = episode['id']
-        if seasonNum == 0 or episodeNum == 0:
-            name = title
-            if episodeType == 'CLI':
-                name += ' (Clip)'
-            elif episodeType == 'PRE':
-                name += ' (Preview)'
-        elif episodeType == 'EPI':
+        if seasonNum <> 0 and episodeNum <> 0:
             name = str(seasonNum)+'x'+str(episodeNum)+' - '+title
-        elif episodeType == 'CLI':
-            name = title+' (Clip from '+str(seasonNum)+'x'+str(episodeNum)+')'
+        else:
+            name = title
+            
+        if episodeType == 'CLI':
+            name += ' (Clip)'
         elif episodeType == 'PRE':
-            name = title+' (Preview for '+str(seasonNum)+'x'+str(episodeNum)+')'
+            name += ' (Preview)'
+                
         if showseriestitle == True:
             name = showtitle+' - '+name
-        segments = episode.findAll('segment')
-        duration = 0.00
-        for segment in segments:
-                duration += float(segment['duration'])
+        if episode.has_key('duration'):
+            duration=episode['duration']
+        if duration == '':
+            segments = episode.findAll('segment')
+            duration = 0.00
+            for segment in segments:
+                    duration += float(segment['duration'])
+            duration = str (int(duration/60) )+':'+str( int( duration-int(duration/60)*60 ) )
         u = sys.argv[0]
         if segids is not None:
             u += '?url="'+urllib.quote_plus(segids)+'"'
@@ -126,8 +142,8 @@ def listVideos(CollectionID, filterByEpisodeType, offset='0', limit = '30', sort
                      "Genre":genre,
                      #"Rating":float(ranking),
                      "Mpaa":rating,
-                     "Premiered":expirationDate,
-                     "Duration":str(int(duration/60))
+                     "Premiered":airDate,
+                     "Duration":duration
                      }
         common.addVideo(u,name,thumbnailUrl,infoLabels=infoLabels)            
 

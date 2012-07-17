@@ -381,22 +381,6 @@ def VIDEOLINKS( data ):
         common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')
 
-        
-def getHTML( url ):
-    print 'HULU --> common :: getHTML :: url = '+url
-    cj = cookielib.LWPCookieJar()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.load(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    opener.addheaders = [('Referer', 'http://hulu.com'),
-                         ('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')]
-    usock=opener.open(url)
-    response=usock.read()
-    usock.close()
-    #if os.path.isfile(COOKIEFILE):
-    #    cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-    return response
-
   
 def clean_subs(data):
         br = re.compile(r'<br.*?>')
@@ -498,7 +482,7 @@ def play(url = common.args.url):
                 print "no key"
                 
         if (closedcaption is not None):
-            xml_closedcaption = getHTML(closedcaption)
+            xml_closedcaption = common.getURL(closedcaption)
             convert_subtitles(xml_closedcaption,guid)
 
     #print "DEBUG refs:" + str(refs)

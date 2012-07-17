@@ -57,7 +57,7 @@ def process(urlBase, fullname = common.args.url):
     #url = 'http://feed.theplatform.com/f/hQNl-B/2g1gkJT0urp6/'
     url = urlBase
     url += '&form=json'
-    url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'
+    #url += '&fields=guid,title,description,categories,content,defaultThumbnailUrl'
     url += '&fileFields=duration,url,width,height'
     url += '&count=true'
     url += '&byCategories='+urllib.quote_plus(fullname)
@@ -66,23 +66,36 @@ def process(urlBase, fullname = common.args.url):
     episodes = demjson.decode(data)['entries']
     for episode in episodes:
         name = episode['title']
+        showname= episode['media$categories'][1]['media$name'].split('/')[1]
+        try:
+            seasonEpisode = episode['pl1$subtitle'].replace('Episode','').strip()
+            season = int(seasonEpisode[:1])
+            episodeNum = int(seasonEpisode[1:])
+        except:
+            season = 0
+            episodeNum = 0
         description = episode['description']
         thumb= episode['plmedia$defaultThumbnailUrl']
         duration=str(int(episode['media$content'][0]['plfile$duration']))
+        airDate = common.formatDate(epoch=episode['pubDate']/1000)
+        if season <> 0 and episodeNum <> 0:
+            displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
+        else:
+            displayname = name
         url=episode['media$content'][0]['plfile$url']
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="syfy"'
         u += '&sitemode="play"'
         infoLabels={ "Title":name,
-                     #"Season":season,
-                     #"Episode":episode,
+                     "Season":season,
+                     "Episode":episodeNum,
                      "Plot":description,
-                     #"premiered":airDate,
+                     "premiered":airDate,
                      "Duration":duration,
-                     "TVShowTitle":common.args.name
+                     "TVShowTitle":showname
                      }
-        common.addVideo(u,name,thumb,infoLabels=infoLabels)
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
 
 #Get SMIL url and play video
 def play():

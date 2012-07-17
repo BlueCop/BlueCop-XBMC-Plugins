@@ -32,7 +32,7 @@ def modes( ):
                     name = 'The '+name.replace(', The','')
                 allDescription +=name+', '
         count=0
-        common.addDirectory('Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon,count=count,description='Your Favorite Shows From:\n'+allDescription)
+        common.addDirectory('Favorite Shows','Favorlist','NoUrl',thumb=common.fav_icon,count=count,description='Your Favorite Shows On:\n'+allDescription)
         count+=1
         common.addDirectory('All Shows','Masterlist','NoUrl',thumb=common.all_icon,count=count,description='All Shows Available On:\n'+allDescription)
         count+=1

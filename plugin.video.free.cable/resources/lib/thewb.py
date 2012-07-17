@@ -47,7 +47,6 @@ def fullepisodes(url=common.args.url):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.find('div',attrs={'id':'full_ep_car'}).findAll('div',attrs={'id':True,'class':True})
     for episode in episodes:
-        print episode.prettify()
         links=episode.findAll('a')
         url=BASE+links[1]['href']
         showname = links[1].find('strong').string

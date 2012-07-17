@@ -28,7 +28,6 @@ def rootlist(db=False):
                 for subcollection in subcollections:
                         scid = subcollection['id']
                         name = subcollection.find('name').string.replace('- Full Episodes','').encode('utf-8')
-                        print name
                         if db==True:
                                 db_shows.append((name,'cartoon', 'episodes',scid))
                         else:
@@ -41,8 +40,6 @@ def rootlist(db=False):
 def episodes():
         cid = common.args.url
         showname = common.args.name
-        xbmcplugin.setContent(pluginhandle, 'episodes')
-        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_NONE)
         url = getCollectionByContentId
         url += '?limit=200'
         url += '&offset=0'
@@ -56,20 +53,25 @@ def episodes():
                 thumbnail = episode.find('thumbnailurl').string
                 plot = episode.find('description').string
                 duration = episode.find('duration').string
-                try:
-                    seasonNum = int(episode.find('seasonnumber').string)
-                    print seasonNum
-                except:
-                    seasonNum = 0
-                try:
-                    episodeNum = int(episode.find('episodenumber').string)
-                    print episodeNum
-                except:
-                    episodeNum = 0
-                if episodeNum == 0 or seasonNum == 0:
-                    print 'bad season or episode value'
+                try:seasonNum = int(episode.find('seasonnumber').string)
+                except:seasonNum = 0
+                try:episodeNum = str(episode.find('episodenumber').string)
+                except:episodeNum = '0'
+                if len(episodeNum) > 2 and episodeNum.startswith(str(seasonNum)):
+                    episodeNum = episodeNum[1:]
+                if len(episodeNum) > 2:
+                    episodeNum = episodeNum[-2:]
+                try:episodeNum = int(episodeNum)
+                except:episodeNum = 0
+                
+                if episodeNum <> 0 and seasonNum <> 0:
+                    displayname = str(seasonNum)+'x'+str(episodeNum)+' - '+name
+                elif seasonNum <> 0:
+                    displayname = 'S'+str(seasonNum)+' - '+name
+                elif episodeNum <> 0:
+                    displayname = 'E'+str(episodeNum)+' - '+name
                 else:
-                    name = str(seasonNum)+'x'+str(episodeNum)+' - '+name
+                    displayname = name
                 segments = episode.findAll('segment')
                 if len(segments) == 0:
                     url = episodeId
@@ -85,7 +87,7 @@ def episodes():
                                  "Duration":duration,
                                  "TVShowTitle":showname
                                  }
-                    common.addVideo(u,name,thumbnail,infoLabels=infoLabels)     
+                    common.addVideo(u,displayname,thumbnail,infoLabels=infoLabels)     
                 else:
                     url = ''
                     for segment in segments:
@@ -102,7 +104,7 @@ def episodes():
                                  "Duration":duration,
                                  "TVShowTitle":showname
                                  }
-                    common.addVideo(u,name,thumbnail,infoLabels=infoLabels)          
+                    common.addVideo(u,displayname,thumbnail,infoLabels=infoLabels)          
         common.setView('episodes')
 
 def getAUTH(aifp,window,tokentype,vid,filename):
@@ -127,7 +129,7 @@ def GET_RTMP(vid):
         url = cvpXML+vid
         html=common.getURL(url)
         tree=BeautifulStoneSoup(html, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-        print tree.prettify()
+        #print tree.prettify()
         sbitrate = int(common.settings['quality'])
         hbitrate = -1
         files = tree.findAll('file')

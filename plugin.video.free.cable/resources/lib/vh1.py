@@ -175,6 +175,7 @@ def videos(url=common.args.url):
         print 'No videos'
 
 def playuri(uri = common.args.url,referer='http://www.tvland.com'):
+    mp4_url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=/44620/mtvnorigin"
     mtvn = 'http://media.mtvnservices.com/'+uri 
     swfUrl = common.getRedirect(mtvn,referer=referer)
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0])
@@ -200,16 +201,17 @@ def playuri(uri = common.args.url,referer='http://www.tvland.com'):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 rtmpdata = video.find('src').string
-                protocall = rtmpdata.split('://')[0]
-                host = rtmpdata.split('://')[1].split('/')[0]
-                app = rtmpdata.split('://')[1].split('/')[1]
-                playpath = rtmpdata.split(app+'/')[1]
-                if '.mp4' in playpath:
-                    playpath = 'mp4:'+playpath#.replace('.mp4','')
-                else:
-                    playpath = playpath#.replace('.flv','')
-                rtmpurl = 'rtmpe://'+host+':1935/'+app
-                rtmpurl += ' playpath=' + playpath + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
+                rtmpurl = mp4_url+rtmpdata.split('viacomvh1strm')[2]
+                #protocall = rtmpdata.split('://')[0]
+                #host = rtmpdata.split('://')[1].split('/')[0]
+                #app = rtmpdata.split('://')[1].split('/')[1]
+                #playpath = rtmpdata.split(app+'/')[1]
+                #if '.mp4' in playpath:
+                #    playpath = 'mp4:'+playpath#.replace('.mp4','')
+                #else:
+                #    playpath = playpath#.replace('.flv','')
+                #rtmpurl = 'rtmpe://'+host+':1935/'+app
+                #rtmpurl += ' playpath=' + playpath + " swfurl=" + swfUrl.split('?')[0] +" pageUrl=" + referer + " swfvfy=true"
         stacked_url += rtmpurl.replace(',',',,')+' , '
     stacked_url = stacked_url[:-3]
     item = xbmcgui.ListItem(path=stacked_url)

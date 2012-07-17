@@ -13,6 +13,7 @@ import resources.lib._common as common
 
 pluginhandle = int(sys.argv[1])
 BASE_URL = 'http://abcfamily.go.com/watch'
+RSS_URL = 'http://cdn.abc.go.com/vp2/ws-supt/s/syndication/2000/rss/002/001/-1/-1/-1/-1/-1/-1'
 BASE = 'http://abcfamily.go.com'
 
 def masterlist():
@@ -33,6 +34,26 @@ def rootlist(db=False):
             db_shows.append((name,'abcfamily','showcats',url))
         else:
             common.addShow(name, 'abcfamily', 'showcats', url) #, thumb, thumb, description)
+    if db==True:
+        return db_shows
+    else:
+        common.setView('tvshows')
+
+def rootlistRSS(db=False):
+    data = common.getURL(RSS_URL)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    menu=tree.findAll('item')
+    db_shows = []
+    for item in menu:
+        name = item('title')[0].string.encode('utf-8')
+        url = item('link')[0].string
+        splitUrl = url.split('/watch/')
+        url = splitUrl[0]+'/shows/'+splitUrl[1].split('/')[0]+'/videos'
+        thumb = item('image')[0].string
+        if db==True:
+            db_shows.append((name,'abcfamily','showcats',url))
+        else:
+            common.addShow(name, 'abcfamily','showcats', url )# , thumb)
     if db==True:
         return db_shows
     else:
@@ -119,6 +140,8 @@ def videos(url=common.args.url):
     common.setView('episodes')
 
 def play(url=common.args.url):
+    finalurl=False
+    playpath=False
     vid= re.compile('(VD\d*)').findall(url)[0]
     rtmpdata = 'http://cdn.abc.go.com/vp2/ws/s/contents/2002/utils/video/mov/17496/9024/%s/432?v=05040017_1' % vid
     data = common.getURL(rtmpdata)
@@ -136,8 +159,18 @@ def play(url=common.args.url):
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 playpath = filename['src']
-                
-    swfUrl = 'http://ll.static.abc.com/m/vp2/prod/flash/VP2_05040017_0_1254.swf'
-    rtmpurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-    item = xbmcgui.ListItem(path=rtmpurl)
-    xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+    if playpath:
+        swfUrl = 'http://ll.static.abc.com/m/vp2/prod/flash/VP2_05040017_0_1254.swf'
+        finalurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
+    else:
+        plid= re.compile('(PL\d*)').findall(url)[0]
+        clipurl = 'http://abc.go.com/vp2/ws/s/contents/1000/videomrss?brand=002&device=001&start=0&limit=100&fk=CATEGORIES&fv='+plid
+        data = common.getURL(clipurl)
+        tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        for video in tree.findAll('item'):
+            if video.find('guid').string == vid:
+                finalurl = video.find('media:content')['url']
+    if finalurl:
+        item = xbmcgui.ListItem(path=finalurl)
+        xbmcplugin.setResolvedUrl(pluginhandle, True, item)
+        

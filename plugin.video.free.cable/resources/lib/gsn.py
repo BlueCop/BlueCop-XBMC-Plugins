@@ -6,6 +6,7 @@ import urllib2
 import sys
 import os
 import re
+import types
 
 import demjson
 from BeautifulSoup import BeautifulSoup
@@ -52,27 +53,43 @@ def show():
 def episodes():
     data = common.getURL(common.args.url)
     items = demjson.decode(data)['media']['items']
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     for item in items:
+        infoLabels={}
         name = item['title'].encode('utf-8')
         try:
-            season = int(name.split('Season')[1].split('Episode')[0].strip())
-            episode = int(name.split('Episode')[1].strip())
-            name = name.split('Season')[0].strip()+' %sx%s' % (str(season),str(episode))
+            infoLabels['Season'] = int(name.split('Season')[1].split('Episode')[0].strip())
+            infoLabels['Episode'] = int(name.split('Episode')[1].strip())
+            name = name.split('Season')[0].strip()
         except:
-            season = 0
-            episode = 0
-        try:plot = item['description'].encode('utf-8')
-        except:plot = item['description'][0].encode('utf-8')
+            name = name.split('Season')[0].strip()
         thumb = item['thumbnail_url']
         #url = item['url']
         urls = item['conversions']
         url = urls[len(urls)-1]['streaming_url']
-        infoLabels={ "Title":name,
-                     #"Duration":duration
-                     "Season":season,
-                     "Episode":episode,
-                     "Plot":plot,
-                     "TVShowTitle":name
-                     }
-        common.addVideo(url,name,thumb,infoLabels=infoLabels)
+        infoLabels['Title']=name
+        infoLabels['TVShowTitle']=name
+        for field in item['custom_fields']:
+            if field['slug'] == 'season-number':
+                infoLabels['Season']=int(field['values'][0])
+            elif field['slug'] == 'episode-number':
+                infoLabels['Episode']=int(field['values'][0])
+            elif field['slug'] == 'rating':
+                infoLabels['MPAA']=field['values'][0]
+        
+        if isinstance(item['description'], types.ListType):
+            infoLabels['Plot'] = item['description'][0].encode('utf-8')
+        else:
+            infoLabels['Plot'] = item['description'].encode('utf-8')
+        
+        if infoLabels.has_key('Episode') and infoLabels.has_key('Season'):
+            displayname = '%sx%s - %s' % (str(infoLabels['Season']),str(infoLabels['Episode']),name)
+        elif infoLabels.has_key('Episode'):
+            displayname = '%s. - %s' % (str(infoLabels['Episode']),name)
+        elif infoLabels.has_key('Season'):    
+            displayname = 'S%s - %s' % (str(infoLabels['Season']),name)
+        else:
+            displayname=name
+        infoLabels['Title']=displayname
+        common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')

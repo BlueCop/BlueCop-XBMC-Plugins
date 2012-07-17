@@ -35,7 +35,12 @@
 	
 	<string id="30035">Enable Views</string>
 
-	<string id="30041">U.S. Proxy port</string>
-	<string id="30040">U.S. Proxy IP</string>
-	<string id="30039">Enable Proxy</string>
+	<string id="30040">Proxy IP</string>
+	<string id="30041">Port</string>
+	<string id="30042">Enable Proxy</string>
+	<string id="30043">User Name</string>
+	<string id="30044">Password</string>
+	
+	<string id="30050">Advanced</string>
+	
 </strings>

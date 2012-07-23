@@ -34,23 +34,25 @@
 		<setting id="cartoon" type="bool" label="Cartoon Network" default="false"/>
 		<setting id="cbs" type="bool" label="CBS" default="true"/>
 		<setting id="comedy" type="bool" label="Comedy Central" default="true"/>
+		<setting id="crackle" type="bool" label="Crackle" default="true"/>
 		<setting id="thecw" type="bool" label="The CW" default="true"/>
 		<setting id="food" type="bool" label="Food Network" default="true"/>
-		<setting id="fox" type="bool" label="FOX (Disabled Reason: DRM)" default="false"/>
-		<setting id="fx" type="bool" label="FX (Disabled Reason: DRM)" default="false"/>
+		<setting id="fox" type="bool" label="FOX (DRM)" default="false"/>
+		<setting id="fx" type="bool" label="FX (DRM)" default="false"/>
 		<setting id="gsn" type="bool" label="Game Show Network" default="true"/>
-		<setting id="hgtv" type="bool" label="HGTV (Disabled Reason: Broken)" default="false"/>
+		<setting id="hgtv" type="bool" label="HGTV" default="true"/>
 		<setting id="history" type="bool" label="History Channel" default="true"/>
 		<setting id="hub" type="bool" label="The Hub (Disabled Reason: Broken)" default="false"/>
 		<setting id="lifetime" type="bool" label="Lifetime" default="true"/>
 		<setting id="mtv" type="bool" label="MTV Shows" default="true"/>
-		<setting id="natgeo" type="bool" label="National Geographic (Disabled Reason: Stream Drops)" default="false"/>
-		<setting id="natgeowild" type="bool" label="Nat Geo Wild (Disabled Reason: Stream Drops)" default="false"/>
+		<setting id="natgeo" type="bool" label="National Geographic (STREAM DROPS)" default="false"/>
+		<setting id="natgeowild" type="bool" label="Nat Geo Wild (STREAM DROPS)" default="false"/>
 		<setting id="nbc" type="bool" label="NBC" default="true"/>
 		<setting id="nickteen" type="bool" label="Nick Teen" default="true"/>
 		<setting id="nicktoons" type="bool" label="Nick Toons" default="true"/>
 		<setting id="nick" type="bool" label="Nickelodeon" default="true"/>
 		<setting id="oxygen" type="bool" label="Oxygen" default="true"/>
+		<setting id="pbs" type="bool" label="PBS (NOT FINISHED)" default="false"/>
 		<setting id="spike" type="bool" label="Spike" default="true"/>
 		<setting id="syfy" type="bool" label="SyFy" default="true"/>
 		<setting id="tbs" type="bool" label="TBS" default="false"/>

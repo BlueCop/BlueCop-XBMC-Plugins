@@ -177,9 +177,10 @@ def GET_RTMP(vid):
                 if bitrate > hbitrate and bitrate <= sbitrate:
                         hbitrate = bitrate
                         filename = filenames.string
-        if 'rtmp://' in filename:
+        serverDetails = tree.find('akamai')
+        if serverDetails:
             filename = filename[1:len(filename)-4]#.replace('mp4:','')
-            serverDetails = tree.find('akamai')
+            #serverDetails = tree.find('akamai')
             server = serverDetails.find('src').string.split('://')[1]
             #get auth
             tokentype = serverDetails.find('authtokentype').string

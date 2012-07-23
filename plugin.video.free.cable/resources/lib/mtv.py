@@ -12,9 +12,6 @@ from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
 import resources.lib._common as common
 
-try: from sqlite3 import dbapi2 as sqlite
-except: from pysqlite2 import dbapi2 as sqlite
-
 pluginhandle=int(sys.argv[1])
 
 BASE_URL = 'http://www.mtv.com/ontv/all/'

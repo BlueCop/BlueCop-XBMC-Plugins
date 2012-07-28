@@ -26,8 +26,9 @@ def rootlist(db=False):
     shows=tree.find('ul',attrs={'class':'sub-menu sub-menu-1'}).findAll('a')
     db_shows = []
     for show in shows:
-        print show.prettify()
-        url = BASE+show['href']+'videos/'
+        url = show['href']+'videos/'
+        if BASE not in url:
+            url = BASE+url
         name = show.find('span').string
         if db==True:
             db_shows.append((name, 'gsn', 'show', url))

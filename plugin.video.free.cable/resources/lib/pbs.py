@@ -6,6 +6,7 @@ import urllib2
 import sys
 import os
 import re
+import base64
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
@@ -16,10 +17,10 @@ import coveapi
 
 pluginhandle = int (sys.argv[1])
 
-key='FreeCable-813422a9-84ac-47cc-bc5a-9b06acce3b6a'
-secret='012c7108-5bb5-4bae-b51f-04d1234fcedd'
+key='RnJlZUNhYmxlLTgxMzQyMmE5LTg0YWMtNDdjYy1iYzVhLTliMDZhY2NlM2I2YQ=='
+secret='MDEyYzcxMDgtNWJiNS00YmFlLWI1MWYtMDRkMTIzNGZjZWRk'
 
-cove = coveapi.connect(key, secret)
+cove = coveapi.connect( base64.b64decode(key), base64.b64decode(secret) )
 
 def masterlist():
     return rootlist(db=True)

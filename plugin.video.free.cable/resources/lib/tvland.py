@@ -18,10 +18,10 @@ def rootlist(db=False):
     for show in categories:
         url = show['href']
         name = show.contents[0].strip()
-        if name == 'Hot in Cleveland':
-            mode = 'hic_episodes'
-        else:
-            mode = 'episodes'
+        #if name == 'Hot in Cleveland':
+        #    mode = 'hic_episodes'
+        #else:
+        mode = 'episodes'
         if db==True:
             db_shows.append((name,'tvland',mode,url))
         else:

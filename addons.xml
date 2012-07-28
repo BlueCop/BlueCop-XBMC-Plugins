@@ -88,13 +88,14 @@
 
 <addon id="plugin.video.free.cable"
        name="Free Cable"
-       version="0.4.7"
+       version="0.4.8"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
     <import addon="script.module.beautifulsoup" version="3.0.8"/>
     <import addon="script.module.demjson" version="1.4"/>
-    <import addon="script.module.free.cable.database" version="0.0.1"/>
+    <import addon="script.module.free.cable.database" version="0.0.2"/>
+    <import addon="script.module.coveapi" version="0.2"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
             library="default.py">
@@ -277,6 +278,20 @@
   </extension>
 </addon>
 
+<addon id="script.module.coveapi"
+       name="Cove API"
+       version="0.2"
+       provider-name="github.com/pbs/python-coveapi">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+  </requires>
+  <extension point="xbmc.python.module"
+             library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
+</addon>
+
 <addon id="script.module.cryptopy"
        name="CryptoPy"
        version="1.2.6"
@@ -307,7 +322,7 @@
 
 <addon id="script.module.free.cable.database"
        name="Free Cable Database"
-       version="0.0.1"
+       version="0.0.2"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>

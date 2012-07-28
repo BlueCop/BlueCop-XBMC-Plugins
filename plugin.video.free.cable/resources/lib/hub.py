@@ -16,110 +16,51 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    data = common.getURL(BASE_URL)
+    data = common.getURL(BASE)
     tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    episodes = tree.findAll(attrs={'class' : 'float-left item'})
-
-    found = []
-    for episode in episodes:
-        showid = episode.find('a')['href'].split('shows/')[1].split('/videos')[0]
-        if showid not in found:
-            found.append(showid)
-    print found
-
-    for showid in found:
-        show = shows[showids.index(showid)]
-        name = show[0]
-        url = show[1]
-        thumb = show[2]
-        if db==True:
-            db_shows.append((name,'hub','episodes',BASE + url,None,thumb,None))
+    shows = tree.find('div',attrs={'class' : 'footer-groups-middle'}).findAll('a')
+    for show in shows:
+        if len(show.contents) > 1:
+            name = show.contents[0]+show.contents[2]
         else:
-            common.addDirectory(name, 'hub', 'episodes', BASE + url, thumb)
-
-    # add on a Movies category
-    if db==True:
-        db_shows.append(('Movies','hub','episodes','movies',None,None,None))
-    else:
-        common.addDirectory('Movies', 'hub', 'episodes', 'movies')
-
+            name = show.string
+        if name:
+            url = BASE+show['href']
+            if name.endswith(' Videos'):
+                name = name.replace(' Videos','')
+                if db==True:
+                    db_shows.append((name,'hub','videos',url))
+                else:
+                    common.addShow(name, 'hub', 'videos',url)
     if db==True:
         return db_shows
-
-def episodes(url=common.args.url):
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
-    if url == '':
-        return
-    if url == 'movies':
-        data = common.getURL('http://www.hubworld.com/videos/movies')
-        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        movies = tree.findAll('div',attrs={'class' : 'float-left item'})
-        for movie in movies:
-            movietitle = movie.find('div', attrs={'class' : 'desc'}).string.strip().encode('utf-8')
-            thumb = BASE + movie.find(attrs={'class' : 'thumbnail'})['thumbnailsrc']
-            description = movie.find(attrs={'class' : 'hr'}).findAll('div')[1].string.strip().encode('utf-8')
-            url = BASE + movie.find('a')['href']
-            u = sys.argv[0]
-            u += '?url="'+urllib.quote_plus(url)+'"'
-            u += '&mode="hub"'
-            u += '&sitemode="play"'
-            item=xbmcgui.ListItem(movietitle, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":movietitle,
-                                                     "Season":0,
-                                                     "Episode":0,
-                                                     "Plot":description,
-                                                     "premiered":'',
-                                                     "Duration":'',
-                                                     "TVShowTitle":''
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
     else:
-        data = common.getURL(url)
-        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        # [0] is the position of the episodes block, I really hope they don't change this
-        try:
-            episodes=tree.findAll(attrs={'class' : 'landing-carousel-content carousel'})[0].find('div',attrs={'class' : 'container'}).findAll('div',attrs={'class' : 'clear-after item'})
-        except:
-            episodes = []
-        for episode in episodes:
-            seasonepisode = int(episode.find(attrs={'class' : 'float-left thumbnail'})['thumbnailsrc'].split('-ep')[1].split('-')[0])
-            season = 0
+        common.setView('tvshows')
 
-            airDate = ''
-            description = episode.find(attrs={'class' : 'hr'}).findAll('div')[1].string.strip()
-            duration = ''
-            try:
-                episodeTitle = episode.find(attrs={'style' : 'overflow: hidden; height: 64px;'}).string.encode('utf-8').split(':')[1].strip()
-            except:
-                episodeTitle = episode.find(attrs={'style' : 'overflow: hidden; height: 64px;'}).string.encode('utf-8').strip()
-            name = episodeTitle
-            displayname = name
-            url = BASE + episode.find('a')['href']
-            thumb = BASE + episode.find(attrs={'class' : 'float-left thumbnail'})['thumbnailsrc']
-
-            u = sys.argv[0]
-            u += '?url="'+urllib.quote_plus(url)+'"'
-            u += '&mode="hub"'
-            u += '&sitemode="play"'
-            item=xbmcgui.ListItem(displayname, iconImage=thumb, thumbnailImage=thumb)
-            item.setInfo( type="Video", infoLabels={ "Title":name,
-                                                     "Season":season,
-                                                     "Episode":seasonepisode,
-                                                     "Plot":description,
-                                                     "premiered":airDate,
-                                                     "Duration":duration,
-                                                     "TVShowTitle":common.args.name
-                                                     })
-            item.setProperty('IsPlayable', 'true')
-            xbmcplugin.addDirectoryItem(pluginhandle,url=u,listitem=item,isFolder=False)
+def videos(url=common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    videos = tree.findAll('section',attrs={'class' : re.compile('content-item.+?')})
+    for video in videos:
+        infoLabels={}
+        url   = BASE+video.find('a')['href']
+        thumb = BASE+video.find('img')['src']
+        infoLabels['Title'] = video.find('b',attrs={'class':'content-item-subtitle'}).string
+        infoLabels['TVShowTitle'] = str(video.find('b',attrs={'class':'content-item-brand'}).string)
+        infoLabels['Plot'] = str(video.find('span',attrs={'class':'content-item-short-description'}).string) 
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="hub"'
+        u += '&sitemode="play"'
+        common.addVideo(u,infoLabels['Title'],thumb,infoLabels=infoLabels)
+    common.setView('episodes')
 
 def play():
     # get our id number here since it's not accessable from the overview page and we don't want to kill the processor
-    data = common.getURL(common.args.url)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    id=tree.findAll('script')[-1].string.split('brightcove_mediaId =')[1].split(';')[0].strip()
-
+    #data = common.getURL(common.args.url)
+    #tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    #id=tree.findAll('script')[-1].string.split('brightcove_mediaId =')[1].split(';')[0].strip()
+    id = common.args.url.split('/watch/')[1].split('/')[0]
     # ok, back to buisness
     videoPlayer = int(id)
 

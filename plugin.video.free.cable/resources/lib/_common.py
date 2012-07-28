@@ -46,6 +46,8 @@ site_dict= {'aetv':'A&E',
             'thecw': 'CW, The',
             'comedy': 'Comedy Central',
             'crackle': 'Crackle',
+            'disney':'Disney',
+            'disneyxd':'Disney XD',
             'food': 'Food Network',
             'fox': 'FOX',
             'fx': 'FX',
@@ -54,6 +56,8 @@ site_dict= {'aetv':'A&E',
             'history': 'History Channel',
             'hub':'Hub, The',
             'lifetime': 'Lifetime',
+            'marvel': 'Marvel',
+            'marvelkids': 'Marvel Kids',
             'mtv': 'MTV',
             'natgeo': 'National Geographic',
             'natgeowild': 'Nat Geo Wild',
@@ -63,6 +67,7 @@ site_dict= {'aetv':'A&E',
             'nick': 'Nickelodeon',
             'oxygen': 'Oxygen',
             'pbs': 'PBS',
+            'pbskids': 'PBS Kids',
             'spike': 'Spike',
             'syfy': 'SyFy',
             'tbs': 'TBS',
@@ -70,6 +75,7 @@ site_dict= {'aetv':'A&E',
             'tvland': 'TV Land',
             'usa': 'USA',
             'vh1': 'VH1',
+            'thewbkids': 'WB Kids, The',
             'thewb': 'WB, The',
             }
 
@@ -85,6 +91,8 @@ site_descriptions= {'aetv': "A&E is Real Life. Drama.  Now reaching more than 99
                     'thecw': "The CW Network was formed as a joint venture between Warner Bros. Entertainment and CBS Corporation. The CW is America's fifth broadcast network and the only network targeting women 18-34. The network's primetime schedule includes such popular series as America's Next Top Model, Gossip Girl, Hart of Dixie, 90210, The Secret Circle, Supernatural, Ringer, Nikita, One Tree Hill and The Vampire Diaries.",
                     'comedy': "COMEDY CENTRAL, the #1 brand in comedy, is available to over 99 million viewers nationwide and is a top-rated network among men ages 18-24 and 18-34 and adults ages 18-49.  With on-air, online and on-the-go mobile technology, COMEDY CENTRAL gives its audience access to the cutting-edge, laugh-out-loud world of comedy wherever they go.  Hit series include Tosh.0, Workaholics, Futurama, Key & Peele, Ugly Americans and the Emmy' and Peabody' Award-winning series The Daily Show with Jon Stewart, The Colbert Report and South Park.  COMEDY CENTRAL is also involved in producing nationwide stand-up tours, boasts its own record label and operates one of the most successful home entertainment divisions in the industry.  COMEDY CENTRAL is owned by, and is a registered trademark of Comedy Partners, a wholly-owned unit of Viacom Inc. (NASDAQ: VIA and VIAB).  For more information visit COMEDY CENTRAL's press Web site at www.cc.com/press or the network's consumer site at www.comedycentral.com and follow us on Twitter @ComedyCentralPR for the latest in breaking news updates, behind-the-scenes information and photos.",
                     'crackle': "Crackle, Inc. is a multi-platform video entertainment network and studio that distributes full length, uncut, movies, TV shows and original programming in our users favorite genres – like comedy, action, crime, horror, Sci-Fi, and thriller. Crackles channels and shows reach a global audience across the Internet, in the living room, and on devices including a broad range of Sony electronics.",
+                    'disney':'Disney',
+                    'disneyxd':'Disney XD',
                     'food': "FOOD NETWORK (www.foodnetwork.com) is a unique lifestyle network and Web site that strives to be way more than cooking.  The network is committed to exploring new and different ways to approach food - through pop culture, competition, adventure, and travel - while also expanding its repertoire of technique-based information. Food Network is distributed to more than 96 million U.S. households and averages more than seven million Web site users monthly. With headquarters in New York City and offices in Atlanta, Los Angeles, Chicago, Detroit and Knoxville, Food Network can be seen internationally in Canada, Australia, Korea, Thailand, Singapore, the Philippines, Monaco, Andorra, Africa, France, and the French-speaking territories in the Caribbean and Polynesia. Scripps Networks Interactive (NYSE: SNI), which also owns and operates HGTV (www.hgtv.com), DIY Network (www.diynetwork.com), Great American Country (www.gactv.com) and FINE LIVING (www.fineliving.com), is the manager and general partner.",
                     'fox': "Fox Broadcasting Company is a unit of News Corporation and the leading broadcast television network among Adults 18-49. FOX finished the 2010-2011 season at No. 1 in the key adult demographic for the seventh consecutive year ' a feat that has never been achieved in broadcast history ' while continuing to dominate all network competition in the more targeted Adults 18-34 and Teen demographics. FOX airs 15 hours of primetime programming a week as well as late-night entertainment programming, major sports and Sunday morning news.",
                     'fx': "FX is News Corp.'s flagship general entertainment basic cable network. Launched in 1994, FX is carried in more than 97 million homes and provides a slate of standout original drama series, including Sons of Anarchy, Justified and American Horror Story in addition the comedies It's Always Sunny in Philadelphia, Archer, The League, Louie, Wilfred and Unsupervised. Its diverse schedule includes box-office hits from 20th Century Fox and other major studios, as well as an impressive roster of acquired hit series. FX ranks as the #7 basic cable network in primetime (8-11PM) among P18-49, FX's target demographic. (Most Current thru 10/14/11 among 94 Measured Networks)",
@@ -93,6 +101,8 @@ site_descriptions= {'aetv': "A&E is Real Life. Drama.  Now reaching more than 99
                     'history': "HISTORY and HISTORY HD are the leading destinations for revealing, award-winning original non-fiction series and event-driven specials that connect history with viewers in an informative, immersive and entertaining manner across multiple platforms. Programming covers a diverse variety of historical genres ranging from military history to contemporary history, technology to natural history, as well as science, archaeology and pop culture. Among the network's program offerings are hit series such as Ax Men, Battle 360, How The Earth Was Made, Ice Road Truckers, Pawn Stars and The Universe, as well as acclaimed specials including 102 Minutes That Changed America, 1968 with Tom Brokaw, King, Life After People, Nostradamus: 2012 and Star Wars: The Legacy Revealed. HISTORY has earned four Peabody Awards, seven Primetime Emmy' Awards, 12 News & Documentary Emmy' Awards and received the prestigious Governor's Award from the Academy of Television Arts & Sciences for the network's Save Our History' campaign dedicated to historic preservation and history education. Take a Veteran to School Day is the network's latest initiative connecting America's schools and communities with veterans from all wars. The HISTORY web site, located at www.history.com, is the definitive historical online source that delivers entertaining and informative content featuring broadband video, interactive timelines, maps, games, podcasts and more.",
                     'hub':"The Hub, a multi-platform joint venture between Discovery Communications (NASDAQ: DISCA, DISCB, DISCK) and Hasbro, Inc. (NYSE: HAS), is a cable and satellite television network featuring original programming as well as content from Discovery's library of award-winning children's educational programming; from Hasbro's rich portfolio of entertainment and educational properties built during the past 90 years; and from leading third-party producers worldwide. The Hub lineup includes animated and live-action series, specials and game shows, and the network extends its content online. The Hub launched October 10, 2010 (10-10-10) in approximately 60 million U.S. households.",
                     'lifetime': "A leading force in the entertainment industry, Lifetime Television is the highest-rated women's network, followed only by its sister channel, Lifetime Movie Network. Upon its 1984 launch, Lifetime quickly established itself as a pioneer in the growing cable universe to become the preeminent television destination and escape for women and has long been the number one female-targeted network on all of basic cable among Women 18-49, Women 25-54 and Women 18+. The Network, one of television's most widely distributed outlets, is currently seen in nearly 98 million households nationwide. Lifetime is synonymous with providing critically acclaimed, award-winning and popular original programming for women that spans movies and miniseries, dramas, comedies and reality series. In continuing this tradition, the Network has aggressively expanded its original programming slate, and, for the 2009-10 season, has amassed the most powerful line-up in Company history.",
+                    'marvel': 'Marvel started in 1939 as Timely Publications, and by the early 1950s had generally become known as Atlas Comics. Marvel\'s modern incarnation dates from 1961, the year that the company launched Fantastic Four and other superhero titles created by Stan Lee, Jack Kirby, Steve Ditko, and others. Marvel counts among its characters such well-known properties as Spider-Man, the X-Men, the Fantastic Four, Iron Man, the Hulk, Thor, Captain America and Daredevil; antagonists such as the Green Goblin, Magneto, Doctor Doom, Galactus, and the Red Skull. Most of Marvel\'s fictional characters operate in a single reality known as the Marvel Universe, with locations that mirror real-life cities such as New York, Los Angeles and Chicago.',
+                    'marvelkids': 'Marvel started in 1939 as Timely Publications, and by the early 1950s had generally become known as Atlas Comics. Marvel\'s modern incarnation dates from 1961, the year that the company launched Fantastic Four and other superhero titles created by Stan Lee, Jack Kirby, Steve Ditko, and others. Marvel counts among its characters such well-known properties as Spider-Man, the X-Men, the Fantastic Four, Iron Man, the Hulk, Thor, Captain America and Daredevil; antagonists such as the Green Goblin, Magneto, Doctor Doom, Galactus, and the Red Skull. Most of Marvel\'s fictional characters operate in a single reality known as the Marvel Universe, with locations that mirror real-life cities such as New York, Los Angeles and Chicago.',
                     'mtv': "MTV is Music Television. It is the music authority where young adults turn to find out what's happening and what's next in music and popular culture. MTV reaches 412 million households worldwide, and is the #1 Media Brand in the world. Only MTV can offer the consistently fresh, honest, groundbreaking, fun and inclusive youth-oriented programming found nowhere else in the world. MTV is a network that transcends all the clutter, reaching out beyond barriers to everyone who's got eyes, ears and a television set.",
                     'natgeo': "Critically acclaimed non-fiction. Network providing info-rich entertainment that changes the way you see the world.  A trusted source for more than 100 years, National Geographic provides NGC with unique access to the most respected scientists, journalists and filmmakers, resulting in innovative and contemporary programming of unparalleled quality.  NGC HD continues to provide spectacular imagery that National Geographic is known for in stunning high-definition.  A leader on the digital landscape, NGC HD is one of the top five HD networks and is the #1 channel viewers would most like to see in high definition for the fourth year in a row.  Additionally, the channel received some of the highest ratings in key categories, such as 'high quality,' 'information' and 'favorite' in the prestigious benchmark study among all 55 measured cable and broadcast networks. In addition, NGC VOD is a category leader. Building on its success as one of the fastest-growing cable networks year-to-year in ratings and distribution since launching in January 2001, NGC now reaches more than 70 million homes, with carriage on all major cable and satellite television providers.  Highlighted programming in 2010 includes: New episodes of Expedition Great White, the popular series, Taboo and Border Wars.  In addition, new seasons of series' WORLD'S TOUGHEST FIXES and LOCKED UP ABROAD.  2010 specials include DRUGS, INC., LOST GOLD OF THE DARK AGES and GREAT MIGRATIONS  For more information, please visit www.natgeotv.com.",
                     'natgeowild': "Experience the best, most intimate encounters with wildlife ever seen on television.  Backed by its unparallel reputation and blue chip programming, Nat Geo Wild brings viewers documentaries entirely focused on the animal kingdom and the world it inhabits.  From the most remote environments, to the forbidding depths of our oceans, to the protected parks in our backyards, Nat Geo Wild uses spectacular cinematography and intimate storytelling to take viewers on unforgettable journeys into the wild world.  Nat Geo Wild launched in August 2006 and is now available in Hong Kong, Singapore, the U.K., Australia, Latin America, France, Italy, Portugal, Turkey and other territories in Europe.  Nat Geo Wild HD launched in the U.K. in March 2009 and is also available in Poland.  Additional launches are expected globally.",
@@ -102,6 +112,7 @@ site_descriptions= {'aetv': "A&E is Real Life. Drama.  Now reaching more than 99
                     'nick': "Nickelodeon, now in its 31st year, is the number-one entertainment brand for kids. It has built a diverse, global business by putting kids first in everything it does. The company includes television programming and production in the United States and around the world, plus consumer products, online, recreation, books and feature films. Nickelodeon's U.S. television network is seen in more than 100 million households and has been the number-one-rated basic cable network for 16 consecutive years.",
                     'oxygen': "Oxygen Media is a multiplatform lifestyle brand that delivers relevant and engaging content to young women who like to \"live out loud.\" Oxygen is rewriting the rulebook for women's media by changing how the world sees entertainment from a young woman's point of view.  Through a vast array of unconventional and original content including \"Bad Girls Club,\" \"Dance Your Ass Off\" and \"Tori & Dean: Home Sweet Hollywood,\" the growing cable network is the premier destination to find unique and groundbreaking unscripted programming.   A social media trendsetter, Oxygen is a leading force in engaging the modern young woman, wherever they are, with popular features online including OxygenLive, shopOholic, makeOvermatic, tweetOverse and hormoneOscope.  Oxygen is available in 76 million homes and online at www.oxygen.com, or on mobile devices at wap.oxygen.com.  Oxygen Media is a service of NBC Universal.",
                     'pbs': "PBS and our member stations are America’s largest classroom, the nation’s largest stage for the arts and a trusted window to the world. In addition, PBS's educational media helps prepare children for success in school and opens up the world to them in an age-appropriate way.",
+                    'pbskids': 'PBS Kids is the brand for children\'s programming aired by the Public Broadcasting Service (PBS) in the United States founded in 1993. It is aimed at children ages 2 to 13.',
                     'spike': "Spike TV knows what guys like. The brand speaks to the bold, adventuresome side of men with action-packed entertainment, including a mix of comedy, blockbuster movies, sports, innovative originals and live events. Popular shows like The Ultimate Fighter, TNA iMPACT!, Video Game Awards, DEA, MANswers, MXC, and CSI: Crime Scene Investigation, plus the Star Wars and James Bond movie franchises, position Spike TV as the leader in entertainment for men.",
                     'syfy': "Syfy is a media destination for imagination-based entertainment. With year round acclaimed original series, events, blockbuster movies, classic science fiction and fantasy programming, a dynamic Web site (www.Syfy.com), and a portfolio of adjacent business (Syfy Ventures), Syfy is a passport to limitless possibilities. Originally launched in 1992 as SCI FI Channel, and currently in 95 million homes, Syfy is a network of NBC Universal, one of the world's leading media and entertainment companies. Syfy. Imagine greater.",
                     'tbs': "TBS, a division of Turner Broadcasting System, Inc., is television's top-rated comedy network and is available in 100.1 million households.  It serves as home to such original comedy series as My Boys, Neighbors from Hell, Are We There Yet? and Tyler Perry's House of Payne and Meet the Browns; the late-night hit Lopez Tonight, starring George Lopez, and the upcoming late-night series starring Conan O'Brien; hot contemporary comedies like Family Guy and The Office; specials like Funniest Commercials of the Year; special events, including star-studded comedy festivals in Chicago; blockbuster movies; and hosted movie showcases.",
@@ -109,6 +120,7 @@ site_descriptions= {'aetv': "A&E is Real Life. Drama.  Now reaching more than 99
                     'tvland': "TV Land is dedicated to presenting the best in entertainment on all platforms for consumers in their 40s. Armed with a slate of original programming, acquired classic shows, hit movies and fullservice website, TV Land is now seen in over 98 million U.S. homes. TV Land PRIME is TV Land's prime time programming destination designed for people in their mid-forties and the exclusive home to the premieres of the network's original programming, contemporary television series acquisitions and movies.",
                     'usa': "USA Network is cable television's leading provider of original series and feature movies, sports events, off-net television shows, and blockbuster theatrical films. USA Network is seen in over 88 million U.S. homes. The USA Network web site is located at www.usanetwork.com. USA Network is a program service of NBC Universal Cable a division of NBC Universal, one of the world's leading media and entertainment companies in the development, production and marketing of entertainment, news and information to a global audience.",
                     'vh1': "VH1 connects viewers to the music, artists and pop culture that matter to them most with series, specials, live events, exclusive online content and public affairs initiatives. VH1 is available in 90 million households in the U.S. VH1 also has an array of digital services including VH1 Classic, VH1 Soul and VSPOT, VH1's broadband channel. Connect with VH1 at www.VH1.com.",
+                    'thewbkids': 'The KidsWB Collection of Scooby-Doo, Looney Toons, Batman: The Brave and the Bold, Hanna-Barbera, DC and Warner stars under one roof.',
                     'thewb': "TheWB.com is the 1 fan site for shows targeted to adults 18-34. Whether it's the familiar ones you love or the new and the original series made only for the web, TheWB.com paves the way as a premium video entertainment destination. It's TV online. On TheWB.com, you can watch full-length episodes of One Tree Hill, The O.C., Buffy the Vampire Slayer, Gilmore Girls, Everwood, Smallville, Friends, Pushing Daisies, Chuck, Jack & Bobby, Angel and Veronica Mars. Plus, it has additional features that include community and message boards, extensive photo galleries, games and downloadable features that allow you to have a deeper relationship with these and other television shows. TheWB.com also offers a line-up of original series made exclusively for the web from some of the top producers in Hollywood, including Sorority Forever, Rich Girl Poor Girl, Childrens' Hospital and the upcoming Rockville CA. TheWB.com is free, ad-supported and available anytime in the U.S. Thank you for your viewership!",
                     }
 
@@ -273,8 +285,17 @@ def load_showlist(favored=False):
         infoLabels['TVShowTitle']=series_title.encode('utf-8', 'ignore')
         prefixplot=''
         if network<>None:
-            prefixplot+='Station: %s' % network
-            prefixplot+='\n'
+            if site_dict[mode] <> network:
+                prefixplot+='Network: %s' % network
+                prefixplot+='\n'
+                prefixplot+='Station: %s' % site_dict[mode]
+                prefixplot+='\n'
+            else:
+                prefixplot+='Station: %s' % site_dict[mode]
+                prefixplot+='\n'
+        else:
+            prefixplot+='Station: %s' % site_dict[mode]
+            prefixplot+='\n'   
         if Airs_DayOfWeek<>None and Airs_Time<>None:
             prefixplot+='Airs: %s @ %s' % (Airs_DayOfWeek,Airs_Time)
             prefixplot+='\n'
@@ -286,7 +307,7 @@ def load_showlist(favored=False):
         if plot<>None:
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.encode('utf-8', 'ignore')
         else:
-            infoLabels['Plot']=prefixplot+"\"%s\" on %s" % (series_title,site_dict[mode])
+            infoLabels['Plot']=prefixplot
         if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
@@ -562,8 +583,17 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         infoLabels['TVShowTitle']=series_title.encode('utf-8', 'ignore')
         prefixplot=''
         if network<>None:
-            prefixplot+='Station: %s' % network
-            prefixplot+='\n'
+            if site_dict[mode] <> network:
+                prefixplot+='Network: %s' % network
+                prefixplot+='\n'
+                prefixplot+='Station: %s' % site_dict[mode]
+                prefixplot+='\n'
+            else:
+                prefixplot+='Station: %s' % site_dict[mode]
+                prefixplot+='\n'
+        else:
+            prefixplot+='Station: %s' % site_dict[mode]
+            prefixplot+='\n'      
         if Airs_DayOfWeek<>None and Airs_Time<>None:
             prefixplot+='Airs: %s @ %s' % (Airs_DayOfWeek,Airs_Time)
             prefixplot+='\n'
@@ -575,7 +605,7 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         if plot<>None:
             infoLabels['Plot']=prefixplot.encode('utf-8', 'ignore')+plot.decode("utf-8").encode('utf-8', 'ignore')
         else:
-            infoLabels['Plot']=prefixplot+"\"%s\" on %s" % (series_title,site_dict[mode])
+            infoLabels['Plot']=prefixplot
         if date: infoLabels['date']=date
         if first_aired<>None: infoLabels['aired']=first_aired
         if year<>None: infoLabels['Year']=year
@@ -588,7 +618,7 @@ def addShow(series_title, mode='', sitemode='', url='', thumb='', fanart='', TVD
         if runtime<>None: infoLabels['duration']=runtime
         if rating<>None: infoLabels['rating']=rating
     name = series_title
-    series_title = series_title.replace(u'\xae','%A9').replace(u'\xe9','%E9').replace(u'\u2122','%99')
+    series_title = series_title.replace(u'\xae','%A9').replace(u'\xe9','%E9').replace(u'\u2122','%99').replace(u'\u2122','%99').replace(u'\u2019','')
     u  = sys.argv[0]
     u += '?url="'+urllib.quote_plus(url)+'"'
     u += '&mode="'+mode+'"'

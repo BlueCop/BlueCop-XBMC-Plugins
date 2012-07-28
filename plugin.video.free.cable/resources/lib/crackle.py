@@ -74,7 +74,7 @@ def movieGenres(genre=common.args.url):
     common.addDirectory('Thriller', 'crackle', 'moviesByGenre', 'Thriller')
     common.setView('seasons')
 
-def showsByGenremoviesByGenre(genre=common.args.url):
+def moviesByGenre(genre=common.args.url):
     movies(genre)
 
 def movies(genre,db=False):

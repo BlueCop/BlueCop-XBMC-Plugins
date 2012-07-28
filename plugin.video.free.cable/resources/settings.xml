@@ -36,15 +36,19 @@
 		<setting id="comedy" type="bool" label="Comedy Central" default="true"/>
 		<setting id="crackle" type="bool" label="Crackle" default="true"/>
 		<setting id="thecw" type="bool" label="The CW" default="true"/>
+		<setting id="disney" type="bool" label="Disney (NOT FINISHED)" default="false"/>
+		<setting id="disneyxd" type="bool" label="Disney XD (NOT FINISHED)" default="false"/>
 		<setting id="food" type="bool" label="Food Network" default="true"/>
 		<setting id="fox" type="bool" label="FOX (DRM)" default="false"/>
 		<setting id="fx" type="bool" label="FX (DRM)" default="false"/>
 		<setting id="gsn" type="bool" label="Game Show Network" default="true"/>
 		<setting id="hgtv" type="bool" label="HGTV" default="true"/>
 		<setting id="history" type="bool" label="History Channel" default="true"/>
-		<setting id="hub" type="bool" label="The Hub (Disabled Reason: Broken)" default="false"/>
+		<setting id="hub" type="bool" label="The Hub" default="true"/>
 		<setting id="lifetime" type="bool" label="Lifetime" default="true"/>
-		<setting id="mtv" type="bool" label="MTV Shows" default="true"/>
+		<setting id="marvel" type="bool" label="Marvel" default="true"/>
+		<setting id="marvelkids" type="bool" label="Marvel Kids" default="true"/>
+		<setting id="mtv" type="bool" label="MTV" default="true"/>
 		<setting id="natgeo" type="bool" label="National Geographic (STREAM DROPS)" default="false"/>
 		<setting id="natgeowild" type="bool" label="Nat Geo Wild (STREAM DROPS)" default="false"/>
 		<setting id="nbc" type="bool" label="NBC" default="true"/>
@@ -52,15 +56,17 @@
 		<setting id="nicktoons" type="bool" label="Nick Toons" default="true"/>
 		<setting id="nick" type="bool" label="Nickelodeon" default="true"/>
 		<setting id="oxygen" type="bool" label="Oxygen" default="true"/>
-		<setting id="pbs" type="bool" label="PBS (NOT FINISHED)" default="false"/>
+		<setting id="pbskids" type="bool" label="PBS Kids" default="true"/>
+		<setting id="pbs" type="bool" label="PBS" default="true"/>
 		<setting id="spike" type="bool" label="Spike" default="true"/>
 		<setting id="syfy" type="bool" label="SyFy" default="true"/>
 		<setting id="tbs" type="bool" label="TBS" default="false"/>
 		<setting id="tnt" type="bool" label="TNT" default="false"/>
 		<setting id="tvland" type="bool" label="TV Land" default="true"/>
 		<setting id="usa" type="bool" label="USA" default="true"/>
-		<setting id="vh1" type="bool" label="VH1 Shows" default="true"/>
+		<setting id="vh1" type="bool" label="VH1" default="true"/>
 		<setting id="thewb" type="bool" label="The WB" default="true"/>
+		<setting id="thewbkids" type="bool" label="The WB Kids" default="true"/>
 		<setting type="sep" />
 	</category>
 	

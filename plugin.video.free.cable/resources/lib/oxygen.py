@@ -71,8 +71,12 @@ def process(urlBase, fullname = common.args.url):
         if ' Episode ' in episode['title'] and ' Episode Preview' not in episode['title']:
             showname=episode['title'].split('Episode')[0].strip()
             seasonEpisode = episode['title'].split(':')[0].split('Episode')[-1].strip()
-            season = int(seasonEpisode[:1])
-            episodeNum = int(seasonEpisode[1:])
+            try:
+                season = int(seasonEpisode[:1])
+                episodeNum = int(seasonEpisode[1:])
+            except:
+                season = 0
+                episodeNum = 0
             displayname = '%sx%s - %s' % (str(season),str(episodeNum),name)
         elif ' Season ' in episode['title']:
             showname=episode['title'].split('Season')[0].strip()

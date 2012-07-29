@@ -83,7 +83,9 @@ def process(urlBase, fullname = common.args.url):
 def play():
     smilurl=common.args.url
     swfUrl = 'http://www.bravotv.com/_tp/pdk/swf/flvPlayer.swf'
-    data = common.getURL(smilurl)
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
+    data = common.getURL(smilurl,proxy=proxy)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     print tree.prettify()
     rtmpbase = tree.find('meta')

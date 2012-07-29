@@ -25,7 +25,9 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    data = common.getURL(BASE_URL)
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
+    data = common.getURL(BASE_URL,proxy=proxy)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     shows=tree.find('div',attrs={'id':'show-directory'}).findAll('li')
     db_shows = []
@@ -43,7 +45,9 @@ def rootlist(db=False):
         common.setView('tvshows')
 
 def fullepisodes(url=common.args.url):
-    data = common.getURL(url)
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
+    data = common.getURL(url,proxy=proxy)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     episodes=tree.find('div',attrs={'id':'full_ep_car'}).findAll('div',attrs={'id':True,'class':True})
     for episode in episodes:
@@ -82,7 +86,9 @@ def fullepisodes(url=common.args.url):
 
 def play(url=common.args.url):
     jsonurl = 'http://metaframe.digitalsmiths.tv/v2/WBtv/assets/'+url.split('/')[-1]+'/partner/146?format=json'
-    data = common.getURL(jsonurl)
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
+    data = common.getURL(jsonurl,proxy=proxy)
     rtmp = demjson.decode(data)['videos']['limelight700']['uri']
     rtmpsplit = rtmp.split('mp4:')
     rtmp = rtmpsplit[0]+' playpath=mp4:'+rtmpsplit[1]

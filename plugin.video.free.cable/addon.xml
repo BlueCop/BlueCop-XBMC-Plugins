@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.free.cable"
        name="Free Cable"
-       version="0.5.0"
+       version="0.5.1"
        provider-name="BlueCop">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
@@ -16,7 +16,7 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <summary>US station aggregator</summary>
-    <description>\"Free Cable is the ultimate aphrodisiac\" - The Cable Guy</description>
+    <description>"Free Cable is the ultimate aphrodisiac" - The Cable Guy</description>
     <platform>all</platform>
   </extension>
 </addon>

@@ -25,11 +25,11 @@ def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     items=tree.find('ul',attrs={'class':'left-col-menu video-landing clearfix'}).findAll('li',attrs={'class':True})
     db_shows = []
+    common.addShow('Full Biographies', 'bio', 'full_bios', '/videos/full-bios')
     for item in items:
         if item['class'] == 'mainItem expanded' or item['class'] == 'mainItem ':
             if item.find('span').string == 'Shows':
@@ -65,6 +65,35 @@ def rootlist(db=False):
         return db_shows
     else:
         common.setView('tvshows')
+        
+def full_bios(path=common.args.url):
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    for page in range(1,4):
+        url = BASE+path+'?page-number='+str(page)+'&pagination-sort-by=alphabetical&pagination-per-page=100&prev-sort=alphabetical&prev-per-page=100'
+        data = common.getURL(url)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        videos=tree.find('div',attrs={'class':'video-results clearfix'}).findAll('li')
+        for video in videos:
+            link = video.find('a')
+            name = link.find('strong').string.strip()
+            type = name.split(' - ')[1].strip()
+            name = name.split(' - ')[0]
+            if type == 'Full Episode' or type == 'Full Biography':
+                pass
+            else:
+                name+=' ('+type+')'
+            url = BASE + link['href']
+            #thumb = video.find('img')['src']
+            thumb = ''
+            duration = video.find('span',attrs={'class':'video-duration'}).string.strip().replace('(','').replace(')','')
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="bio"'
+            u += '&sitemode="play"'
+            infoLabels={ "Title":name,
+                         "Duration":duration}
+            common.addVideo(u,name,thumb,infoLabels=infoLabels)
+    common.setView('episodes')
                       
 def videos(url=common.args.url):
     url = BASE+url+'?page-number=1&pagination-type=all&pagination-sort-by=most-recent&pagination-per-page=100'

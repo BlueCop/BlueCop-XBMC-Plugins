@@ -85,20 +85,21 @@ def videos(url=common.args.url):
 
 
 def fullepisodes(url=common.args.url):
-    xbmcplugin.setContent(pluginhandle, 'episodes')
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    episodes=tree.find(attrs={'class' : 'clips'}).findAll('div',recursive=False)
-    for episode in episodes:
-        print episode.prettify()
-        #uri = 'mgid:arc:episode:spike.com:'+episode['id'].replace('episode_','')
-        try:uri = episode.find('a')['href']
-        except: uri='BAD'
-        name = episode.find('img')['title']
-        thumb = episode.find('img')['src'].split('?')[0]
-        description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
-        airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
-        try:
+    seasons=tree.find('ul',attrs={'class' : 'season_navigation'}).findAll('a')
+    for season in seasons:
+        data = common.getURL(season['href'])
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        episodes=tree.find(attrs={'class' : 'clips'}).findAll('div',recursive=False)
+        for episode in episodes:
+            try: uri = episode.find('a')['href']
+            except: continue
+            name = episode.find('img')['title']
+            thumb = episode.find('img')['src'].split('?')[0]
+            description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
+            airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
+            #try:
             seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
             if 3 == len(seasonepisode):
                 season = int(seasonepisode[:1])
@@ -106,31 +107,31 @@ def fullepisodes(url=common.args.url):
             elif 4 == len(seasonepisode):
                 season = int(seasonepisode[:2])
                 episode = int(seasonepisode[-2:])
-        except:
-            season=0
-            episode=0
-        if season <> 0 or episode <> 0:
-            displayname = '%sx%s - %s' % (str(season),str(episode),name)
-        else:
-            displayname = name
-        #except:
-        #    print 'no season data'
-        #    displayname = name
-        #    season = 0
-        #    episode = 0
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(uri)+'"'
-        u += '&mode="spike"'
-        u += '&sitemode="playepisode"'
-        infoLabels={ "Title":name,
-                     "Season":season,
-                     "Episode":episode,
-                     "Plot":description,
-                     "premiered":airDate
-                     #"Duration":duration,
-                     #"TVShowTitle":common.args.name
-                     }
-        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+            #except:
+            #    season=0
+            #    episode=0
+            if season <> 0 or episode <> 0:
+                displayname = '%sx%s - %s' % (str(season),str(episode),name)
+            else:
+                displayname = name
+            #except:
+            #    print 'no season data'
+            #    displayname = name
+            #    season = 0
+            #    episode = 0
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(uri)+'"'
+            u += '&mode="spike"'
+            u += '&sitemode="playepisode"'
+            infoLabels={ "Title":name,
+                         "Season":season,
+                         "Episode":episode,
+                         "Plot":description,
+                         "premiered":airDate
+                         #"Duration":duration,
+                         #"TVShowTitle":common.args.name
+                         }
+            common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')
     
 def playepisode(url = common.args.url):

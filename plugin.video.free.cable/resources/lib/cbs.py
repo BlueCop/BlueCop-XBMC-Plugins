@@ -452,7 +452,7 @@ def playST(url = common.args.url):
 
 def play(url = common.args.url):
     print "DEBUG Entering play function"
-
+    swfUrl = 'http://can.cbs.com/thunder/player/chrome/canplayer.swf'
     if 'http://' in url:
         data=common.getURL(url)
         try:
@@ -461,69 +461,38 @@ def play(url = common.args.url):
             pid = re.compile("var pid = '(.*?)';").findall(data)[0]
     else:
         pid = url  
-    url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
+    # OLD URL
+    #url = "http://release.theplatform.com/content.select?format=SMIL&Tracking=true&balance=true&MBR=true&pid=" + pid
+    url = "http://link.theplatform.com/s/dJ5BDC/%s?format=SMIL&Tracking=true&mbr=true" % pid
     if (common.settings['enableproxy'] == 'true'):
         proxy = True
     else:
         proxy = False
     data=common.getURL(url,proxy=proxy)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    #print "DEBUG TREEE "+str(tree)
+    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
     
     if (common.settings['enablesubtitles'] == 'true'):
-        refs = tree.findAll('ref',attrs={'tp:closedcaptionurl': True})
-        closedcaption = None
-        for item in refs:
-            try:
-                closedcaption = item['tp:closedcaptionurl']
-                guid = item['guid']
-                print "closed caption: " + closedcaption + " GUID: " +str(guid)
-            except:
-                print "no key"
-                
+        closedcaption = tree.find('param',attrs={'name':'ClosedCaptionURL'})
         if (closedcaption is not None):
-            xml_closedcaption = common.getURL(closedcaption)
-            convert_subtitles(xml_closedcaption,guid)
+            xml_closedcaption = common.getURL(closedcaption['value'])
+            convert_subtitles(xml_closedcaption,pid)
 
-    #print "DEBUG refs:" + str(refs)
-        
-    videos = tree.findAll('video',attrs={'profile': True})
-    print "DEBUG videos:" + str(videos)
-    rtmps=[]
-    https=[]
-    cccount=0
-    for item in videos:
-        print "VIDEO NUMBER " +str(cccount) + " " + str(item) + "      ENDDDD"
-        cccount=cccount+1
-        url = item['src']
-        if 'rtmp' in url:
-            rtmps.append(item)
-        elif 'http' in url:
-            https.append(item)
-    hbitrate = -1
-    sbitrate = int(common.settings['quality']) * 1024
-    for item in rtmps:
-        bitrate = int(item['system-bitrate'])
-        
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            url = item['src'].split('<break>')
-            rtmp = url[0]
-            playpath = url[1]
-            if ".mp4" in playpath:
-                    playpath = 'mp4:' + playpath
-            else:
+    rtmpbase = tree.find('meta')
+    if rtmpbase:
+        rtmpbase = rtmpbase['base']
+        items=tree.find('switch').findAll('video')
+        hbitrate = -1
+        sbitrate = int(common.settings['quality']) * 1024
+        for item in items:
+            bitrate = int(item['system-bitrate'])
+            if bitrate > hbitrate and bitrate <= sbitrate:
+                hbitrate = bitrate
+                playpath = item['src']
+                if '.mp4' in playpath:
+                    playpath = 'mp4:'+playpath
+                else:
                     playpath = playpath.replace('.flv','')
-            swfUrl = "http://www.cbs.com/thunder/player/1_0/chromeless/1_5_1/CAN.swf"
-            finalurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-    '''
-    for item in https:
-        print item['profile']
-        bitrate = int(item['system-bitrate'])
-        if bitrate > hbitrate:
-            hbitrate = bitrate
-            finalurl = item['src']
-    '''
+                finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
     if (common.settings['enablesubtitles'] == 'true') and (closedcaption is not None):
@@ -531,7 +500,7 @@ def play(url = common.args.url):
             print 'CBS--> Not Playing'
             xbmc.sleep(100)
     
-        subtitles = os.path.join(common.pluginpath,'resources','cache',guid+'.srt')
-        print "HULU --> Setting subtitles"
+        subtitles = os.path.join(common.pluginpath,'resources','cache',pid+'.srt')
+        print "CBS --> Setting subtitles"
         xbmc.Player().setSubtitles(subtitles)
 

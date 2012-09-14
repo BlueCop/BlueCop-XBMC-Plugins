@@ -34,9 +34,12 @@ def MOVIE_VIDEOS():
         movie_id = re.compile('csa_movie_id = "movie_(.*?)";').findall(data)[0]
         inqueue = CHECK_QUEUE(movie_id)
         movietitle = tree.find('h1',attrs={'class':'movie_title'}).string
-        plot = tree.find('div',attrs={'class':'synP'}).renderContents()
-        tags = re.compile(r'<.*?>')
-        plot = tags.sub('', plot).strip()
+        try:
+            plot = tree.find('div',attrs={'class':'synP'}).renderContents()
+            tags = re.compile(r'<.*?>')
+            plot = tags.sub('', plot).strip()
+        except:
+            plot = ''
         mpaa = tree.find('span',attrs={'id':'rating'})['class']
         metadata = tree.find('span',attrs={'class':'genres'}).findAll('span',recursive=False)
         genredata = tree.find('span',attrs={'class':'genres'}).findAll('a')
@@ -52,7 +55,8 @@ def MOVIE_VIDEOS():
             year = int(metadata[0].string)
             runtime = metadata[2].string.replace('mins','').strip()
         
-        poster = tree.find('div',attrs={'class':'more-images posters'}).find('img')['src'].replace('thumbs/','') 
+        try: poster = tree.find('div',attrs={'class':'more-images posters'}).find('img')['src'].replace('thumbs/','')
+        except: poster = '' 
         infoLabels={ "Title": movietitle,
                     'plot':plot,
                     'mpaa':mpaa,

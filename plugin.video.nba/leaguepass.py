@@ -64,6 +64,7 @@ def encrypt(args):
         return ''
 
 teams = {
+	"bkn" : "nets",
         "nyk" : "knicks",
         "njn" : "nets",
         "atl" : "hawks",
@@ -132,9 +133,9 @@ def getGames(fromDate = '', full = True, highlight = False):
             vs = ''
             hs = ''
             if isFirst:
-                tmp2 = x.partition('games":[[{')
+                tmp2 = x.partition('games":[[')
                 isFirst = False
-                tmp3 = tmp2[2]
+                tmp3 = tmp2[2][tmp2[2].find('{"h'):]
             else:
                 tmp3 = x
 
@@ -142,7 +143,6 @@ def getGames(fromDate = '', full = True, highlight = False):
             for y in tmp4:
                 y = y.replace('"', '').replace(" ", "").replace("[", "")
                 y = y.replace('{h' , 'h')
-
                 if y[:2] == 'h:':
                     h = y[2:]
                 elif y[:2] == 'v:':

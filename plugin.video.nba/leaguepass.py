@@ -28,35 +28,37 @@ def getDate( default= '', heading='Please enter date (YYYY/MM/DD)', hidden=False
 
 def login():
     try:
-        url = 'https://www.nba.tv/nbatv/secure/login?'
+        url = 'https://watch.nba.com/nba/secure/login?'
         body = {'username' : settings.getSetting( id="username"), 'password' : settings.getSetting( id="password")}
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         response, content = http.request(url+urllib.urlencode(body), 'POST', headers=headers)
         global cookies
-        cookies  = response['set-cookie'].partition(';')[0] + '; locale=en_US'
+        cookies  = response['set-cookie'].partition(';')[0]
+	print 'login --> ' +cookies
         return cookies
     except:
         return ''
 
 def encrypt(args):
     try:
-        url = 'http://www.nba.tv/nbatv/servlets/encryptvideopath?'
+        url = 'http://watch.nba.com/nba/servlets/encryptvideopath?'
         headers = { 'Host': 'www.nba.tv',
-                    'User-Agent':'Mozilla/5.0 (X11; U; Linux x86_64; de; rv:1.9.1.18) Gecko/20110323 Iceweasel/3.5.18 (like Firefox/3.5.18)',
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'de-de,de;q=0.8,en-us;q=0.5,en;q=0.3',
                     'Accept-Encoding': 'gzip,deflate',
-                    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
                     'Keep-Alive': '300',
                     'Connection': 'keep-alive',
                     'Cookie': cookies }
         url = url+ urllib.urlencode(args)
+	print 'url--> ' + url + ' headers ' + str(headers)
         response, content = http.request(url, 'POST', headers=headers)
         xml = parseString(str(content))
         link = xml.getElementsByTagName("path")[0].childNodes[0].nodeValue
         pp = ' playpath=mp4:u' + link.partition('mp4:u')[2]
         app = ' app=ondemand?' + link.partition('?')[2]
         link = 'rtmp://cp118328.edgefcs.net:1935/ondemand' + app + pp + ' swfUrl=http://neulionms.vo.llnwd.net/o37/nba/player/nbatv/console.swf swfVfy=1'
+	print 'encrypt--> ' + str(response) + ' content ' + str(content)
         return link
     except:
         return ''
@@ -211,13 +213,24 @@ def dateMenu(type):
     addDir('This week',  type + 'this', '2' ,'')
     addDir('Last week' , type + 'last', '3','')
     addDir('Select date' , type + 'date', '4','')
+    addDir('2011-2012 season', type +'s12', '6','')
 
-def gameLinks(mode, url):
+def season2012(mode, url):
+    d1 = date(2011, 12, 23)
+    week = 1
+    while week < 28:
+    	gameLinks(mode,url, d1)
+        d1 = d1 + timedelta(7)
+	week = week + 1
+
+def gameLinks(mode, url, date2Use = None):
     try:
         isFull = url.find('archive') != -1
         isHighlight = url.find('highlights') != -1
         if mode == 4:
             tday = getDate()
+	elif mode == 6:
+	    tday = date2Use
         else:
             tday = date.today()
 
@@ -228,7 +241,7 @@ def gameLinks(mode, url):
         default = "%04d" % now.year
         default = default + '/' + "%d" % now.month
         default = default + '_' + "%d" % now.day
-        if mode == 2 or mode ==4:
+        if mode == 2 or mode ==4 or mode ==6:
             getGames(default, isFull, isHighlight)
         elif mode == 3:
             tday = tday - timedelta(7)
@@ -298,7 +311,8 @@ elif mode==1:
 
 elif mode==5:
     playGame(name, url)
-
+elif mode==6:
+    season2012(mode, url)
 else:
     gameLinks(mode, url)
 

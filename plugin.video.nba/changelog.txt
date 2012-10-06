@@ -1,4 +1,5 @@
 Changelog:
+0.1.2- fix for 2012 preseason
 0.1.1- bugfix for missing 2012 finals games
 0.1.0- added listing for complete 2011/2012 season
 0.0.9- fix for new domain watch.nba.com

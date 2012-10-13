@@ -152,7 +152,7 @@
 
 <addon id="plugin.video.nba"
        name="NBA League Pass"
-       version="0.0.8"
+       version="0.1.2"
        provider-name="robla">
   <requires>
     <import addon="xbmc.python" version="1.0"/>

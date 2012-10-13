@@ -192,7 +192,7 @@ def sp_seasons(url=common.args.url):
 def sp_episodes():
     import demjson
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_EPISODE)
-    url = 'http://www.southparkstudios.com/feeds/full-episode/carousel/'+common.args.url+'/342853'
+    url = 'http://www.southparkstudios.com/feeds/full-episode/carousel/'+common.args.url+'/dc400305-d548-4c30-8f05-0f27dc7e0d5c'
     json = common.getURL(url)
     episodes = demjson.decode(json)['season']['episode']
     for episode in episodes:

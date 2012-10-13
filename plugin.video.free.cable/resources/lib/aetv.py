@@ -166,7 +166,8 @@ def showsubThePlatform(url=common.args.url,tree=False):
 
 def playThePlatform():
     data = common.getURL(common.args.url)
-    mrss = urllib.unquote_plus(base64.b64decode(re.compile('{ mrss: "(.+?)",').findall(data)[0]))
+    #mrss = urllib.unquote_plus(base64.b64decode(re.compile('{ mrss: "(.+?)",').findall(data)[0]))
+    mrss = urllib.unquote_plus(base64.b64decode(re.compile('"mrss=(.+?)&').findall(data)[0]))
     smil_url = re.compile('<media:text>smilUrl=(.+?)</media:text>').findall(mrss)[0]
     signUrl  = 'http://www.history.com/components/get-signed-signature'
     signUrl += '?url='+smil_url.split('/s/')[1].split('?')[0]

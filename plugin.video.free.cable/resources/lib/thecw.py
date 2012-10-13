@@ -23,18 +23,18 @@ def masterlist():
 def rootlist(db=False):
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'id':'videoshowslist'}).findAll('li',recursive=False)
+    menu=tree.find('div',attrs={'id':'shows-video'}).findAll('li')
     db_shows = []
     for item in menu:
-        url = BASE + item.find(attrs={'class':'videothumb'}).find('a')['href']
-        thumb = item.find('img')['src']
-        showname = item.find(attrs={'class':'videoinfo'}).contents[0].strip()
-        if showname == 'More Video':
-            continue
+        url = BASE + item.find('a')['href']
+        #thumb = item.find('img')['src']
+        showname = item.find('p',attrs={'class':'t'}).string.strip()
+        #if showname == 'More Video':
+        #    continue
         if db==True:
             db_shows.append((showname,'thecw','show',url))
         else:
-            common.addShow(showname, 'thecw', 'show', url, thumb)
+            common.addShow(showname, 'thecw', 'show', url)
     if db==True:
         return db_shows
     else:
@@ -43,10 +43,10 @@ def rootlist(db=False):
 def show(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'id':'showtabs'}).findAll('li')
+    menu=tree.find('div',attrs={'id':'videotabs'}).findAll('li')
     for item in menu:
         itemurl = url +'<videotab>'+ item['id'].replace('videotab_','')
-        name = item.find('a').contents[0].title()
+        name = item.find('p').string.split('(')[0].title()
         common.addDirectory(name, 'thecw', 'episodes', itemurl)
     common.setView('seasons')
 
@@ -56,22 +56,23 @@ def episodes(url=common.args.url):
     url = urldata[0]
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'id':'showinfo'}).findAll(attrs={'class':'videotabcontents'})
+    menu=tree.find(attrs={'id':'cw-content'}).findAll(attrs={'class':'videotabcontents'})
     for item in menu:
         itemid = int(item['id'].replace('videotabcontents_',''))
         if tabid == itemid:
             videos=item.findAll('div',recursive=False)
             for video in videos:
+                print video.prettify()
                 url = video.find('a')['href'].split('=')[1]
                 print url
                 thumb = video.find('img')['src']
-                name = video.find(attrs={'class':'header'}).string.title()
-                hoverinfo = video.find(attrs={'class':'hoverinfo-lower'})('p')[0]
-                try:
-                    description = hoverinfo.contents[2].strip()
-                except:
-                    print 'description failure'
-                    description = ''
+                name = video.find(attrs={'class':'t1'}).string.title()
+                description = video.find(attrs={'class':'d3'}).string
+                #try:
+                #    description = hoverinfo.contents[2].strip()
+                #except:
+                #    print 'description failure'
+                #    description = ''
                 try:
                     airdate = hoverinfo.contents[0].contents[2].replace('Original Air Date: ','')
                 except:

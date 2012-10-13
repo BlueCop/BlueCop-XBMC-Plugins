@@ -44,6 +44,8 @@ def masterlist():
                 url+='video/'
             elif '/shows/3/' in url:
                 url+='video/'
+            elif '/shows/3/' in url:
+                url+='video/'
             elif '/shows/nyc_22' in url:
                 name = 'NYC 22'
                 url+='video/'
@@ -84,7 +86,11 @@ def shows(catid = common.args.url):
                     url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
                 elif 'shows/dogs_in_the_city/' in url:
                     url+='video/'
-                elif '/shows/3/' in url:
+                elif '/shows/partners/' in url:
+                    url+='video/'
+                elif '/shows/elementary/' in url:
+                    url+='video/'
+                elif '/shows/vegas/' in url:
                     url+='video/'
                 elif '/shows/nyc_22' in url:
                     name = 'NYC 22'
@@ -200,6 +206,10 @@ def stprocessvideos(purl):
 
 def showcats(url = common.args.url):
     data = common.getURL(url)
+    #try:
+    #    var show  = new CBS.Show({id:111381});
+    #    show_id = re.compile("new CBS\.Show\(id:(.*?)\);").findall(data)
+    #    url = 'http://www.cbs.com/carousels/'+dir3+'/video/'+dir1+'/'+dir2+'/0/400/
     try:
         print 'CBS: Trying New Carousel'
         carousels = re.compile("loadUpCarousel\('(.*?)','(.*?)', '(.*?)', (.*?), true, stored").findall(data)

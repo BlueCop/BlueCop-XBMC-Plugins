@@ -160,19 +160,20 @@ def play(uri = common.args.url,referer='http://www.mtv.com'):
     mtvn = 'http://media.mtvnservices.com/'+uri 
     swfUrl = common.getRedirect(mtvn,referer=referer)
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0]).strip()
+    #configurl = configurl.split('/config.xml?')[0]+'/context4/config.xml?'+configurl.split('/config.xml?')[1]
     configxml = common.getURL(configurl,referer=mtvn)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    feed = tree.find('player').find('feed')
-    try:
-        mrssurl = feed.string.replace('{uri}',uri).replace('&amp;','&')
-        mrssxml = common.getURL(feedurl)
-        mrsstree = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    except:
-        mrsstree = feed
+    feed = tree.find('feed')
+    #try:
+    mrssurl = feed.string.replace('{uri}',uri).replace('&amp;','&')
+    mrssxml = common.getURL(mrssurl)
+    mrsstree = BeautifulStoneSoup(mrssxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    #except:
+    #    mrsstree = feed
     segmenturls = mrsstree.findAll('media:content')
     stacked_url = 'stack://'
     for segment in segmenturls:
-        surl = segment['url']
+        surl = segment['url']#+'&acceptMethods=fms,hdn1,hds'
         videos = common.getURL(surl)
         videos = BeautifulStoneSoup(videos, convertEntities=BeautifulStoneSoup.HTML_ENTITIES).findAll('rendition')
         hbitrate = -1

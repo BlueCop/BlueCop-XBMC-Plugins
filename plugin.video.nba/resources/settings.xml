@@ -5,7 +5,7 @@
   <category label="50000">
     <setting id="username" type="text" label="50001" default=""/>
     <setting id="password" type="text" label="50002" option="hidden" default=""/>
-    <setting id="quality" type="enum" label="50003" values="SD (800 kbit/s)|SD (1600 kbit/s)" default="1" />
+    <setting id="quality" type="enum" label="50003" values="800 kbit/s|1600 kbit/s|3000 kbit/s" default="2" />
    <setting id="scores" type="enum" label="50004" values="hide|show" default="0" /> </category>
 
 </settings>

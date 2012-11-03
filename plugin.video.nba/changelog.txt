@@ -1,4 +1,5 @@
 Changelog:
+0.1.3- fix for 2012/2013 highlights, added 3000 kbit/s quality setting, for the time being archived and condensed games for 2012 are not available
 0.1.2- fix for 2012 preseason
 0.1.1- bugfix for missing 2012 finals games
 0.1.0- added listing for complete 2011/2012 season

@@ -95,7 +95,6 @@ def episode(cid = common.args.url):
                         episodeNum = episodeNum[1:]
                     if len(episodeNum) > 2:
                         episodeNum = episodeNum[-2:]
-                        print episodeNum
                     episodeNum = int(episodeNum)
                 except:episodeNum = 0
                 try:duration = episode.find('duration').string.strip()

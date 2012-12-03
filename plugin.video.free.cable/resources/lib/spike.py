@@ -99,17 +99,17 @@ def fullepisodes(url=common.args.url):
             thumb = episode.find('img')['src'].split('?')[0]
             description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
             airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
-            #try:
-            seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
-            if 3 == len(seasonepisode):
-                season = int(seasonepisode[:1])
-                episode = int(seasonepisode[-2:])
-            elif 4 == len(seasonepisode):
-                season = int(seasonepisode[:2])
-                episode = int(seasonepisode[-2:])
-            #except:
-            #    season=0
-            #    episode=0
+            try:
+                seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
+                if 3 == len(seasonepisode):
+                    season = int(seasonepisode[:1])
+                    episode = int(seasonepisode[-2:])
+                elif 4 == len(seasonepisode):
+                    season = int(seasonepisode[:2])
+                    episode = int(seasonepisode[-2:])
+            except:
+                season=0
+                episode=0
             if season <> 0 or episode <> 0:
                 displayname = '%sx%s - %s' % (str(season),str(episode),name)
             else:
@@ -138,7 +138,8 @@ def playepisode(url = common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     #print tree.prettify()
-    uri = tree.find('object',attrs={'id':'video_player'})['resource'].split('/')[-1]
+    uri = tree.find('div',attrs={'id':'video_player_box'})['data-mgid']
+    #uri = tree.find('object',attrs={'id':'video_player'})['resource'].split('/')[-1]
     play(uri)
 
 def play(uri = common.args.url,referer='http://www.tvland.com'):
@@ -187,7 +188,8 @@ def play(uri = common.args.url,referer='http://www.tvland.com'):
 def playvideo(url = common.args.url):
     data=common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    uri = tree.find('meta',attrs={'property':'og:video'})['content'].split('://')[1].split('/')[1]
+    #uri = tree.find('meta',attrs={'property':'og:video'})['content'].split('://')[1].split('/')[1]
+    uri = tree.find('div',attrs={'id':'video_player_box'})['data-mgid']
     play(uri,referer=url)
 
 

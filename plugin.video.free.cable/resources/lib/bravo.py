@@ -55,7 +55,8 @@ def process(urlBase, fullname = common.args.url):
     episodes = demjson.decode(data)['entries']
     for episode in episodes:
         if fullname == episode['pl1$show'][0]:
-            name = episode['description'].split('-')[1].strip()
+            try: name = episode['description'].split('-')[1].strip()
+            except: name = episode['pl1$show'][0]
             showname = episode['pl1$subtitle']
             description = episode['description']
             thumb= episode['plmedia$defaultThumbnailUrl']

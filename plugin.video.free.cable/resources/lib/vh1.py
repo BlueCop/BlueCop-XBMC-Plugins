@@ -174,18 +174,18 @@ def videos(url=common.args.url):
     except:
         print 'No videos'
 
-def playuri(uri = common.args.url,referer='http://www.tvland.com'):
+def playuri(uri = common.args.url,referer='www.vh1.com'):
     mp4_url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=/44620/mtvnorigin"
     mtvn = 'http://media.mtvnservices.com/'+uri 
-    swfUrl = common.getRedirect(mtvn,referer=referer)
+    swfUrl = common.getRedirect(mtvn)#,referer=referer)
     configurl = urllib.unquote_plus(swfUrl.split('CONFIG_URL=')[1].split('&')[0])
     configxml = common.getURL(configurl)
     tree=BeautifulStoneSoup(configxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     feed = tree.find('player').find('feed')
     try:
-        mrssurl = feed.string.replace('{uri}',uri).replace('&amp;','&')
-        mrssxml = common.getURL(feedurl)
-        mrsstree = BeautifulStoneSoup(feeddata, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+        mrssurl = feed.string.replace('{uri}',uri).replace('{ref}','None').replace('&amp;','&').strip()
+        mrssxml = common.getURL(mrssurl)
+        mrsstree = BeautifulStoneSoup(mrssxml, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     except:
         mrsstree = feed
     segmenturls = mrsstree.findAll('media:content')

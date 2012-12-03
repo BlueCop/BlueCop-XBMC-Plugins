@@ -14,7 +14,7 @@ import resources.lib._common as common
 
 pluginhandle = int (sys.argv[1])
 
-BASE_URL = 'http://www.nbc.com/Video/library/'
+BASE_URL = 'http://www.nbc.com/video/library/full-episodes/'
 BASE = 'http://www.nbc.com'
 
 def masterlist():
@@ -33,16 +33,34 @@ def shows(url = common.args.url, choosenCat='Show Library', db=False):
             marker = categories.index(category)
     items = menu.findAll('ul')[marker].findAll('a')
     db_shows = []
-    if len(items) == 1:
-        url = BASE + items[0]['href']
-        shows2(url)
+    dupecheck = []
+    #            ('Revolution','nbc','showroot','http://www.nbc.com/revolution/video/nobodys-fault-but-mine/1425158/'),
+    #            ('Chicago Fire','nbc','showroot','http://www.nbc.com/chicago-fire/video/categories/season-1/1416546/')]
+    #common.addShow('Revolution','nbc','showroot','http://www.nbc.com/revolution/video/nobodys-fault-but-mine/1425158/')
+    #common.addShow('Chicago Fire','nbc','showroot','http://www.nbc.com/chicago-fire/video/categories/season-1/1416546/')
     for item in items:
         name = item.string
         url = item['href']
-        if db==True:
-            db_shows.append((name,'nbc','showroot',url))
-        else:
-            common.addShow(name, 'nbc', 'showroot', url)
+        #if db==True:
+        db_shows.append((name,'nbc','showroot',url))
+        dupecheck.append(name)
+        #else:
+        #    common.addShow(name, 'nbc', 'showroot', url)
+    
+    items = tree.findAll('ul',attrs={'class':'scet_th_list'})
+    for list in items:
+        for item in list.findAll('li',recursive=False):
+            link = item.find('a')
+            name = link['title']
+            url = link['href']
+            if name not in dupecheck:
+                db_shows.append((name,'nbc','showroot',url))
+                dupecheck.append(name)
+
+    if not db:
+        for show in db_shows:
+            common.addShow(show[0], 'nbc', 'showroot', show[3])
+
     if db==True:
         return db_shows
     else:
@@ -54,10 +72,10 @@ def showroot(url = common.args.url):
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     sets=tree.find('div',attrs={'id' : 'scet-categories'}).findAll('div',attrs={'class' : 'scet-cat-group'})
     for set in sets:
-        set_title = set.find('h5').string
-        if set_title == 'All Videos':
+        set_title = set.find('h5').string.lower()
+        if set_title == 'all videos':
             continue
-        elif set_title == 'Full Episodes' or set_title == 'Webisodes':
+        elif set_title == 'full episodes' or set_title == 'webisodes':
             mode = 'showsubFullEpisode'
         else:
             mode = 'showsubClips'
@@ -161,6 +179,23 @@ def play():
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def getsmil(vid):
+    url  = 'http://videoservices.nbcuni.com/player/clip?clear=true&domainReq=www.nbc.com&geoIP=US'
+    url += '&clipId='+vid
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    url = 'http://video.nbcuni.com/' + tree.find('clipurl').string
+    return url
+
+def getrtmp():
+    rtmphost = 'cp37307.edgefcs.net'
+    app = 'ondemand'
+    identurl = 'http://'+rtmphost+'/fcs/ident'
+    ident = common.getURL(identurl)
+    ip = re.compile('<fcs><ip>(.+?)</ip></fcs>').findall(ident)[0]
+    rtmpurl = 'rtmp://'+ip+':1935/'+app+'?_fcs_vhost='+rtmphost
+    return str(rtmpurl)
+
+def getsmilOLD(vid):
     gw = RemotingService(url='http://video.nbcuni.com/amfphp/gateway.php',
             referer='http://www.nbc.com/assets/video/3-0/swf/NBCVideoApp.swf',
             user_agent='Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7)',
@@ -173,8 +208,7 @@ def getsmil(vid):
     url = 'http://video.nbcuni.com/' + response['clipurl']
     return url
 
-
-def getrtmp():
+def getrtmpOLD():
     gw = RemotingService(url='http://video.nbcuni.com/amfphp/gateway.php',
             referer='http://www.nbc.com/assets/video/3-0/swf/NBCVideoApp.swf',
             user_agent='Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7)',
@@ -191,5 +225,5 @@ def getrtmp():
     return str(rtmpurl)
 
 def getswfUrl():
-    swfUrl = "http://www.nbc.com/assets/video/4-0/swf/core/video_player_extension.swf?4.5.5"
+    swfUrl = "http://video.nbcuni.com/core/6.6.1/OSMFPlayer.swf"
     return swfUrl

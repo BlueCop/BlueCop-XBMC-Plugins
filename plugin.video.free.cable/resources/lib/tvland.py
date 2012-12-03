@@ -128,7 +128,7 @@ def playurl(url = common.args.url):
     data=common.getURL(url)
     #tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     #uri = tree.find('param',attrs={'name':'movie'})['value'].split('://')[1].split('/')[1]
-    uri = re.compile("contentUri: '(.*?)',",).findall(data)[0]
+    uri = re.compile('"http://media.mtvnservices.com/(.*?)",').findall(data)[0]
     playuri(uri,referer=url)
 
 

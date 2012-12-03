@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import xbmcplugin
 import xbmc
 import xbmcgui
@@ -9,6 +11,14 @@ import re
 import httplib
 import base64
 import random
+import binascii
+import time
+import hmac
+try:
+    import hashlib.sha1 as sha1
+except:
+    import sha as sha1
+
 
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
@@ -18,111 +28,151 @@ from pyamf import remoting
 pluginhandle = int(sys.argv[1])
 
 BASEURL = 'http://www.aetv.com/videos/display.jsp'
+SHOWSURL = 'http://www.aetv.com/allshows.jsp'
 BASE = 'http://www.aetv.com'
 
 def masterlist():
-    return rootlist(db=True)
+    return showlist(db=True)
 
 def rootlist(db=False):
+    common.addDirectory('Shows'    , 'aetv', 'showlist', '')
+    common.addDirectory('Lifestyle', 'aetv', 'lifesytlelist', 'season_url')
+    common.addDirectory('Classic'  , 'aetv', 'classiclist', 'season_url')
+
+def lifesytlelist():
+    droplist('/lifestyle/')
+
+def classiclist():
+    droplist('/classic/')
+    
+def droplist(homedir):
+    url  = 'http://www.aetv.com/minisite/videoajx.jsp'
+    url += '?homedir='+homedir
+    url += '&pfilter=ALL%20VIDEOS'
+    url += '&sfilter=All%20Categories'
+    url += '&seriesfilter=ALL%20SERIES'
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    shows = tree.find('div',attrs={'id':'series_filter'}).findAll('li',attrs={'class':None})
+    for show in shows:
+        name = show.find('a').string
+        url  = 'http://www.aetv.com/minisite/videoajx.jsp'
+        url += '?homedir='+homedir
+        url += '&seriesfilter='+name.replace(' ','%20')
+        common.addShow(name, 'aetv', 'show_primary_filter', url)
+
+def show_primary_filter(url=common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    primary_filter = tree.find('div',attrs={'id':'primary_filter'})
+    if primary_filter:
+        filters = primary_filter.findAll('li',attrs={'class':None})
+        if len(filters) > 1:
+            for filter in filters:
+                link = filter.find('a')
+                item_url = url + '&pfilter='+link.string.strip().replace(' ','%20')
+                common.addDirectory(link.string.title(), 'aetv', 'show_secondary_filter', item_url)
+        else:
+            showsubThePlatform(url.replace(' ','%20'),tree=tree)
+    else:
+        showsubThePlatform(url.replace(' ','%20'),tree=tree)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    common.setView('seasons')
+
+def show_secondary_filter(url=common.args.url):
+    data = common.getURL(url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    second_filter = tree.find('div',attrs={'id':'secondary_filter'})
+    if second_filter:
+        filters = second_filter.findAll('li')
+        if len(filters) > 1:
+            for filter in filters:
+                link = filter.find('a')
+                if link.string == 'All Categories':
+                    item_url = url
+                else:
+                    item_url = url + '&sfilter='+link.string.strip().replace(' ','%20')
+                common.addDirectory(link.string.title(), 'aetv', 'showsubThePlatform', item_url)
+        else:
+            showsubThePlatform(url.replace(' ','%20'),tree=tree)
+    else:
+        showsubThePlatform(url.replace(' ','%20'),tree=tree)
+    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+    common.setView('seasons')
+    
+def showlist(db=False):
     data = common.getURL(BASEURL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id':'av-list1','class':'all-videos_unordered'}).findAll('a')
     db_shows = []
-    blackListShows = ["Kirstie Alley's Big Life"]
-    subListShows = ['Cold Case Files',
-                    'Confessions of a Matchmaker',
-                    'CSI Miami',
-                    'Inked',
-                    'Random 1',
-                    'SWAT - Dallas, Detroit, KC',
-                    'Sons of Hollywood',
-                    'Jacked: Auto Theft Task Force',
-                    'The Two Coreys']
-    newListShows = ['Airline','Extreme Paranormal','Flight 93','King of Cars']
-    for name in newListShows:
-        url = 'http://www.aetv.com/videos/classic/?bcpid=65056640001&bclid=1747275989'
-        if db==True:
-            db_shows.append((name, 'aetv', 'show_cats_filter', url))
-        else:
-            common.addShow(name, 'aetv', 'show_cats_filter', url)
+    blackListShows = ["Kirstie Alley's Big Life","The Sopranos®","Coma"]
     for item in menu:
         name = item.string.encode('utf-8')
         url = item['href']
         if 'http://' not in item['href']:
             url = BASE + url
-        if 'aetv.com/longmire/' in url:
-            url+='video/'
-        if name in subListShows:
-            mode = 'show_cats_filter'
-        elif name in blackListShows:
+        if name in blackListShows:
             continue
-        else:
-            mode = 'show_cats'
-            
+
         if db==True:
-            db_shows.append((name, 'aetv', mode, url))
+            db_shows.append((name, 'aetv', 'show_cats', url))
         else:
-            common.addShow(name, 'aetv', mode, url)
+            common.addShow(name, 'aetv', 'show_cats', url)
     if db==True:
         return db_shows
     else:
         common.setView('tvshows')
 
-def show_cats_filter():
-    if common.args.name == 'SWAT - Dallas, Detroit, KC':
-        common.args.name = 'S.W.A.T.'
-    elif common.args.name == 'CSI Miami':
-        common.args.name = 'CSI: Miami'
-    show_cats(filter=True)
-
-def show_cats(url=common.args.url,filter=False):
-    data = common.getURL(url)
-    try:
-        if 'bcpid=' in url:
-            playerID = url.split('bcpid=')[1].split('&')[0]
-        else:
-            playerID = int(re.compile('bcpid=(.+?)&bclid').findall(data)[0])
-        configurl = BASE + re.compile('baseURL=(.+?)&baseDIR').findall(data)[0] + '/categories.xml'
-        id_data = common.getURL(configurl)
-        categories=BeautifulStoneSoup(id_data, convertEntities=BeautifulStoneSoup.XML_ENTITIES).findAll('category')
-        for category in categories:
-            try: name = category.find('title').contents[1].strip()
-            except: name = category.find('title').contents[0].strip()
-            refids = category.findAll('refid')
-            showstring=''
-            for refid in refids:
-                showstring += refid.string+'<strings>'
-            if filter and common.args.name == name:
-                showsub(str(playerID)+'<split>'+showstring)
-                break
-            elif not filter:
-                common.addDirectory(name, 'aetv', 'showsub', str(playerID)+'<split>'+showstring)
-            common.setView('seasons')
-    except:
-        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        homedir = tree.find('div',attrs={'id':'video_home_dir','style':'display : none'}).string
-        #homedir = re.compile('<div id="video_home_dir" style="display : none">(.+?)</div>').findall(data)[0]
-        series_url  = 'http://www.aetv.com/minisite/videoajx.jsp'
-        series_url += '?homedir='+homedir
-        full_series_url = series_url+'&pfilter=FULL%20EPISODES'
-        clips_series_url = series_url+'&pfilter=CLIPS'
-        common.addDirectory('Full Episodes', 'aetv', 'showseasonThePlatform', full_series_url)
-        common.addDirectory('Clips', 'aetv', 'showseasonThePlatform', clips_series_url)
-        common.setView('seasons')
-
-def showseasonThePlatform(url=common.args.url):
-    data = common.getURL(url)
+def show_cats(url=common.args.url):
+    data = common.getURL(url.replace(' ','%20'))
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    seasons = tree.findAll('div',attrs={'class':'fake-select inactive'})[1].findAll('li',attrs={'class':None})
+    homedir = tree.find('div',attrs={'id':'video_home_dir','style':'display : none'}).string
+    series_base  = 'http://www.aetv.com/minisite/videoajx.jsp'
+    series_base += '?homedir='+homedir
+    #full_series_url = series_url+'&pfilter=FULL%20EPISODES'
+    #clips_series_url = series_url+'&pfilter=CLIPS'
+    if homedir == '/lifestyle/' or homedir == '/classic/':
+        series = url.split('=')[-1].replace(' ','%20')
+        series_url = series_base + '&seriesfilter='+series
+    else:
+        series_url = series_base
+    data = common.getURL(series_url)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    seasons = tree.find('div',attrs={'id':'primary_filter'}).findAll('li',attrs={'class':None})
     if len(seasons) > 0:
         for season in seasons:
             link = season.find('a')
-            season_url = url+'&sfilter='+link.string.strip().replace(' ','%20')
+            if '?' in series_base:
+                season_url = series_base + '&pfilter='+link.string.strip().replace(' ','%20')
+            else:
+                season_url = series_base + '?pfilter='+link.string.strip().replace(' ','%20')
+            if homedir == '/lifestyle/' or homedir == '/classic/':
+                series = url.split('=')[-1].replace(' ','%20')
+                season_url += '&seriesfilter='+series
+            common.addDirectory(link.string.title(), 'aetv', 'showseasonThePlatform', season_url)
+        xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
+        common.setView('seasons')
+    else:
+        showseasonThePlatform(url.replace(' ','%20'),tree=tree)
+    common.setView('seasons')
+
+def showseasonThePlatform(url=common.args.url,tree=False):
+    if not tree:
+        data = common.getURL(url)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    seasons = tree.find('div',attrs={'id':'secondary_filter'}).findAll('li')
+    if len(seasons) > 1:
+        for season in seasons:
+            link = season.find('a')
+            if link.string == 'All Categories':
+                season_url = url
+            else:
+                season_url = url+'&sfilter='+link.string.strip().replace(' ','%20')
             common.addDirectory(link.string, 'aetv', 'showsubThePlatform', season_url)
         xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
         common.setView('seasons')
     else:
-        showsubThePlatform(tree=tree)
+        showsubThePlatform(url.replace(' ','%20'),tree=tree)
     
 
 def showsubThePlatform(url=common.args.url,tree=False):
@@ -137,8 +187,10 @@ def showsubThePlatform(url=common.args.url,tree=False):
         infoLabels={'Season':season}
         video_details = video.find('div',attrs={'class':'video_details'})
         infoLabels['Title'] = video_details.find('p',attrs={'class':'video_details-title'}).string.encode('utf-8')
-        thumb = video.find('img')['src']
-        url = video.find('a')['onclick'].split(",'")[1].split("'")[0]
+        thumb = video.find('img')['realsrc']
+        if 'http://' not in thumb:
+            thumb = BASE + thumb
+        url = 'http'+video.find('a')['onclick'].split("'http")[1].split("'")[0]
         infoLabels['Plot'] = video_details.find('p',attrs={'class':'video_details-synopsis'}).string.encode('utf-8')
         displayname=infoLabels['Title']
         for p in video_details.findAll('p',attrs={'class':None}):
@@ -167,12 +219,19 @@ def showsubThePlatform(url=common.args.url,tree=False):
 def playThePlatform():
     data = common.getURL(common.args.url)
     #mrss = urllib.unquote_plus(base64.b64decode(re.compile('{ mrss: "(.+?)",').findall(data)[0]))
-    mrss = urllib.unquote_plus(base64.b64decode(re.compile('"mrss=(.+?)&').findall(data)[0]))
-    smil_url = re.compile('<media:text>smilUrl=(.+?)</media:text>').findall(mrss)[0]
-    signUrl  = 'http://www.history.com/components/get-signed-signature'
-    signUrl += '?url='+smil_url.split('/s/')[1].split('?')[0]
-    signUrl += '&cache='+str(random.randint(100, 999))
-    sig = str(common.getURL(signUrl))
+    try:mrss = urllib.unquote_plus(base64.b64decode(re.compile('{ mrss: "(.+?)",').findall(data)[0]))
+    except:mrss = urllib.unquote_plus(base64.b64decode(re.compile('"mrss=(.+?)&').findall(data)[0]))
+    tree=BeautifulStoneSoup(mrss, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    for item in tree.findAll('item'):
+        link = item.find('link').string
+        if link == common.args.url:
+            smil_url = item.find('media:text',text=re.compile('smilUrl=')).string.split('smilUrl=')[1]
+    #smil_url = re.compile('<media:text>smilUrl=(.+?)</media:text>').findall(mrss)[0]
+    #signUrl  = 'http://www.history.com/components/get-signed-signature'
+    #signUrl += '?url='+smil_url.split('/s/')[1].split('?')[0]
+    #signUrl += '&cache='+str(random.randint(100, 999))
+    #sig = str(common.getURL(signUrl))
+    sig = sign_url(smil_url)
     smil_url += '&sig='+sig
     data = common.getURL(smil_url)
     tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
@@ -190,86 +249,19 @@ def playThePlatform():
     item = xbmcgui.ListItem(path=rtmpurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
-def showsub(url=common.args.url):
-    urldata=url.split('<split>')
-    playerID = int(urldata[0])
-    showstrings = urldata[1].split('<strings>')
-    for showstring in showstrings:
-        if showstring <> '':
-            addvideos(playerID, showstring)
-    
-def addvideos(playerID, showstring):    
-    const = '1ce592dc1e35e815f66ae86d01057451c807a9cb'
-    try:
-        for item in get_clip_info(const, playerID, showstring)['videoDTOs']:
-            name = item['displayName'].encode('utf-8')
-            thumb = item['videoStillURL']
-            airDate = str(item['publishedDate']).encode('utf-8')
-            description = item['shortDescription'].encode('utf-8')
-            try: season = int(item['customFields']['seasonnumber'])
-            except: season = 0
-            try: episode = int(item['customFields']['episodenumber'])
-            except: episode = 0
-            try: showtitle = item['customFields']['seriesname']
-            except: showtitle = common.args.name
-            if season <> 0 or episode <> 0:
-                displayname = '%sx%s - %s' % (str(season),str(episode),name)
-            else:
-                displayname = name
-            if len(item['renditions']) <> 0:
-                url = choosertmp(item['renditions'])
-            else:
-                url = processrtmp(item['FLVFullLengthURL'])
-            infoLabels={ "Title":name,
-                         "Season":season,
-                         "Episode":episode,
-                         "Plot":description,
-                         "premiered":airDate,
-                         #"Duration":duration,
-                         "TVShowTitle":showtitle
-                         }
-            common.addVideo(url,displayname,thumb,infoLabels=infoLabels)
-        common.setView('episodes')
-    except:
-        print 'Video loading failure'
+def sign_url(url):
+    hmac_key = 'crazyjava'
+    SEC_HEX = '733363723374' #'s3cr3t'
+    expiration = get_expiration()
+    path = url.split('http://link.theplatform.com/s/')[1].split('?')[0]
+    sign_data = binascii.unhexlify('00'+expiration+binascii.hexlify(path).lower())
+    sig = hmac.new(hmac_key, sign_data, sha1)
+    sigHEX = sig.hexdigest()
+    signature = '00' + expiration + sigHEX + SEC_HEX
+    #finalUrl = url+'?sig='+signature+'&format=SMIL&Tracking=true&Embedded=true&mbr=true'
+    return signature
 
-def choosertmp(renditions):
-    hbitrate = -1
-    sbitrate = int(common.settings['quality']) * 1024
-    for item in renditions:
-        bitrate = int(item['encodingRate'])
-        if bitrate > hbitrate and bitrate <= sbitrate:
-            hbitrate = bitrate
-            url = item['defaultURL']
-    return processrtmp(url)
-
-def processrtmp(urldata):
-    auth = urldata.split('?')[1]
-    urldata = urldata.split('&')
-    rtmp = urldata[0]+'?'+auth
-    playpath = urldata[1].split('?')[0]+'?'+auth
-    swfUrl = 'http://admin.brightcove.com/viewer/us1.25.03.01.2011-05-12131832/federatedVideo/BrightcovePlayer.swf'
-    rtmpurl = rtmp+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
-    return rtmpurl
-
-def build_amf_request(const, playerID, showstring):
-    env = remoting.Envelope(amfVersion=3)
-    env.bodies.append(
-        (
-            "/1", 
-            remoting.Request(
-                target="com.brightcove.player.runtime.PlayerMediaFacade.findPagingMediaCollectionByReferenceId", 
-                body=[const, playerID, showstring, 0, 50, 1119255093],
-                envelope=env
-            )
-        )
-    )
-    return env
-
-def get_clip_info(const, playerID, showstring):
-    conn = httplib.HTTPConnection("c.brightcove.com")
-    envelope = build_amf_request(const, playerID, showstring)
-    conn.request("POST", "/services/messagebroker/amf?playerId="+str(playerID), str(remoting.encode(envelope).read()), {'content-type': 'application/x-amf'})
-    response = conn.getresponse().read()
-    response = remoting.decode(response).bodies[0][1].body
-    return response  
+def get_expiration(auth_length = 600):
+    current_time = time.mktime(time.gmtime())+auth_length
+    expiration = ('%0.2X' % current_time).lower()
+    return expiration

@@ -45,8 +45,16 @@ def rootlist(db=False):
 
 def ccepisodes(url=common.args.url):
     data = common.getURL(url)
-    showcase=re.compile("var episodeShowcaseLlink = '(.+?)';").findall(data)[0]
-    keepGoing=True
+    try:
+        showcase=re.compile("var episodeShowcaseLlink = '(.+?)';").findall(data)[0]
+        keepGoing=True
+    except:
+        keepGoing=False
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(url)+'"'
+        u += '&mode="comedy"'
+        u += '&sitemode="playurl"'
+        common.addVideo(u,"Play Episode")
     current=1
     while keepGoing:
         showcase_url = BASE_URL+showcase+'?currentPage='+str(current)

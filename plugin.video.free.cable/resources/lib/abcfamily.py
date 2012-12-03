@@ -62,7 +62,7 @@ def rootlistRSS(db=False):
 def showcats(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    cats=tree.findAll(attrs={'class' : re.compile('(.+?)videoCollectionModule moduleWide ')})
+    cats=tree.findAll(attrs={'class' : re.compile('(.+?)videoCollectionModule(.+?)')})
     for cat in cats:
         name = cat.find('div',attrs={'class' : 'twocolumnheader'}).find('h3').string.title()
         common.addDirectory(name, 'abcfamily', 'videos', url) 
@@ -71,7 +71,7 @@ def showcats(url=common.args.url):
 def videos(url=common.args.url):
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    cats=tree.findAll(attrs={'class' : re.compile('(.+?)videoCollectionModule moduleWide ')})
+    cats=tree.findAll(attrs={'class' : re.compile('(.+?)videoCollectionModule(.+?)')})
     for cat in cats:
         catname = cat.find('div',attrs={'class' : 'twocolumnheader'}).find('h3').string.title()
         if catname == common.args.name:

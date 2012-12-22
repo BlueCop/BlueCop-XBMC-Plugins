@@ -1,5 +1,7 @@
+import json
 import datetime, time
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
 import urllib,urllib2,re,time,xbmcplugin,xbmcgui, xbmcaddon, os, httplib2
 from xml.dom.minidom import parse, parseString
@@ -54,19 +56,15 @@ def encrypt2012(args):
                     'Connection': 'keep-alive',
                     'Cookie': cookies }
         url = url+ urllib.urlencode(args)
-        print 'url--> ' + url + ' headers ' + str(headers)
         response, content = http.request(url, 'POST', headers=headers)
         xml = parseString(str(content))
         link = xml.getElementsByTagName("path")[0].childNodes[0].nodeValue
 	pp = ' playpath=mp4:' + link.partition('mp4:')[2]
         app = ' app=ondemand?' + link.partition('?')[2]
         link = 'rtmp://cp118328.edgefcs.net/ondemand' + app + pp + ' swfUrl=http://neulionms.vo.llnwd.net/o37/nba/player/nbatv/console.swf swfVfy=1'
-        print 'encrypt--> ' + str(response) + ' content ' + str(content)
         return link
     except:
         return ''
-
-
 
 def encrypt(args):
     try:
@@ -80,14 +78,12 @@ def encrypt(args):
                     'Connection': 'keep-alive',
                     'Cookie': cookies }
         url = url+ urllib.urlencode(args)
-	print 'url--> ' + url + ' headers ' + str(headers)
         response, content = http.request(url, 'POST', headers=headers)
         xml = parseString(str(content))
         link = xml.getElementsByTagName("path")[0].childNodes[0].nodeValue
         pp = ' playpath=mp4:u' + link.partition('mp4:u')[2]
         app = ' app=ondemand?' + link.partition('?')[2]
         link = 'rtmp://cp118328.edgefcs.net:1935/ondemand' + app + pp + ' swfUrl=http://neulionms.vo.llnwd.net/o37/nba/player/nbatv/console.swf swfVfy=1'
-	print 'encrypt--> ' + str(response) + ' content ' + str(content)
         return link
     except:
         return ''
@@ -126,110 +122,66 @@ teams = {
         "hou" : "rockets"}
 
 def getGames(fromDate = '', full = True, highlight = False):
-    pattern = 'c:{ipd:'
-    postfix = 'condensed_'
-    squality = 'hd'
-
-    if quality == '0':
-        squality = 'sd'
-
-    if full == True:
-        pattern = 'f:{ipd:'
-        postfix ='whole_'
 
     try:
         date = ''
         h = ''
         v = ''
         gid =''
-        idx = ''
         st = ''
         vs = ''
         hs = ''
+	idx = ''
+	t = ''
+	s = ''
         headers = {'User-agent' : 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'}
         thisweek = 'http://smb.cdnak.neulion.com/fs/nba/feeds/schedule/' +fromDate +  '.js?t=' + "%d"  %time.time()
         req = urllib2.Request(thisweek, None, headers);
         response = str(urllib2.urlopen(req).read())
-        tmp = response.split('}}}')
-        isFirst = True
+	js = json.loads(response[response.find("{"):])
+	for game in js['games']:
+		for details in game:
+			try:
+				h = details['h']
+				v = details['v']
+				gid = details['id']
+				date = details['d']
+				s = str(details['s'])
+				t = str(details['t'])
 
-        for x in tmp:
-            date = ''
-            h = ''
-            v = ''
-            gid =''
-            idx = ''
-            vs = ''
-            hs = ''
-            if isFirst:
-                tmp2 = x.partition('games":[[')
-                isFirst = False
-                tmp3 = tmp2[2][tmp2[2].find('{"h'):]
-            else:
-                tmp3 = x
+				try:
+					st = details['st']
+					vs = str(details['vs'])
+					hs = str(details['hs'])
+				except:
+					vs = ''
+					hs = ''
+				
+				try:
+					videos = details['video']
+					full = videos['f']
+					idx =  full['ipd']
+				except:
+					full = ''
+					idx = ''
 
-            tmp4 = tmp3.split(',')
-            for y in tmp4:
-                y = y.replace('"', '').replace(" ", "").replace("[", "").replace("]","").replace("}","")
-                y = y.replace('{h' , 'h')
-                if y[:2] == 'h:':
-                    h = y[2:]
-                elif y[:2] == 'v:':
-                    v = y[2:]
-                elif y[:3] == 'vs:':
-                    vs = y[3:]
-                elif y[:3] == 'hs:':
-                    hs = y[3:]
-                elif y[:3] == 'id:':
-                    gid = y[5:]
-                elif y[:2] == 'd:':
-                    date = y[2:].partition('T')[0].replace('-','/')
-                else:
-                    pos = y.find(pattern)
-                    if pos != -1:
-                        idx = y[pos+8:pos+9]
+			except  Exception, e:
+				continue
 
-            if date != '' and idx in ['1', '2', '3', '4', '5']:
-                name = date  + ' '  + v + '@' + h
+			if idx != '':
+				name = date[:10] + ' ' + v + '@' + h
+				if scores == '1':
+					name = name + ' ' + vs + ':' + hs 	
+				if highlight == True:
+					url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date[:10].replace('-','/') +'/' + gid + '-' + v.lower() 
+					squality = '1280x720.mp4'
+        				if quality == '0':
+						squality = '576x324.flv'
+				        elif quality == '1':
+					        squality = '640x360.flv'
 
-                if scores == '1' and vs != '':
-                    name = name + " " + vs + ":" + hs
-
-                if highlight == False:
-                    year = '2011'
-                    playoffidx = '2'
-                    if date > '2012/04/27' and date < '2012/10/01':
-                        playoffidx = '3'
-		    elif date < '2012/10/30' and date > '2012/10/01':
-			playoffidx = '1'
-			year = '2012'
-		    elif date > '2012/10/29':
-			year = '2012'
-
-                    url = 'rtmp://cp117939.edgefcs.net/ondemand/mp4:u/nbamobile/vod/nba/' + date + '/' + gid + '/pc/' + playoffidx + '_' + gid
-                    url = url + '_' + v.lower() + '_' + h.lower() + '_' + year + '_h_'  + postfix+ idx + '_'  + squality + '.mp4'
-                    addDir(name, url, '5', '')
-                else:
-                    if date < '2012/04/27':
-                        url = 'http://nba.cdn.turner.com/nba/big/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
-                        if quality == '0':
-                            url = url + '576x324.flv'
-                        else:
-                            url = url + '1280x720.mp4'
-                        thumb = 'http://nba.cdn.turner.com/nba/nba/video/games/' + teams[h.lower()] + '/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.400x300.jpg'
-                    elif date < '2012/10/30':
-                        url = 'http://nba.cdn.turner.com/nba/big/channels/playoffs/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba_nba_'
-                        if quality == '0':
-                            url = url + '576x324.flv'
-                        else:
-                            url = url + '1280x720.mp4'
-                        thumb = 'http://i2.cdn.turner.com/nba/nba/video/channels/playoffs/' + date + '/00' + gid + '_' + v.lower() + '_' + h.lower() + '_recap.nba.576x324.jpg'
-		    else:
-			url = '00' + gid
-			thumb = ''
-			addDir(name, url, '5', thumb)
-			continue
-                    addLink(name, url, '', thumb)
+					url = url + '-' + h.lower() + '-recap.nba_nba_' + squality 
+					addLink(name, url, name, '')
     except:
         return None
 
@@ -238,40 +190,35 @@ def playGame(title, url):
     values = { 'path' : url , 'isFlex' : 'true', 'type': 'fvod'}
  
     if url.find('00') == 0:
-	squality = '3000'
+        squality = '3000'
+        if quality == '0':
+          squality = '800'
+        elif quality == '1':
+          squality = '1600'
 
-	if quality == '0':
-	  squality = '800'
-	elif quality == '1':
-	  squality = '1600'
-	
-    	values = { 'id' :  url, 'isFlex':'true','bitrate': squality,'gt':'recapf', 'type':'game' }
-    	link = encrypt2012(values)
+        values = { 'id' :  url, 'isFlex':'true','bitrate': squality,'gt':'recapf', 'type':'game' }
+        link = encrypt2012(values)
     else:
-	if cookies == '':
+        if cookies == '':
           cookies  = login()
-	link = encrypt(values)
+        link = encrypt(values)
     if link != '':
-	addLink(title, link,'','')
-	info = xbmcgui.ListItem(name)
-        playlist = xbmc.PlayList(1)
-        playlist.clear()
-        playlist.add(link, info)
-        xbmc.executebuiltin('playlist.playoffset(video,0)')
+        liz.addLink(title, link, title, '')
+	liz.select(true)
+	xbmc.executebuiltin("PlayWith");
     else:
-	xbmc.executebuiltin("XBMC.Notification("+'No Video'+"," + 'No video source available!' +")")	
+        xbmc.executebuiltin("XBMC.Notification("+'No Video'+"," + 'No video source available!' +")")
 
 def mainMenu():
-    addDir('Archive', 'archive', '1','')
-    addDir('Condensed', 'condensed', '1','')
-    addDir('Highlights', 'highlights', '1', '')
+    addDir('Recaps', 'recaps', '1', '')
+    addDir('Highlights', 'highlights', '1','')
 
 def dateMenu(type):
-    if type != 'archive' and type != 'condensed': 
-      addDir('This week',  type + 'this', '2' ,'')
-      addDir('Last week' , type + 'last', '3','')
-      addDir('Select date' , type + 'date', '4','')
-    addDir('2011-2012', type +'s12', '6','')
+    if (type == 'highlights'):
+	getHighlights()
+    else:
+	addDir('This week',  type + 'this', '2' ,'')
+    	addDir('Last week' , type + 'last', '3','')
 
 def season2012(mode, url):
     d1 = date(2011, 12, 23)
@@ -281,10 +228,35 @@ def season2012(mode, url):
         d1 = d1 + timedelta(7)
 	week = week + 1
 
+def getHighlights():
+ for index in ['1','2','3','4','5']:
+    link = 'http://www.nba.com/feeds/mobile/xbox/video/league/news/highlights_' +index + '.xml'
+    headers = {'User-agent' : 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'}
+
+    req = urllib2.Request(link, None, headers);
+    response = str(urllib2.urlopen(req).read())
+    xml = parseString(response)
+    games = xml.getElementsByTagName("item")
+    for game in games:
+	t = None
+	u = None
+	i = None
+	d = None
+	date = None
+	try:
+		u = game.getElementsByTagName("link")[0].firstChild.nodeValue
+	        t = game.getElementsByTagName("title")[0].firstChild.nodeValue
+		i = game.getElementsByTagName("image")[0].firstChild.nodeValue
+		d = game.getElementsByTagName("description")[0].firstChild.nodeValue
+		date = game.getElementsByTagName("pubDate")[0].firstChild.nodeValue[:8]
+		addLink(t, u, date + ' ' + d, i)
+	except:
+		continue
+
 def gameLinks(mode, url, date2Use = None):
     try:
         isFull = url.find('archive') != -1
-        isHighlight = url.find('highlights') != -1
+        isHighlight = url.find('recaps') != -1
         if mode == 4:
             tday = getDate()
 	elif mode == 6:
@@ -310,7 +282,7 @@ def gameLinks(mode, url, date2Use = None):
             getGames(default, isFull, isHighlight)
         else:
                 getGames(default, False, isHighlight)
-        xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
+        xbmcplugin.addSortMethod(handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
     except:
         xbmcplugin.endOfDirectory(handle = int(sys.argv[1]),succeeded=False)
         return None
@@ -333,9 +305,10 @@ def getParams():
     return param
 
 def addLink(name,url,title,iconimage):
-    liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
-    liz.setInfo( type="Video", infoLabels={ "Title": title } )
-    return xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
+    liz=xbmcgui.ListItem(title, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
+    liz.setInfo( type="video", infoLabels={ "Title": title, 'Genre' : 'Sports' } )
+    xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=liz)
+    return liz
 
 def addDir(name,url,mode,iconimage):
     u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
@@ -366,7 +339,6 @@ if mode==None or url==None or len(url)<1:
 
 elif mode==1:
     dateMenu(url)
-
 elif mode==5:
     playGame(name, url)
 elif mode==6:

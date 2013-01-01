@@ -162,7 +162,9 @@ def ADD_MOVIE(addASIN,isPrime=True,inWatchlist=False,export=False):
         if export:
             xbmclibrary.EXPORT_MOVIE(moviedata[0])
         else:
-            listmovie.ADD_MOVIE_ITEM(moviedata,inWatchlist=inWatchlist)
+            righturl='http://www.amazon.com/gp/product/' + addASIN
+            listmovie.ADD_MOVIE_ITEM(moviedata,righturl,inWatchlist=inWatchlist)
+            #listmovie.ADD_MOVIE_ITEM(moviedata,inWatchlist=inWatchlist)
 
 def ADD_SERIES(addASIN,isPrime=True,export=False):
     shows = tvDB.lookupShowsdb(addASIN,isPrime)

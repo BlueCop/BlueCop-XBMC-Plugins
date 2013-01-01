@@ -33,7 +33,7 @@ def LIST_MOVIE_ROOT():
     xbmcplugin.endOfDirectory(pluginhandle)
     
 def LIST_MOVIE_AZ():
-    common.addDir('#','listmovie','LIST_MOVIES_WATCHED_FILTERED','')
+    common.addDir('#','listmovie','LIST_MOVIES_AZ_FILTERED','')
     alphabet=set(string.ascii_uppercase)
     for letter in alphabet:
         common.addDir(letter,'listmovie','LIST_MOVIES_AZ_FILTERED',letter)
@@ -147,8 +147,10 @@ def LIST_MOVIES(export=False,genrefilter=False,actorfilter=False,directorfilter=
             xbmc.executebuiltin("Container.SetViewMode("+str(confluence_views[view])+")")
         xbmcplugin.endOfDirectory(pluginhandle,updateListing=False)
     
-def ADD_MOVIE_ITEM(moviedata,inWatchlist=False):
+def ADD_MOVIE_ITEM(moviedata,override_url=False,inWatchlist=False):
     asin,hd_asin,movietitle,url,poster,plot,director,writer,runtime,year,premiered,studio,mpaa,actors,genres,stars,votes,TMDBbanner,TMDBposter,TMDBfanart,isprime,isHD,watched,favor,TMDB_ID = moviedata
+    if override_url:
+        url=override_url
     if poster == None or poster == 'None':
         fanart = ''
         poster =''

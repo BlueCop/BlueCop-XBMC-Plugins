@@ -166,14 +166,21 @@ def addTVWatchlist():
 def addWatchlist(prodType,asin=False):
     if not asin:
         asin=args.asin
-    customerid=setCustomer()
+    #customerid=setCustomer()
+    url = 'http://www.amazon.com/gp/video/watchlist/ajax/hoverbubble.html?ASIN='+asin
+    data = getURL(url,useCookie=True)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    form = tree.find('form',attrs={'id':'watchlistForm'})
+    token = form.find('input',attrs={'id':'token'})['value']
     url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
-    url += '?dataType=json&addItem=10&ASIN='+asin
-    url += '&custID='+customerid
+    url += '?dataType=json'
+    url += '&addItem=0'
+    url += '&ASIN='+asin
+    url += '&token='+token
     url += '&prodType='+prodType #movie or tv
     data = getURL(url,useCookie=True)
     json = demjson.decode(data)
-    if json['AsinStatus'] == 0:
+    if json['AsinStatus'] == '0':
         getURL(url,useCookie=True)
 
 def removeMovieWatchlist():
@@ -185,14 +192,20 @@ def removeTVWatchlist():
 def removeWatchlist(prodType,asin=False):
     if not asin:
         asin=args.asin
-    customerid=setCustomer()
+    #customerid=setCustomer()
+    url = 'http://www.amazon.com/gp/video/watchlist/ajax/hoverbubble.html?ASIN='+asin
+    data = getURL(url,useCookie=True)
+    tree = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    form = tree.find('form',attrs={'id':'watchlistForm'})
+    token = form.find('input',attrs={'id':'token'})['value']
     url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
-    url += '?dataType=json&ASIN='+asin
-    url += '&custID='+customerid
+    url += '?dataType=json'
+    url += '&ASIN='+asin
+    url += '&token='+token
     url += '&prodType='+prodType #movie or tv
     data = getURL(url,useCookie=True)
     json = demjson.decode(data)
-    if json['AsinStatus'] == 1:
+    if json['AsinStatus'] == '1':
         getURL(url,useCookie=True)
         
 def makeGUID():

@@ -210,7 +210,7 @@ def ASIN_ADD(ASINLIST,isPrime=True):
         else:
             director = None
         if title.has_key('runtime'):
-            runtime = str(title['runtime']['valueMillis']/1000/60)
+            runtime = str(title['runtime']['valueMillis']/1000)
         else:
             runtime = None
         if title.has_key('releaseOrFirstAiringDate'):

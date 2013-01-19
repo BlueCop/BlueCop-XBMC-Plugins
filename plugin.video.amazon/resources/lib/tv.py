@@ -587,7 +587,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=F
             else:
                 plot = None
             if title.has_key('runtime'):
-                runtime = str(title['runtime']['valueMillis']/1000/60)
+                runtime = str(title['runtime']['valueMillis']/1000)
             else:
                 runtime = None
             if title.has_key('releaseOrFirstAiringDate'):

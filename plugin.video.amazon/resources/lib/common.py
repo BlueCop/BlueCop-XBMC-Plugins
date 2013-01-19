@@ -106,7 +106,7 @@ def addDir(name, mode, sitemode, url='', thumb='', fanart='', infoLabels=False, 
     item.setInfo( type="Video", infoLabels=infoLabels)
     xbmcplugin.addDirectoryItem(handle=pluginhandle,url=u,listitem=item,isFolder=True,totalItems=totalItems)
 
-def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False,traileronly=False):
+def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False,traileronly=False,HD=False):
     if not infoLabels:
         infoLabels={ "Title": name}
     u  = sys.argv[0]
@@ -121,6 +121,13 @@ def addVideo(name,url,poster='',fanart='',infoLabels=False,totalItems=0,cm=False
     infoLabels['Trailer']=utrailer
     liz=xbmcgui.ListItem(name, thumbnailImage=poster)
     liz.setInfo( type="Video", infoLabels=infoLabels)
+    try:
+        if HD:
+            liz.addStreamInfo('video', { 'codec': 'h264', 'width':1280 ,'height' : 720 })
+        else:
+            liz.addStreamInfo('video', { 'codec': 'h264', 'width':720 ,'height' : 400 })
+        liz.addStreamInfo('audio', { 'codec': 'aac', 'channels' : 2 })
+    except:pass
     try:
         if fanart <> '' or fanart <> None:
             liz.setProperty('fanart_image',fanart)

@@ -246,7 +246,7 @@ def ADD_SEASON_ITEM(seasondata,mode='listtv',submode='LIST_EPISODES_DB',seriesTi
     if season <> 0 and len(str(season)) < 3: displayname += 'Season '+str(season)
     elif len(str(season)) > 2: displayname += 'Year '+str(season)
     else: displayname += 'Specials'
-    if isHD: displayname += ' [HD]'
+    if isHD: displayname += ' [COLOR FFE47911][HD][/COLOR]'
     cm = []
     if inWatchlist:
         cm.append( ('Remove from Watchlist', 'XBMC.RunPlugin(%s?mode="common"&sitemode="removeTVWatchlist"&asin="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
@@ -317,7 +317,7 @@ def ADD_EPISODE_ITEM(episodedata,seriesTitle=False):
         displayname=''
     if season == 0: displayname +=  str(episode)+'. '+episodetitle
     else: displayname +=  str(season)+'x'+str(episode)+' - '+episodetitle
-    if isHD: displayname += ' [HD]'
+    #if isHD: displayname += ' [COLOR FFE47911][HD][/COLOR]'
     displayname = displayname.replace('"','')
     try:
         if common.args.thumb and poster == None: poster = common.args.thumb
@@ -331,4 +331,4 @@ def ADD_EPISODE_ITEM(episodedata,seriesTitle=False):
         cm.append( ('Unwatch', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="unwatchEpisodedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     else: cm.append( ('Mark Watched', 'XBMC.RunPlugin(%s?mode="tv"&sitemode="watchEpisodedb"&url="%s")' % ( sys.argv[0], urllib.quote_plus(asin) ) ) )
     cm.append( ('Export to Library', 'XBMC.RunPlugin(plugin://plugin.video.amazon?mode="xbmclibrary"&sitemode="EXPORT_EPISODE"&asin="%s")' % ( urllib.quote_plus(asin) ) ) )
-    common.addVideo(displayname,url,poster,fanart,infoLabels=infoLabels,cm=cm)
+    common.addVideo(displayname,url,poster,fanart,infoLabels=infoLabels,cm=cm,HD=isHD)

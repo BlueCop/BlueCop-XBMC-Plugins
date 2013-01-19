@@ -180,12 +180,13 @@ def addMoviesdb(isPrime=True):
         for title in titles:
             ASINLIST += title['titleId']+','
         ASIN_ADD(ASINLIST)
-        endIndex = json['message']['body']['endIndex']
+        endIndex+=250
+        #endIndex = json['message']['body']['endIndex']
         if (dialog.iscanceled()):
             goAhead = False
-        elif endIndex == 0:
+        elif endIndex > 14000:
             goAhead = False
-        dialog.update(int(page*100.0/8),'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
+        dialog.update(int(page*100.0/56),'Scanning Page %s' % str(page),'Scanned %s Movies' % str(endIndex) )
 
 def ASIN_ADD(ASINLIST,isPrime=True):
     titles = appfeed.ASIN_LOOKUP(ASINLIST)['message']['body']['titles']
@@ -200,8 +201,14 @@ def ASIN_ADD(ASINLIST,isPrime=True):
                 thumbnailBase = thumbnailUrl.replace(thumbnailFilename,'')
                 poster = thumbnailBase+thumbnailFilename.split('.')[0]+'.jpg'
             except: poster = None
-        plot = title['synopsis']
-        director = title['director']
+        if title.has_key('synopsis'):
+            plot = title['synopsis']
+        else:
+            plot = None
+        if title.has_key('director'):
+            director = title['director']
+        else:
+            director = None
         if title.has_key('runtime'):
             runtime = str(title['runtime']['valueMillis']/1000/60)
         else:
@@ -252,17 +259,7 @@ def ASIN_ADD(ASINLIST,isPrime=True):
         addMoviedb(moviedata)
     return [asin,hd_asin]
 
-MovieDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newmovies.db')
-MovieDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
-MovieDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies0.db')
-MovieDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies1.db')
-if not os.path.exists(MovieDBfile) and os.path.exists(MovieDBdownload):
-    import shutil
-    shutil.move(MovieDBdownload, MovieDBfile)
-    if os.path.exists(MovieDBfile0):
-        os.remove(MovieDBfile0)
-    if os.path.exists(MovieDBold): 
-        os.remove(MovieDBold)
+MovieDBfile = os.path.join(xbmc.translatePath('special://home/addons/script.module.amazon.database/lib/'),'movies.db')
 if not os.path.exists(MovieDBfile):
     MovieDB = sqlite.connect(MovieDBfile)
     MovieDB.text_factory = str
@@ -270,6 +267,28 @@ if not os.path.exists(MovieDBfile):
 else:
     MovieDB = sqlite.connect(MovieDBfile)
     MovieDB.text_factory = str
+
+
+#===============================================================================
+# MovieDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newmovies.db')
+# MovieDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies.db')
+# MovieDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies0.db')
+# MovieDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'movies1.db')
+# if not os.path.exists(MovieDBfile) and os.path.exists(MovieDBdownload):
+#    import shutil
+#    shutil.move(MovieDBdownload, MovieDBfile)
+#    if os.path.exists(MovieDBfile0):
+#        os.remove(MovieDBfile0)
+#    if os.path.exists(MovieDBold): 
+#        os.remove(MovieDBold)
+# if not os.path.exists(MovieDBfile):
+#    MovieDB = sqlite.connect(MovieDBfile)
+#    MovieDB.text_factory = str
+#    createMoviedb()
+# else:
+#    MovieDB = sqlite.connect(MovieDBfile)
+#    MovieDB.text_factory = str
+#===============================================================================
 
 ######### OLD HTML SCRAPING CODE
 #MOVIE_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314934213&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2858905011%2Cp_85%3A2470955011&sort=-releasedate'

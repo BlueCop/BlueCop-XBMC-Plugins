@@ -80,7 +80,7 @@ def PLAYVIDEO():
     getstream += '&customerID='+values['customerID']
     getstream += '&deviceID='+values['deviceID']
     getstream += '&token='+values['token']
-    getstream += '&xws-fa-ov=false'
+    #getstream += '&xws-fa-ov=false'
     getstream += '&format=json'
     getstream += '&version=1'
     try:

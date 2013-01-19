@@ -366,14 +366,14 @@ def addTVdb():
                 SERIES_COUNT += 1
                 SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
                 ALL_SERIES_ASINS += title['ancestorTitles'][0]['titleId']+','
-            EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'])
+            EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl']+'&NumberOfResults=400')
             if hdasin:
-                EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'].replace(asin,hdasin))
+                EPISODE_FEEDS.append(title['childTitles'][0]['feedUrl'].replace(asin,hdasin)+'&NumberOfResults=400')
         del titles
         ASIN_ADD(SERIES_ASINS)
-        dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+        dialog.update(int(page*100.0/9),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         ASIN_ADD(SEASONS_ASINS)
-        dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+        dialog.update(int(page*100.0/9),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
         for url in EPISODE_FEEDS:
             titles = appfeed.URL_LOOKUP(url)['message']['body']['titles']
             EPISODE_ASINS=''
@@ -387,13 +387,14 @@ def addTVdb():
                                 EPISODE_ASINS += offer['asin']+','
             if EPISODE_ASINS <> '':
                 ASIN_ADD(EPISODE_ASINS)
-            dialog.update(int(page*100.0/8),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
-        endIndex = json['message']['body']['endIndex']
+            dialog.update(int(page*100.0/9),'%s Shows' % str(SERIES_COUNT),'%s Seasons' % str(SEASON_COUNT),'%s Episodes' % str(EPISODE_COUNT) )
+        #endIndex = json['message']['body']['endIndex']
+        endIndex+=250
         if (dialog.iscanceled()):
             goAhead = False
-        elif endIndex == 0:
+        elif endIndex > 2500:
             goAhead = False
-        dialog.update(int(page*100.0/8),'Scanning Page %s' % str(page),'Scanned %s Seasons' % str(endIndex) )
+        dialog.update(int(page*100.0/9),'Scanning Page %s' % str(page),'Scanned %s Seasons' % str(endIndex) )
         page+=1
     print 'TOTALS'
     print SERIES_COUNT
@@ -480,8 +481,13 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=F
         elif title['contentType'] == 'SEASON':
             asin = title['titleId']
             season = title['number']
-            seriestitle = title['ancestorTitles'][0]['title']
-            seriesasin = title['ancestorTitles'][0]['titleId']
+            if title.has_key('ancestorTitles'):
+                if len(title['ancestorTitles']) > 0:
+                    try:
+                        seriestitle = title['ancestorTitles'][0]['title']
+                        seriesasin = title['ancestorTitles'][0]['titleId']
+                    except:
+                        pass
             if addSeries:
                 ASIN_ADD(seriesasin)
             if title['formats'][0].has_key('images'):
@@ -556,10 +562,12 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=F
         elif title['contentType'] == 'EPISODE':
             asin = title['titleId']
             episodetitle = title['title']
-            seriestitle = title['ancestorTitles'][0]['title']
-            seriesasin = title['ancestorTitles'][0]['titleId']
-            seasonasin = title['ancestorTitles'][1]['titleId']
-            season = title['ancestorTitles'][1]['number']
+            if title.has_key('ancestorTitles'):
+                if len(title['ancestorTitles']) > 0:
+                    seriestitle = title['ancestorTitles'][0]['title']
+                    seriesasin = title['ancestorTitles'][0]['titleId']
+                    seasonasin = title['ancestorTitles'][1]['titleId']
+                    season = title['ancestorTitles'][1]['number']
             if title.has_key('number'):
                 episode = title['number']
             else:
@@ -612,9 +620,9 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=F
                 votes = None
             for format in title['formats']:
                 if format['videoFormatType'] == 'HD':
-                    isHD = True
                     for offer in format['offers']:
                         if offer['offerType'] == 'PURCHASE':
+                            isHD = True
                             hd_asin = offer['asin']
                             hd_url = common.BASE_URL+'/gp/product/'+hd_asin
                 for offer in format['offers']:
@@ -627,18 +635,7 @@ def ASIN_ADD(ASINLIST,url=False,isPrime=True,isHD=False,single=False,addSeries=F
             else:
                 addEpisodedb([asin,seasonasin,seriesasin,seriestitle,season,episode,poster,mpaa,actors,genres,episodetitle,studio,stars,votes,url,plot,premiered,year,runtime,isHD,isPrime,False])
 
-
-tvDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newtv.db')
-tvDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
-tvDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv0.db')
-tvDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv1.db')
-if not os.path.exists(tvDBfile) and os.path.exists(tvDBdownload):
-    import shutil
-    shutil.move(tvDBdownload, tvDBfile)
-    if os.path.exists(tvDBfile0):
-        os.remove(tvDBfile0)
-    if os.path.exists(tvDBold):
-        os.remove(tvDBold)
+tvDBfile = os.path.join(xbmc.translatePath('special://home/addons/script.module.amazon.database/lib/'),'tv.db')
 if not os.path.exists(tvDBfile):
     tvDB = sqlite.connect(tvDBfile)
     tvDB.text_factory = str
@@ -646,6 +643,25 @@ if not os.path.exists(tvDBfile):
 else:
     tvDB = sqlite.connect(tvDBfile)
     tvDB.text_factory = str
+
+#tvDBdownload = os.path.join(xbmc.translatePath(common.pluginpath),'resources','cache','newtv.db')
+#tvDBold = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv.db')
+#tvDBfile = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv0.db')
+#tvDBfile0 = os.path.join(xbmc.translatePath('special://profile/addon_data/plugin.video.amazon/'),'tv1.db')
+#if not os.path.exists(tvDBfile) and os.path.exists(tvDBdownload):
+#    import shutil
+#    shutil.move(tvDBdownload, tvDBfile)
+#    if os.path.exists(tvDBfile0):
+#        os.remove(tvDBfile0)
+#    if os.path.exists(tvDBold):
+#        os.remove(tvDBold)
+#if not os.path.exists(tvDBfile):
+#    tvDB = sqlite.connect(tvDBfile)
+#    tvDB.text_factory = str
+#    createTVdb()
+#else:
+#    tvDB = sqlite.connect(tvDBfile)
+#    tvDB.text_factory = str
 
 #===============================================================================
 # TV_URL = 'http://www.amazon.com/gp/search/ref=sr_st?qid=1314982661&rh=n%3A2625373011%2Cn%3A!2644981011%2Cn%3A!2644982011%2Cn%3A2858778011%2Cn%3A2864549011%2Cp_85%3A2470955011&sort=-releasedate'

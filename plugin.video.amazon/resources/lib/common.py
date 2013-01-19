@@ -135,7 +135,7 @@ def setCustomer(check=False):
     if check:
         url = 'http://www.amazon.com'
         data = getURL(url,useCookie=True)
-        customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
+        customerId = re.compile('"customerId":"(.*?)"').findall(data)[0]
         if customerId <> addon.getSetting("customerId"):
             addon.setSetting("customerId",customerId)
             return False
@@ -146,7 +146,7 @@ def setCustomer(check=False):
     else:
         url = 'http://www.amazon.com'
         data = getURL(url,useCookie=True)
-        customerId = re.compile('"customerId" : "(.*?)",').findall(data)[0]
+        customerId = re.compile('"customerId":"(.*?)"').findall(data)[0]
         addon.setSetting("customerId",customerId)
         return customerId
 
@@ -208,7 +208,7 @@ def mechanizeLogin():
         retrys += 1
         print 'Login Retry: '+str(retrys)
         succeeded = dologin()
-        if retrys >= 3:
+        if retrys >= 2:
             xbmcgui.Dialog().ok('Login Error','Failed to Login')
             succeeded=True
 
@@ -234,7 +234,7 @@ def dologin():
             return True
         else:
             cj.save(COOKIEFILE, ignore_discard=True, ignore_expires=True)
-            setCustomer(check=True)
+            #setCustomer(check=True)
             gen_id()
             return True
     except:

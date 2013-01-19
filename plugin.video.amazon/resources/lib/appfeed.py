@@ -65,21 +65,32 @@ PARAMETERS = '?firmware='+firmware+'&deviceTypeID='+deviceTypeID+'&deviceID='+de
 def BUILD_BASE_API(MODE,HOST='https://atv-ext.amazon.com/cdp/'):
     return HOST+MODE+PARAMETERS
 
-def getList(ContentType,start=0,isPrime=True):
+def getList(ContentType,start=0,isPrime=True,NumberOfResults=250,OrderBy='SalesRank',version=2):
     if isPrime:
         BROWSE_PARAMS = '&OfferGroups=B0043YVHMY'
-    BROWSE_PARAMS +='&NumberOfResults=250'
+    BROWSE_PARAMS +='&NumberOfResults='+str(NumberOfResults)
     BROWSE_PARAMS +='&StartIndex='+str(start)
     BROWSE_PARAMS +='&ContentType='+ContentType
-    BROWSE_PARAMS +='&OrderBy=SalesRank'
-    #BROWSE_PARAMS +='&HighDef=F&playbackInformationRequired=false&OrderBy=SalesRank&SuppressBlackedoutEST=T&HideNum=T&Detailed=T&AID=1&IncludeNonWeb=T'
-    BROWSE_PARAMS +='&version=2'    
+    BROWSE_PARAMS +='&OrderBy='+OrderBy
+    #BROWSE_PARAMS +='&Detailed=T'
+    #BROWSE_PARAMS +='&IncludeNonWeb=T'
+    #BROWSE_PARAMS +=
+    #&HighDef=F # T or F ??
+    #&playbackInformationRequired=false
+    #&OrderBy=SalesRank
+    #SuppressBlackedoutEST=T
+    #&HideNum=T
+    #&Detailed=T
+    #&AID=1
+    #&IncludeNonWeb=T
+    BROWSE_PARAMS +='&version='+str(version)    
     url = BUILD_BASE_API('catalog/Browse')+BROWSE_PARAMS
     return demjson.decode(common.getATVURL(url))
 
 def ASIN_LOOKUP(ASINLIST):
     results = len(ASINLIST.split(','))-1
-    BROWSE_PARAMS = '&asinList='+ASINLIST+'&NumberOfResults='+str(results)+'&IncludeAll=T&NumberOfResults=400&playbackInformationRequired=true&version=2'
+    # &NumberOfResults=400
+    BROWSE_PARAMS = '&asinList='+ASINLIST+'&NumberOfResults='+str(results)+'&IncludeAll=T&playbackInformationRequired=true&version=2'
     url = BUILD_BASE_API('catalog/GetASINDetails')+BROWSE_PARAMS
     return demjson.decode(common.getATVURL(url))
 

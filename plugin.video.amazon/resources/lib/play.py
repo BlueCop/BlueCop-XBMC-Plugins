@@ -10,7 +10,66 @@ import xbmcgui
 import os
 import resources.lib.common as common
 
+from BeautifulSoup import BeautifulStoneSoup
+from BeautifulSoup import BeautifulSoup
+try:
+    from xml.etree import ElementTree
+except:
+    from elementtree import ElementTree
+
 pluginhandle = common.pluginhandle
+
+def GETSUBTITLES(values):
+    getsubs  = 'https://atv-ps.amazon.com/cdp/catalog/GetSubtitleUrls'
+    getsubs += '?NumberOfResults=1'
+    getsubs += '&firmware=LNX%2010,3,181,14%20PlugIn'
+    getsubs += '&deviceTypeID='+values['deviceTypeID']
+    getsubs += '&customerID='+values['customerID']
+    getsubs += '&deviceID='+values['deviceID']
+    getsubs += '&format=json'
+    getsubs += '&asin='+values['asin']
+    getsubs += '&version=2'
+    getsubs += '&token='+values['token']
+    getsubs += '&videoType=content'
+    data = common.getURL(getsubs,'atv-ps.amazon.com',useCookie=True)
+    subtitleLanguages = demjson.decode(data)['message']['body']['subtitles']['content']['languages']
+    if len(subtitleLanguages) > 0:
+        subtitleUrl = subtitleLanguages[0]['url']
+        subtitles = CONVERTSUBTITLES(subtitleUrl)
+        common.SaveFile(os.path.join(common.pluginpath,'resources','cache',values['asin']+'.srt'), subtitles)
+
+def CONVERTSUBTITLES(url):
+    xml=common.getURL(url)
+    tree = BeautifulStoneSoup(xml, convertEntities=BeautifulStoneSoup.XML_ENTITIES)
+    lines = tree.find('tt:body').findAll('tt:p')
+    stripTags = re.compile(r'<.*?>',re.DOTALL)
+    spaces = re.compile(r'\s\s\s+')
+    srt_output = ''
+    count = 1
+    displaycount = 1
+    for line in lines:
+        sub = line.renderContents()
+        sub = stripTags.sub(' ', sub)
+        sub = spaces.sub(' ', sub)
+        sub = sub.decode('utf-8')
+        start = line['begin'].replace('.',',')
+        if count < len(lines):
+            end = line['end'].replace('.',',')
+        line = str(displaycount)+"\n"+start+" --> "+end+"\n"+sub+"\n\n"
+        srt_output += line
+        count += 1
+        displaycount += 1
+    return srt_output.encode('utf-8')
+
+def SETSUBTITLES(asin):
+    subtitles = os.path.join(common.pluginpath,'resources','cache',asin+'.srt')
+    if os.path.isfile(subtitles) and xbmc.Player().isPlaying():
+        print "AMAZON --> Subtitles Enabled."
+        xbmc.Player().setSubtitles(subtitles)
+    elif xbmc.Player().isPlaying():
+        print "AMAZON --> Subtitles File Available."
+    else:
+        print "AMAZON --> No Media Playing. Subtitles Not Assigned."
 
 def GETTRAILERS(getstream):
     try:
@@ -72,6 +131,9 @@ def PLAYVIDEO():
     #if not owned:
     #    return PLAYTRAILER_RESOLVE() 
     values['deviceID'] = values['customerID'] + str(int(time.time() * 1000)) + values['asin']
+    
+    if common.addon.getSetting("enable_captions")=='true':
+        GETSUBTITLES(values)
     getstream  = 'https://atv-ps.amazon.com/cdp/catalog/GetStreamingUrlSets'
     #getstream  = 'https://atv-ext.amazon.com/cdp/cdp/catalog/GetStreamingUrlSets'
     getstream += '?asin='+values['asin']
@@ -155,13 +217,19 @@ def PLAYVIDEO():
         surl += '&firmware=WIN%2010,3,181,14%20PlugIn'
         surl += '&customerID='+values['customerID']
         print common.getURL(surl,'atv-ps.amazon.com',useCookie=True)
+                
         if values['pageType'] == 'movie':
             import movies as moviesDB
             moviesDB.watchMoviedb(values['asin'])
         if values['pageType'] == 'tv':
             import tv as tvDB
             tvDB.watchEpisodedb(values['asin'])
-
+            
+        if common.addon.getSetting("enable_captions")=='true':
+            while not xbmc.Player().isPlaying():
+                xbmc.sleep(100)
+            SETSUBTITLES(values['asin'])
+            
 def GETFLASHVARS(pageurl):
     showpage = common.getURL(pageurl,useCookie=True)
     flashVars = re.compile("'flashVars', '(.*?)' \+ new Date\(\)\.getTime\(\)\+ '(.*?)'",re.DOTALL).findall(showpage)

@@ -77,6 +77,11 @@ def getATVURL( url , values = None ):
     else:
         return response
 
+def SaveFile(path, data):
+    file = open(path,'w')
+    file.write(data)
+    file.close()
+
 def androidsig(url):
     hmac_key = binascii.unhexlify('f5b0a28b415e443810130a4bcb86e50d800508cc')
     sig = hmac.new(hmac_key, url, sha1)
@@ -174,7 +179,7 @@ def addWatchlist(prodType,asin=False):
     token = form.find('input',attrs={'id':'token'})['value']
     url = 'http://www.amazon.com/gp/video/watchlist/ajax/addRemove.html'
     url += '?dataType=json'
-    url += '&addItem=0'
+    #url += '&addItem=0'
     url += '&ASIN='+asin
     url += '&token='+token
     url += '&prodType='+prodType #movie or tv

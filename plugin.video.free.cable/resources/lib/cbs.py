@@ -1,4 +1,5 @@
 import xbmcplugin
+import xbmcplugin
 import xbmc
 import xbmcgui
 import urllib
@@ -7,7 +8,7 @@ import sys
 import os
 import re
 import cookielib
-import datetime
+from datetime import datetime
 import time
 
 
@@ -17,55 +18,61 @@ from BeautifulSoup import MinimalSoup
 import resources.lib._common as common
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
+#andyman 16.04.2013
 pluginhandle = int (sys.argv[1])
 
 BASE_URL = "http://www.cbs.com/video/"
 BASE = "http://www.cbs.com"
 
-def masterlist():
-    data = common.getURL(BASE_URL)
-    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.find(attrs={'id' : 'videoContent'})
-    categories=menu.findAll('div', attrs={'id' : True}, recursive=False)
-    db_shows = []
-    for item in categories:
-        shows = item.findAll(attrs={'id' : 'show_block_interior'})
-        for show in shows:
-            name = show.find('img')['alt'].encode('utf-8')
-            thumb = BASE_URL + show.find('img')['src']
-            url = BASE + show.find('a')['href']
-            if 'MacGyver' in name:
-                url += '?vs=Full%20Episodes'
-            if 'daytime/lets_make_a_deal' in url:
-                url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
-            elif 'cbs_evening_news/video/' in url:
-                url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
-            elif 'shows/dogs_in_the_city/' in url:
-                url+='video/'
-            elif '/shows/3/' in url:
-                url+='video/'
-            elif '/shows/3/' in url:
-                url+='video/'
-            elif '/shows/nyc_22' in url:
-                name = 'NYC 22'
-                url+='video/'
-            db_shows.append((name,'cbs','showcats',url))
-    for show in stShows('http://startrek.com/videos',db=True):
-        db_shows.append(show)
-    return db_shows
+# def masterlist():
+    # print "DEBUG Entering masterlist function"
+    # data = common.getURL(BASE_URL)
+    # tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+    # menu=tree.find(attrs={'id' : 'videoContent'})
+    # categories=menu.findAll('div', attrs={'id' : True}, recursive=False)
+    # db_shows = []
+    # for item in categories:
+        # shows = item.findAll(attrs={'id' : 'show_block_interior'})
+        # for show in shows:
+            # name = show.find('img')['alt'].encode('utf-8')
+            # thumb = BASE_URL + show.find('img')['src']
+            # url = BASE + show.find('a')['href']
+            # print name+'|'+thumb+'|'+url
+            # if 'MacGyver' in name:
+                # url += '?vs=Full%20Episodes'
+            # #if 'daytime/lets_make_a_deal' in url:
+                # #url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
+            # if 'cbs_evening_news/video/' in url:
+                # url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
+            # elif 'shows/dogs_in_the_city/' in url:
+                # url+='video/'
+            # elif '/shows/3/' in url:
+                # url+='video/'
+            # elif '/shows/3/' in url:
+                # url+='video/'
+            # elif '/shows/nyc_22' in url:
+                # name = 'NYC 22'
+                # url+='video/'
+            # db_shows.append((name,'cbs','showcats',url))
+    # for show in stShows('http://startrek.com/videos',db=True):
+        # db_shows.append(show)
+    # return db_shows
 
 def rootlist():
+    print "DEBUG Entering rootlist function"
     data = common.getURL(BASE_URL)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     menu=tree.find(attrs={'id' : 'daypart_nav'})
     categories=menu.findAll('a')
     for item in categories:
-        catid = item['onclick'].replace("showDaypart('",'').replace("');",'')
-        name = catid.title()
-        common.addDirectory(name, 'cbs', 'shows', catid)
+        if item['href'].find('javascript') == 0:
+            catid = item['onclick'].replace("showDaypart('",'').replace("');",'')
+            name = re.compile('<a.*>(.+)</a>').findall(str(item))[0].title()
+            common.addDirectory(name, 'cbs', 'shows', catid)
     common.setView('seasons')
 
 def shows(catid = common.args.url):
+    print "DEBUG Entering shows function"
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
     data = common.getURL(BASE_URL)
     data = re.compile('<!-- SHOWS LIST -->(.*?)<!-- END SHOWS LIST -->',re.DOTALL).findall(data)[0]  
@@ -80,9 +87,9 @@ def shows(catid = common.args.url):
                 url = show.find('a')['href']
                 if 'MacGyver' in name:
                     url += '?vs=Full%20Episodes'
-                if 'daytime/lets_make_a_deal' in url:
-                    url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
-                elif 'cbs_evening_news/video/' in url:
+                #if 'daytime/lets_make_a_deal' in url:
+                    #url = url.replace('daytime/lets_make_a_deal','shows/lets_make_a_deal')
+                if 'cbs_evening_news' in url:
                     url = 'http://www.cbs.com/shows/cbs_evening_news/video/'
                 elif 'shows/dogs_in_the_city/' in url:
                     url+='video/'
@@ -97,8 +104,8 @@ def shows(catid = common.args.url):
                     url+='video/'
                 common.addShow(name, 'cbs', 'showcats', url)#, thumb=thumbnail)
             break
-    if catid == 'classics':
-        stShows('http://startrek.com/videos')
+    #if catid == 'classics':
+        #stShows('http://startrek.com/videos')
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
     common.setView('tvshows')
 
@@ -237,11 +244,22 @@ def showcats(url = common.args.url):
         except:
             print 'CBS: secondary-show-nav-wrapper failed'
             print 'CBS: trying vid_module secondary'
-            options = tree.findAll(attrs={'class' : 'vid_module'})
-            for option in options:
-                moduleid = option['id']
-                name = option.find(attrs={'class' : 'hdr'}).string
-                common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid) 
+            try:
+                options = tree.findAll(attrs={'class' : 'vid_module'})
+                print 'DEBUG: '+options
+                for option in options:
+                    moduleid = option['id']
+                    name = option.find(attrs={'class' : 'hdr'}).string
+                    common.addDirectory(name, 'cbs', 'showsubcats', url+'<moduleid>'+moduleid)
+            except:
+                print 'CBS: vid_module secondary failed'
+                print 'CBS: trying 16.04.2013 id-carousel'
+                categories = re.compile("id-carousel-(\d+)").findall(str(tree))
+                for catid in categories:
+                    thisUrl = 'http://www.cbs.com/carousels/videosBySection/'+catid+'/offset/0/limit/40/xs/{excludeShow}'
+                    data = common.getURL(thisUrl)
+                    name = demjson.decode(data)['result']['title']
+                    common.addDirectory(name, 'cbs', 'newvideos2', thisUrl)
     common.setView('seasons')                                      
 
 def showsubcats(url = common.args.url):
@@ -303,7 +321,56 @@ def newvideos(url = common.args.url):
                      }
         common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')  
-        
+
+def newvideos2(url = common.args.url):
+    data = common.getURL(url)
+    itemList = demjson.decode(data)['result']['data']
+    for video in itemList:
+        # data from JSON file
+        vurl = BASE + video['url']
+        thumb = video['thumb']['large']
+        seriesTitle = video['series_title']
+        title = video['label']
+        # need to fetch the video URL for the rest of the meta data
+        videodata = common.getURL(vurl)
+        videotree=BeautifulSoup(videodata, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        description = videotree.find('meta',attrs={'name' : 'description'})['content'].replace("\\'",'"')
+        #16.04.2013 - airdate is now in JSON
+        try:
+            airdatediv = videotree.find('div',attrs={'class' : 'airdate'})
+            aird1 = str(airdatediv).split('<')[1].split(':')[1].strip()
+            aird2 = datetime.strptime(aird1, '%m/%d/%y')
+            airDate = datetime.strftime(aird2, '%Y-%m-%d')
+        except:
+            airDate = 0
+        metadiv = videotree.find('div',attrs={'class' : 'title'})
+        # <span>S6 Ep18 (20:12)  -->  [(u'6', u'18', u'20', u'12')]
+        meta = re.compile("<span>S(\d+)\D+(\d+)\D+(\d+)\:(\d+)").findall(str(metadiv))
+        try:episodeNum = int(meta[0][1])
+        except:episodeNum = 0 
+        try:seasonNum = int(meta[0][0])
+        except:seasonNum = 0
+        try:duration = int(meta[0][2])
+        except:duration = int('0')
+        #rating = video['rating']
+        rating = 0
+        u = sys.argv[0]
+        u += '?url="'+urllib.quote_plus(vurl)+'"'
+        u += '&mode="cbs"'
+        u += '&sitemode="play"'
+        displayname = '%sx%s - %s' % (seasonNum,episodeNum,title)
+        infoLabels={ "Title":title,
+                     "Plot":description,
+                     "Season":seasonNum,
+                     "Episode":episodeNum,
+                     "premiered":airDate,
+                     "Duration":str(duration),
+                     "mpaa":rating,
+                     "TVShowTitle":seriesTitle
+                     }
+        common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
+    common.setView('episodes')  
+    
 def PAGES( tree ):
     try:
         print 'starting PAGES'
@@ -466,9 +533,9 @@ def play(url = common.args.url):
     if 'http://' in url:
         data=common.getURL(url)
         try:
-            pid = re.compile('var pid = "(.*?)";').findall(data)[0]
+            pid = re.compile('video.settings.pid = "(.*?)";').findall(data)[0]
         except:
-            pid = re.compile("var pid = '(.*?)';").findall(data)[0]
+            pid = re.compile("video.settings.pid = '(.*?)';").findall(data)[0]
     else:
         pid = url  
     # OLD URL
@@ -513,4 +580,3 @@ def play(url = common.args.url):
         subtitles = os.path.join(common.pluginpath,'resources','cache',pid+'.srt')
         print "CBS --> Setting subtitles"
         xbmc.Player().setSubtitles(subtitles)
-

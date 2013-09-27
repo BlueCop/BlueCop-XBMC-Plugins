@@ -31,8 +31,8 @@ class Main:
     def __init__( self ):
         if 'http://' in common.args.url:
             video_id=self.getIDS4HTTP(common.args.url)
-            self.queue=True
-            httpplay=True
+            self.queue=False
+            httpplay=False
         else:
             self.queue=False
             httpplay=False
@@ -110,7 +110,7 @@ class Main:
     def getIDS4HTTP(self, url):
         pagedata=common.getFEED(url)
         common.args.videoid = url.split('watch/')[1].split('/')[0]
-        content_id = re.compile('so.addVariable\("content_id", (.*?)\);').findall(pagedata)[0].strip()
+        content_id = re.compile('video/(\d+)').findall(pagedata)[0].strip()
         common.args.eid = self.cid2eid(content_id)
         return content_id
 

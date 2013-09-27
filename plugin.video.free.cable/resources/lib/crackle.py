@@ -155,7 +155,7 @@ def make_auth(url):
     sig = hmac.new(hmac_key, url)
     return sig.hexdigest()
 
-def play(url=common.args.url,playrtmp=True):
+def play(url=common.args.url,playrtmp=False):
     # GET DETAILS FROM API
     #url = build_api_url('details','',ID=id,ios=True)
     #data = common.getURL(url)
@@ -185,8 +185,3 @@ def play(url=common.args.url,playrtmp=True):
 
     item = xbmcgui.ListItem(path=finalurl)
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-    
-    
-    
-    
-    

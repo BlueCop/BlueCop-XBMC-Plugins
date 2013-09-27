@@ -188,14 +188,26 @@ def playepisode(url=common.args.url):
     for item in json['cached_videos']:
         if item['path'] == path:
             smil_url = item['pdk_flash_url'].split('?')[0]
-    #smil_url = json['cached_videos'][0]['pdk_flash_url'].split('?')[0]
-    signed_url = sign_url(smil_url)
-    link = common.getURL(signed_url)
-    tree=BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    base = tree.find('meta')['base']
-    videos = tree.findAll('video')
+    smil_url = json['cached_videos'][0]['pdk_flash_url'].split('?')[0]
+    #signed_url = sign_url(smil_url)
+    #link = common.getURL(signed_url)
+    #tree=BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    #base = tree.find('meta')['base']
+    #videos = tree.findAll('video')
+    #        filename = video['src'].replace('.mp4','').replace('.flv','')
+    #swfUrl = 'http://www.mylifetime.com/shows/sites/all/libraries/pdk_player/pdk/swf/flvPlayer.swf'
+    #auth = filename.split('?')[1]
+    #filename = filename.split('?')[0]
+    #finalurl = 'base'+'?'+auth+' swfurl='+swfUrl+' swfvfy=true playpath='+filename
+    smil_url += '?manifest=m3u'
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
+    #url += '&manifest=m3u'
+    data = common.getURL(smil_url,proxy=proxy)
+    tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     hbitrate = -1
     sbitrate = int(common.settings['quality']) * 1000
+    videos = tree.findAll('video')
     for video in videos:
         try:bitrate = int(video['system-bitrate'])
         except:
@@ -203,11 +215,10 @@ def playepisode(url=common.args.url):
             except: bitrate = 1
         if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
-            filename = video['src'].replace('.mp4','').replace('.flv','')
-    swfUrl = 'http://www.mylifetime.com/shows/sites/all/libraries/pdk_player/pdk/swf/flvPlayer.swf'
-    auth = filename.split('?')[1]
-    filename = filename.split('?')[0]
-    finalurl = base+'?'+auth+' swfurl='+swfUrl+' swfvfy=true playpath='+filename
+            finalurl = video['src']
+
+    #print tree.find('video')
+    #finalurl = tree.find('video')['src']
     item = xbmcgui.ListItem(path=finalurl)
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
@@ -316,7 +327,3 @@ def build_amf_request(key, content_id, url, exp_id):
         )
     )
     return env
-    
-    
-    
-    

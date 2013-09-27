@@ -73,31 +73,46 @@ def showcats(url=common.args.url):
         videos()
         
 def videos(url=common.args.url):
+    print "DEBUG VIDEOES",url
+    print "sart of signin"
+    #signed_url = sign_url(common.args.url)
+    #print signed_url
+    #link = common.getURL(signed_url)
+    #print "L",link
     data = common.getURL(url)
+   # print "DARA",data
     jsonData = re.compile('var playlist = (.+);').findall(data)[0];
+    #print "jdata",jsonData
     json = demjson.decode(jsonData)
+    print "JSON",json
     for item in json:
-        title = item['display']['title'].strip()
-        plot  = item['display']['description'].strip()
-        thumb = item['display']['thumbUrl']
-        duration = item['display']['duration']
-        smil = item['videoURLs']['releaseURL']
-        u = sys.argv[0]
-        u += '?url="'+urllib.quote_plus(smil)+'"'
-        u += '&mode="history"'
-        u += '&sitemode="play"'
-        infoLabels={ "Title":title,
-                     #"Season":season,
-                     #"Episode":episode,
-                     "Plot":plot,
-                     #"premiered":airdate,
-                     "Duration":duration,
-                     #"TVShowTitle":common.args.name
-                     }
-        common.addVideo(u,title,thumb,infoLabels=infoLabels)
+        premium = item['premium']
+        if premium == 'false':
+           title = item['display']['title'].strip()
+           plot  = item['display']['description'].strip()
+           thumb = item['display']['thumbUrl']
+           #print "T",thumb
+           duration = item['display']['duration']
+           smil = item['videoURLs']['releaseURL']
+           #print "vidurls",item['videoURLs']
+           #print "SMIL",smil
+           u = sys.argv[0]
+           u += '?url="'+urllib.quote_plus(smil)+'"'
+           u += '&mode="history"'
+           u += '&sitemode="play"'
+           infoLabels={ "Title":title,
+                        #"Season":season,
+                        #"Episode":episode,
+                        "Plot":plot,
+                        #"premiered":airdate,
+                        "Duration":duration,
+                        #"TVShowTitle":common.args.name
+                        }
+           common.addVideo(u,title,thumb,infoLabels=infoLabels)
     common.setView('episodes')
     
 def videosHTML(url=common.args.url):
+    print "Using html"
     data = common.getURL(url)
     tree=BeautifulSoup(data,convertEntities=BeautifulSoup.HTML_ENTITIES)
     items = tree.find('ul',attrs={'class':'media-thumbs media-thumbs-videos clearfix'}).findAll('li')
@@ -175,8 +190,15 @@ def playOLD():
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def play():
+    if (common.settings['enableproxy'] == 'true'):proxy = True
+    else:proxy = False
     signed_url = sign_url(common.args.url)
-    link = common.getURL(signed_url)
+    #get auth
+    #token=getAUTH(aifp,window,tokentype,vid,filename)
+    print "proxy",proxy
+    link = common.getURL(signed_url,proxy=proxy)
+    
+    print "**",link
     tree=BeautifulStoneSoup(link, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
     base = tree.find('meta')['base']
     videos = tree.findAll('video')
@@ -190,7 +212,11 @@ def play():
         if bitrate > hbitrate and bitrate <= sbitrate:
             hbitrate = bitrate
             filename = video['src'].replace('.mp4','').replace('.flv','')
+            if '.mp4' in video['src']:
+                filename = 'mp4:'+filename #slices 08052013
+   
     swfUrl = 'http://www.history.com/flash/VideoPlayer.swf'
+    #swfUrl='http://servicesaetn-a.akamaihd.net/video/pdk/swf/flvPlayer.swf'
     auth = filename.split('?')[1]
     filename = filename.split('?')[0]
     finalurl = base+'?'+auth+' swfurl='+swfUrl+' swfvfy=true playpath='+filename
@@ -198,19 +224,26 @@ def play():
     return xbmcplugin.setResolvedUrl(pluginhandle, True, item)
 
 def sign_url(url):
-    hmac_key = 'crazyjava'
-    SEC_HEX = '733363723374' #'s3cr3t'
-    expiration = get_expiration()
-    path = url.split('http://link.theplatform.com/s/')[1]
-    sign_data = binascii.unhexlify('00'+expiration+binascii.hexlify(path).lower())
-    sig = hmac.new(hmac_key, sign_data, sha1)
-    sigHEX = sig.hexdigest()
-    signature = '00' + expiration + sigHEX + SEC_HEX
-    finalUrl = url+'?sig='+signature+'&format=SMIL&Tracking=true&Embedded=true&mbr=true'
+    #slices - changed ro use url
+    #http://www.tbs.com/processors/cvp/token.jsp
+    sig=common.getURL('http://www.history.com/components/get-signed-signature?url='+re.compile('/s/(.+)\?').findall(url)[0])
+    #hmac_key = 'crazyjava'
+    #http://link.theplatform.com/s/xc6n8B/Uk9Iewei0eId/tracker.log?type=qos&ver=2&d=1367950641769&rid0=28489795528&t0=Ancient%20Aliens%3A%20The%20Time%20Travelers&tc0=1&lp0=0&lt0=3&pb0=100&pp0=0&pr0=0&nocache=1367950646788
+    #http://link.theplatform.com/s/xc6n8B/Uk9Iewei0eId?mbr=true&sig=005189478ac93e8e252247688d9fe43e80a0ceabf57e46df32733363723374&metafile=true&assetTypes=medium%5Fvideo%5Fs3&switch=rtmp&format=SMIL&Tracking=true&Embedded=true
+    #SEC_HEX = '733363723374' #'s3cr3t'
+    #expiration = get_expiration()
+    #print expiration
+    #path = url.split('http://link.theplatform.com/s/')[1]
+    #sign_data = binascii.unhexlify('00'+expiration+binascii.hexlify(path).lower())
+    #print "Sign data",sign_data
+    #sig = hmac.new(hmac_key, sign_data, sha1)
+    #sigHEX = sig.hexdigest()
+    #signature = '00' + expiration + sigHEX + SEC_HEX
+    finalUrl = url+'&sig='+sig+'&format=SMIL&Tracking=true&Embedded=true&mbr=true&auth=daEbfbTdjaccacMd9aHd_ccdLbad6cjdSdg-brIOlw-cOW-ooHzv'
+    print "fu",finalUrl
     return finalUrl
 
 def get_expiration(auth_length = 600):
     current_time = time.mktime(time.gmtime())+auth_length
     expiration = ('%0.2X' % current_time).lower()
     return expiration
-       

@@ -107,22 +107,62 @@ def episodes(url=common.args.url):
                 common.addVideo(u,displayname,thumb,infoLabels=infoLabels)
     common.setView('episodes')
 
-def play():
+def play(url=common.args.url):
+    #rtmpe://wbads.fcod.llnwd.net/a2383/o33/ playpath=mp4:kidswb/channels/video/thundercats_01_exodus_700kbps.mp4
     swfurl = 'http://pdl.warnerbros.com/cwtv/digital-smiths/production_player/vsplayer.swf'
+    #swfurl = 'http://media.cwtv.com/cwtv/digital-smiths/production_player/vsplayer.swf'
     url = 'http://metaframe.digitalsmiths.tv/v2/CWtv/assets/%s/partner/132?format=json' % common.args.url
+    #jsonurl = 'http://metaframe.digitalsmiths.tv/v2/CWtv/assets/'+url+'/partner/132?format=json'
     data = common.getURL(url)
+    print "D",data
+    #    data = common.getURL(jsonurl)
+    #print demjson.decode(data)['videos']
+    #rtmp = demjson.decode(data)['videos']['ds700']['uri']
+    #rtmpsplit = rtmp.split('mp4:')
+    #74.213.154.10
+    #rtmp = rtmpsplit[0]+' playpath=mp4:'+rtmpsplit[1]
+    #rtmp = 'rtmpe://74.213.154.10/cwtv/ playpath=mp4:'+rtmpsplit[1]
+    #rtmpe://cwtvfs.fplive.net/cwtv/
     items = demjson.decode(data)
     sbitrate = int(common.settings['quality'])
-    if sbitrate > 700:
-        rtmpdata = items['videos']['ds700']['uri'].split('mp4:')
-    if sbitrate < 700:
-        rtmpdata = items['videos']['ds500']['uri'].split('mp4:')
+    hbitrate=-1
+    lbitrate=-1
+    for key in items['videos']:
+        item=items['videos'][key]
+        print "item",item
+        bitrate = int(item['bitrate'])
+        #print "BR",bitrate
+        print sbitrate,bitrate,hbitrate
+        if bitrate < lbitrate or lbitrate==-1:
+            lbitrate = bitrate
+            #print "BR",bitrate
+            lrtmpdata = item['uri'].split('mp4:')
+        if bitrate > hbitrate and bitrate <= sbitrate:
+            hbitrate = bitrate
+            print "BR",bitrate
+            rtmpdata = item['uri'].split('mp4:')
+    if hbitrate==-1:
+       dialog = xbmcgui.Dialog()
+       line1 = "No video found for maxium bitrate "+common.settings['quality']
+       line2 = "Lowest bitrate found is "+str(lbitrate)
+       line3 = "Use this bitrate?"
+       if dialog.yesno("Free Cable", line1,line2,line3):
+          rtmpdata=lrtmpdata
+ 
+ 
+       #dialog.ok("Free Cable", line1, line2, line3)
+      
+    #recently there are more than two steams, some of whch have issues need to support all to work around playback
+    #if sbitrate > 700:
+     #   rtmpdata = items['videos']['ds700']['uri'].split('mp4:')
+    #if sbitrate < 700:
+    #    rtmpdata = items['videos']['ds500']['uri'].split('mp4:')
+    #rtmpdata = items['videos']['ds500']['uri'].split('mp4:')
     rtmp = rtmpdata[0]
-    playpath = 'mp4:'+rtmpdata[1]
+    playpath ='mp4:'+rtmpdata[1].replace('Level3','') 
+    #'mp4:'+'cwtv/videos/2013/04/24/CW-Arrow-2J7320-HomeInvasion_a68203930_500kbps.mp4'
+    #can this be found?
+    rtmp = 'rtmpe://wbworldtv.fcod.llnwd.net/a2246/o23/'
     rtmpurl = rtmp+' playpath='+playpath+" swfurl=" + swfurl + " swfvfy=true"
     item = xbmcgui.ListItem(path=rtmpurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-
-       
-
-

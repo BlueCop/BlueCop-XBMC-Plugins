@@ -100,6 +100,7 @@ def process(urlBase, fullname = common.args.url):
 #Get SMIL url and play video
 def play():
     smilurl=common.args.url
+    #+'&manifest=m3u'
     swfUrl = 'http://www.syfy.com/_utils/video/codebase/pdk/swf/flvPlayer.swf'
     if (common.settings['enableproxy'] == 'true'):proxy = True
     else:proxy = False
@@ -123,13 +124,36 @@ def play():
                     playpath = playpath.replace('.flv','')
                 finalurl = rtmpbase+' playpath='+playpath + " swfurl=" + swfUrl + " swfvfy=true"
     else:
-        items=tree.find('switch').findAll('video')
+        #open m3u
+        data = common.getURL(smilurl+'&manifest=m3u',proxy=proxy)
+        tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+        print tree.prettify()
+        items=tree.find('seq').findAll('video')
+        item=items[0]
         hbitrate = -1
         sbitrate = int(common.settings['quality']) * 1024
+        #for item in items:
+        #    bitrate = int(item['system-bitrate'])
+        #    if bitrate > hbitrate and bitrate <= sbitrate:
+        #        hbitrate = bitrate
+        m3u8url = item['src']
+        origfilename=m3u8url.split('/')[-1]
+        data = common.getURL(m3u8url,proxy=proxy)
+       # lines=data.splitlines()
+        #print "D",data
+        #bitrate on url isn't used
+        #.split('b__=')[0]+'b__='+common.settings['quality']
+        #print data
+        items=re.compile('BANDWIDTH=(\d*).*\n(.*)(\n)').findall(data)
+        #print "%^&^",items
         for item in items:
-            bitrate = int(item['system-bitrate'])
+            #print line
+
+            bitrate = int(item[0])
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
-                finalurl = item['src']
+               # print "BR",bitrate
+                filename = item[1]
+        finalurl=m3u8url.replace(origfilename,filename)
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)

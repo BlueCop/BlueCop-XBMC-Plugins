@@ -91,27 +91,24 @@ def ccepisodes(url=common.args.url):
     common.setView('episodes')
                 
 def episodes(url=common.args.url):
+    #import pprint
     data = common.getURL(url)
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    menu=tree.findAll(attrs={'id':True,'class':True,'href':'#'})
+    menu = [ 1 ]
     for item in menu:        
-        if 'http://www.colbertnation.com' in common.args.url:
-            eurl='http://www.colbertnation.com'+item['id']
-            data = common.getURL(eurl)
-            tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES) 
-            episodes=tree.findAll(attrs={'class':'module showcase_item'})
-            selected = tree.find(attrs={'class':'module showcase_item selected'})
-            if selected <> None:
-                episodes.insert(0,selected)
+        if 'http://www.colbertnation.com' in common.args.url or 'http://www.thedailyshow.com' in common.args.url:
+            episodes=tree.findAll(attrs={'class':['list_item', 'list_item darker', 'list_item now_playing']})
             for episode in episodes:
                 thumb = episode.find('img')['src'].split('?')[0]
-                name = episode.find(attrs={'class':'title'}).find('a').string.encode('utf8')
-                url = episode.find(attrs={'class':'title'}).find('a')['href']
-                airDate = episode.find(attrs={'class':'date'}).string.replace('Aired: ','')
-                airDate = common.formatDate(airDate,'%m/%d/%y')
-                try: description = episode.find(attrs={'class':'description'}).string.encode('utf8')
-                except: description = ''
-                seasonepisode = episode.find(attrs={'class':'number'}).string.replace('Episode ','')
+                name = episode.find(attrs={'class':'guest'}).string.encode('utf8')[:-2]
+                url = episode.find('a')['href']
+                airDate = ''
+                date = episode.find(attrs={'class':'air_date'})
+                if date:
+                    airDate = ''.join(date.findAll(text=True))
+                    name += ' - {0}'.format(str(airDate))
+                description = episode.find(attrs={'class':'inner'}).string.encode('utf8').lstrip().rstrip()
+                seasonepisode = []
                 if len(seasonepisode) == 5:
                     season = int(seasonepisode[:2])
                     episode = int(seasonepisode[-3:])
@@ -263,6 +260,10 @@ def playuri(uri = common.args.url,referer='http://www.comedycentral.com'):
                     rtmpurl = mp4_url+rtmpdata.split('viacomspstrm')[2]
                 elif 'viacomccstrm' in rtmpdata:
                     rtmpurl = mp4_url+rtmpdata.split('viacomccstrm')[2]
+                elif 'mtvnorigin' in rtmpdata:
+                    rtmpurl = mp4_url+rtmpdata.split('mtvnorigin')[1]
+                else:
+                    rtmpurl = rtmpdata
                 #app = rtmpdata.split('://')[1].split('/')[1]
                 #rtmpdata = rtmpdata.split('/'+app+'/')
                 #rtmp = rtmpdata[0]

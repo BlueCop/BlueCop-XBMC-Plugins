@@ -6,79 +6,143 @@ import urllib2
 import sys
 import os
 import re
+import base64
 
-import demjson
 from BeautifulSoup import BeautifulSoup
 from BeautifulSoup import BeautifulStoneSoup
-from pyamf.remoting.client import RemotingService
+#import demjson
 import resources.lib._common as common
 
-pluginhandle = int (sys.argv[1])
-BASE_URL = 'http://pbs.feeds.theplatform.com/ps/JSON/PortalService/2.2/getCategoryList?PID=6HSLquMebdOkNaEygDWyPOIbkPAnQ0_C&startIndex=1&endIndex=50&query=customText|CategoryType|Show&query=CustomBoolean|isPreschool|true&query=HasReleases&field=fullTitle&field=description&field=customData'
+import coveapi
 
-BASE = 'http://pbskids.org'
+pluginhandle = int (sys.argv[1])
+
+key='RnJlZUNhYmxlLTgxMzQyMmE5LTg0YWMtNDdjYy1iYzVhLTliMDZhY2NlM2I2YQ=='
+secret='MDEyYzcxMDgtNWJiNS00YmFlLWI1MWYtMDRkMTIzNGZjZWRk'
+
+cove = coveapi.connect( base64.b64decode(key), base64.b64decode(secret) )
 
 def masterlist():
     return rootlist(db=True)
 
 def rootlist(db=False):
-    xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
-    data = common.getURL(BASE_URL)
-    shows = demjson.decode(data)['items']
+    start = 0
+    count = 200
     db_shows = []
-    for item in shows:
-        url = item['fullTitle']
-        name = item['fullTitle']
-        if db==True:
-            db_shows.append((name,'pbskids','episodes',url))
-        else:
-            common.addShow(name, 'pbskids', 'episodes', url)
+    while start < count:
+        data = cove.programs.filter(filter_producer__name='KIDS',order_by='title',limit_start=start)
+        results = data['results']
+        count = data['count']
+        stop = data['stop']
+        del data
+        for result in results:
+            if len(result['nola_root'].strip()) != 0:
+                program_id = re.compile( '/cove/v1/programs/(.*?)/' ).findall( result['resource_uri'] )[0]
+                name = result['title'].encode('utf-8')
+                if db==True:
+                    db_shows.append((name, 'pbskids', 'show', program_id))
+                else:
+                    common.addShow(name, 'pbskids', 'show', program_id)
+        start = stop
     if db==True:
         return db_shows
     else:
         common.setView('tvshows')
-    
-def episodes(showname = common.args.url):
-    url = 'http://pbs.feeds.theplatform.com/ps/JSON/PortalService/2.2/getReleaseList?PID=6HSLquMebdOkNaEygDWyPOIbkPAnQ0_C'
-    url += '&startIndex=1&endIndex=250&sortField=airdate&sortDescending=true&query=Categories|'+showname.replace(' ','%20')
-    url += '&field=title&field=categories&field=airdate&field=expirationDate&field=length&field=description&field=language&field=thumbnailURL&field=URL&field=PID&contentCustomField=IsClip&contentCustomField=RelatedContentIDs&contentCustomField=RelatedContentIDs_Spanish&contentCustomField=Related_Activities&contentCustomField=Series_URL&contentCustomField=TV_Rating&contentCustomField=Production_NOLA&contentCustomField=Series_Title&contentCustomField=IsGame_header&contentCustomField=Episode_Title&query=CustomBoolean|isPreschool|true&param=affiliate|PBS%20KIDS%20NATIONAL&param=player|PreKplayer'
-    data = common.getURL(url)
-    videos = demjson.decode(data)['items']
+        
+        
+def show(program_id=common.args.url):
+    start = 0
+    count = 200
+    clips = False
+    data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_type='Episode',filter_mediafile_set__video_encoding__mime_type='video/mp4')
+    if data['count'] == 0:
+        clips = True
+        data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_mediafile_set__video_encoding__mime_type='video/mp4')
+    videos = data['results']
+    total = data['count']
+    stop = data['stop']
     for video in videos:
         infoLabels={}
-        thumb=video['thumbnailURL']
-        url=video['URL']
+        try:thumb=video['associated_images'][0]['url']
+        except:thumb=video['associated_images'][0]['url']
+        url=video['mediafiles'][0]['video_data_url']
         infoLabels['Title']=video['title']
-        infoLabels['Plot']=video['description']
-        infoLabels['TVShowTitle']=video['categories'][0] 
-        infoLabels['Duration']=str(int(video['length'])/1000)
+        infoLabels['Plot']=video['long_description']
+        infoLabels['Premiered']=video['airdate'].split(' ')[0]
+        infoLabels['TVShowTitle']=common.args.name
+        infoLabels['Duration']=str(int(video['mediafiles'][0]['length_mseconds'])/1000)
         u = sys.argv[0]
         u += '?url="'+urllib.quote_plus(url)+'"'
         u += '&mode="pbskids"'
         u += '&sitemode="play"'
+        print "U1U",u
         common.addVideo(u,infoLabels['Title'],thumb,infoLabels=infoLabels)
+    start = stop
+    while start < count:
+        if clips:
+            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start)
+        else:
+            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_type='Episode')
+        videos = data['results']
+        total = data['count']
+        stop = data['stop']
+        del data
+        for video in videos:
+            infoLabels={}
+            try:thumb=video['associated_images'][2]['url']
+            except:thumb=video['associated_images'][0]['url']
+            url=video['mediafiles'][0]['video_data_url']
+            infoLabels['Title']=video['title']
+            infoLabels['Plot']=video['long_description']
+            infoLabels['Premiered']=video['airdate'].split(' ')[0]
+            infoLabels['TVShowTitle']=common.args.name
+            infoLabels['Duration']=str(int(video['mediafiles'][0]['length_mseconds'])/1000)
+            u = sys.argv[0]
+            u += '?url="'+urllib.quote_plus(url)+'"'
+            u += '&mode="pbskids"'
+            u += '&sitemode="play"'
+            print "U*U",u
+            common.addVideo(u,infoLabels['Title'],thumb,infoLabels=infoLabels)
+        start = stop
     common.setView('episodes')
 
-#Get SMIL url and play video
 def play():
-    smilurl=common.args.url+'&format=SMIL'
-    data = common.getURL(smilurl)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    print tree.prettify()
-    base = tree.find('meta')
-    if base:
-        base = base['base']
-        if 'rtmp://' in base:
-            playpath=tree.find('ref')['src']
-            if '.mp4' in playpath:
-                playpath = 'mp4:'+playpath
-            else:
-                playpath = playpath.replace('.flv','')
-            finalurl = base+' playpath='+playpath
-        elif 'http://' in base:
-            playpath=tree.find('ref')['src']
-            finalurl = base+playpath
-    else:
-        finalurl=tree.find('ref')['src']
+    print "IN KIDS"
+    #smilurl=common.args.url+'&format=SMIL'
+    redirecturl=common.args.url
+    finalurl=common.getRedirect(redirecturl)
+    print "resolved url",finalurl
+    #data = common.getURL(smilurl)
+    #print "data",data
+    #tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    #print "tree",tree.prettify()
+    #base = tree.find('meta')
+    #print "base",base
+    #base='rtmp://s3h56pp78s3goi.cloudfront.net/cfx/st/mp4:cove2.0/wordgirl/634cc2f8-e5bc-4c20-bf85-9cc78ddaf48c/hd-mezzanine-16x9/WORG309_EpisodeA_M1080-16x9-mp4-1200k.mp4
+    #base='rtmp://s3h56pp78s3goi.cloudfront.net/cfx/st/'
+    #playpath='mp4:cove2.0/wordgirl/634cc2f8-e5bc-4c20-bf85-9cc78ddaf48c/hd-mezzanine-16x9/WORG309_EpisodeA_M1080-16x9-mp4-1200k.mp4'
+    #finalurl = base+' playpath='+playpath  
+   #playpath=tree.find('ref')['src']
+   # if '.mp4' in playpath:
+         #playpath = 'mp4:'+playpath
+          #  else:
+           #     playpath = playpath.replace('.flv','')
+           # finalurl = base+' playpath='+playpath   
+   #if base:
+     #   base = base['base']
+      #  if 'rtmp://' in base:
+       #     playpath=tree.find('ref')['src']
+        #    if '.mp4' in playpath:
+         #       playpath = 'mp4:'+playpath
+          #  else:
+           #     playpath = playpath.replace('.flv','')
+           # finalurl = base+' playpath='+playpath
+       # elif 'http://' in base:
+        #    playpath=tree.find('ref')['src']
+     #       finalurl = base+playpath
+   # else:
+    #    finalurl=tree.find('ref')['src']
+   # finalurl=smilurl
+   # print "URL",finalurl
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)

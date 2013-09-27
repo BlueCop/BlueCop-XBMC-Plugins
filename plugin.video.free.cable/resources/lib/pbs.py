@@ -79,9 +79,9 @@ def show(program_id=common.args.url):
     start = stop
     while start < count:
         if clips:
-            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start)
+            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_mediafile_set__video_encoding__mime_type='video/mp4')
         else:
-            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_type='Episode')
+            data = cove.videos.filter(fields='associated_images,mediafiles',filter_program=program_id,order_by='-airdate',filter_availability_status='Available',limit_start=start,filter_type='Episode',filter_mediafile_set__video_encoding__mime_type='video/mp4')
         videos = data['results']
         total = data['count']
         stop = data['stop']
@@ -105,32 +105,24 @@ def show(program_id=common.args.url):
     common.setView('episodes')
 
 def play():
-    smilurl=common.args.url+'&format=SMIL'
-    data = common.getURL(smilurl)
-    tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
-    print tree.prettify()
-    base = tree.find('meta')
-    if base:
-        base = base['base']
-        if 'rtmp://' in base:
-            playpath=tree.find('ref')['src']
-            if '.mp4' in playpath:
-                playpath = 'mp4:'+playpath
-            else:
-                playpath = playpath.replace('.flv','')
-            finalurl = base+' playpath='+playpath
-        elif 'http://' in base:
-            playpath=tree.find('ref')['src']
-            finalurl = base+playpath
-    else:
-        finalurl=tree.find('ref')['src']
+    url=common.args.url
+    finalurl=common.getRedirect(url)
+    #tree=BeautifulStoneSoup(data, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+    #print tree.prettify()
+    #base = tree.find('meta')
+    #if base:
+     #   base = base['base']
+      #  if 'rtmp://' in base:
+       #     playpath=tree.find('ref')['src']
+        #    if '.mp4' in playpath:
+         #       playpath = 'mp4:'+playpath
+          #  else:
+           #     playpath = playpath.replace('.flv','')
+           # finalurl = base+' playpath='+playpath
+       # elif 'http://' in base:
+        #    playpath=tree.find('ref')['src']
+         #   finalurl = base+playpath
+    #else:
+     #   finalurl=tree.find('ref')['src']
     item = xbmcgui.ListItem(path=finalurl)
     xbmcplugin.setResolvedUrl(pluginhandle, True, item)
-
-
-
-
-        
-        
-        
-        

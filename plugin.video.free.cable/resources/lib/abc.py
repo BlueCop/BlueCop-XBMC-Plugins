@@ -42,10 +42,15 @@ def seasons(url=common.args.url):
     else:
         rss=False
     data = common.getURL(url)
+    print 'ABC url is'
+    print url
     season_set = makeDict(re.compile('season.set\(\{(.+?)\}\);').findall(data)[0])
     season_url = BASE+season_set['service']
     showid = season_set['showid']
     tabs_set = makeDict(re.compile('tabs.set\(\{(.+?)\}\);').findall(data)[0])
+    #teefer22 added the below 1 line
+    tabs_set['service'] = tabs_set['service'].replace('feptabs','tabs')
+
     tabs_url = BASE+tabs_set['service']
     content_set = makeDict(re.compile('content.set\(\{(.+?)\}\);').findall(data)[0])
     content_url = BASE+content_set['service']
@@ -57,6 +62,8 @@ def seasons(url=common.args.url):
         playlistid = tab_data['playlistid']
         playlistcount = tab_data['playlistcount']
         rss_url = tabs_set['rss'].replace('(playlistid)',playlistid).replace('-1/-1/-1',str(seasonid)+'/-1/-1')
+        #teefer22 added the below 1 line
+        rss_url = rss_url.replace('(seasonid)',seasonid)
         content_url = content_url.replace('(seasonid)',seasonid).replace('(playlistid)',playlistid).replace('(start)','0').replace('(size)',str(playlistcount)) 
         if rss:
             common.addDirectory(season_name, 'abc', 'episodesRSS', rss_url)
@@ -84,7 +91,8 @@ def seasons(url=common.args.url):
     common.setView('seasons')
     
 def makeDict(sets):
-    sets = sets.split(',')
+    #teefer22 modified the below 1 line
+    sets = sets.split(', "')
     season_dict={}
     for set in sets:
         split = set.replace('"','').split(':',1)
@@ -182,7 +190,7 @@ def play(url=common.args.url):
     platpath=False
     for filename in filenames:
         if filename['src'] <> '':
-            bitrate = int(filename['bitrate'])
+            bitrate = int(float(filename['bitrate']))
             if bitrate > hbitrate and bitrate <= sbitrate:
                 hbitrate = bitrate
                 playpath = filename['src']

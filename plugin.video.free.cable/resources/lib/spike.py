@@ -21,6 +21,7 @@ def rootlist(db=False):
         for show in shows:
             link = show.find('a')
             url = BASE+link['href']
+            print "URL",url
             name = link.string
             if name == 'The Ultimate Fighter':
                 continue
@@ -36,16 +37,23 @@ def rootlist(db=False):
 def episodes(url=common.args.url):
     xbmcplugin.addSortMethod(pluginhandle, xbmcplugin.SORT_METHOD_LABEL)
     data = common.getURL(url)
+    #print "D",data
     tree=BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
     seeall=tree.find('a', attrs={'class' : 'see_all'})
+    print "eall",seeall
     categories=tree.findAll('a',attrs={'class' : 'read_full'})
     categories.append(seeall)
     try:
         for category in categories:
-            if category is not None:
+            print "cat",category
+            if category is not None and category.string is not None:
                 url = category['href']
+                print "catu",url
+                print "cn",category.string,category
                 name = category.string.replace('See all ','')
+                print 'name',name
                 if name == 'Video Clips':
+                    print "ADDD",name, 'spike', 'videos', url
                     common.addDirectory(name, 'spike', 'videos', url)
                 elif name == 'Full Episodes':
                     common.addDirectory(name, 'spike', 'fullepisodes', url)
@@ -98,7 +106,9 @@ def fullepisodes(url=common.args.url):
             name = episode.find('img')['title']
             thumb = episode.find('img')['src'].split('?')[0]
             description = episode.findAll('p')[0].contents[0].strip().encode('utf-8')
-            airDate = episode.findAll('p')[1].contents[2].strip().encode('utf-8')
+            print "PP12",episode.findAll('p')[1].contents[1]
+            #slces 26.04.2013 changed index 
+            airDate = episode.findAll('p')[1].contents[1].strip().encode('utf-8')
             try:
                 seasonepisode = episode.find(attrs={'class' : 'title'}).contents[2].replace('- Episode ','').strip()
                 if 3 == len(seasonepisode):
@@ -191,5 +201,3 @@ def playvideo(url = common.args.url):
     #uri = tree.find('meta',attrs={'property':'og:video'})['content'].split('://')[1].split('/')[1]
     uri = tree.find('div',attrs={'id':'video_player_box'})['data-mgid']
     play(uri,referer=url)
-
-

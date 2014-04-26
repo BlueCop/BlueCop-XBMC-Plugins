@@ -248,7 +248,7 @@ def dologin():
         br.addheaders = [('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)')]  
         sign_in = br.open("http://www.amazon.com/gp/flex/sign-out.html") 
         #print sign_in.read()  
-        br.select_form(name="sign-in")  
+        br.select_form(name="signIn")  
         br["email"] = addon.getSetting("login_name")
         br["password"] = addon.getSetting("login_pass")
         logged_in = br.submit()  

@@ -4,10 +4,10 @@
        version="3.4.5"
        provider-name="BlueCop">
   <requires>
-    <import addon="xbmc.python" version="1.0"/>
-    <import addon="script.module.beautifulsoup" version="3.0.8"/>
-    <import addon="script.module.elementtree" version="1.2.7"/>
-    <import addon="script.module.cryptopy" version="1.2.6"/>
+    <import addon="xbmc.python" version="2.1.0"/>
+    <import addon="script.module.beautifulsoup" version="4.3.2"/>
+    <import addon="script.module.elementtree" version="1.2.8"/>
+    <import addon="script.module.cryptopy" version="1.2.6.2"/>
   </requires>
   <extension point="xbmc.python.pluginsource"
              library="default.py">
